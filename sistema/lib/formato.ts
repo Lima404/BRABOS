@@ -88,8 +88,17 @@ export function diaCurto(data: string): string {
   });
 }
 
+/**
+ * O `data` é "hoje" para a barbearia?
+ *
+ * Pelo relógio da BARBEARIA, não pelo da máquina: esta função é chamada
+ * durante a renderização, dos dois lados. Com `new Date()` o servidor (UTC em
+ * produção) e o navegador respondiam diferente na virada do dia, e o painel
+ * escrevia "Hoje, 04 de setembro" num lado e "03 de setembro" no outro — erro
+ * de hidratação.
+ */
 export function ehHoje(data: string): boolean {
-  return data === dataISO(new Date());
+  return data === hojeNaBarbearia();
 }
 
 /**

@@ -7,14 +7,21 @@ import {
   listarServicos,
   obterConfiguracaoAgenda,
 } from "@/lib/agenda/repositorio";
+import { obterBarbearia } from "@/lib/conta";
 import { chaves, obterQueryClient } from "@/lib/query";
-import { mesISO } from "@/lib/formato";
+import { hojeNaBarbearia } from "@/lib/formato";
 
 export const metadata: Metadata = { title: "Agenda" };
 
 export default async function AgendaPage() {
-  const mes = mesISO(new Date());
+  // Relógio da barbearia: em produção o Node roda em UTC, e na virada do mês
+  // esta página abriria já no mês seguinte, vazia.
+  const mes = hojeNaBarbearia().slice(0, 7);
   const queryClient = obterQueryClient();
+  // O apelido vem daqui e não de uma consulta no cliente: é ele que monta o
+  // endereço de agendamento online, e a barra precisa dele já no primeiro
+  // desenho pra decidir se mostra o botão.
+  const barbearia = await obterBarbearia();
 
   // Prefetch no servidor: le o repositorio direto, sem passar por HTTP.
   // O cliente reidrata a mesma chave e nao refaz a chamada.
@@ -42,7 +49,7 @@ export default async function AgendaPage() {
       </div>
 
       <HydrationBoundary state={dehydrate(queryClient)}>
-        <Agenda mesInicial={mes} />
+        <Agenda mesInicial={mes} slug={barbearia?.slug} />
       </HydrationBoundary>
     </div>
   );

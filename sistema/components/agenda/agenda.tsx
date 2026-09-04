@@ -8,6 +8,7 @@ import { BarraSuperior } from "@/components/agenda/barra-superior";
 import { CalendarioFC } from "@/components/agenda/calendario-fc";
 import { DialogoComanda } from "@/components/agenda/dialogo-comanda";
 import { DialogoConfiguracao } from "@/components/agenda/dialogo-configuracao";
+import { DialogoLinkAgendamento } from "@/components/agenda/dialogo-link-agendamento";
 import { DialogoNovoAgendamento } from "@/components/agenda/dialogo-novo-agendamento";
 import { mudarEstadoAgendamento } from "@/app/(sistema)/agenda/acoes";
 import { Legenda } from "@/components/agenda/legenda";
@@ -22,20 +23,41 @@ import {
 import { buscarBarbeiros } from "@/lib/barbearia/api";
 import { chaves } from "@/lib/query";
 import { CONFIGURACAO_PADRAO, type Agendamento } from "@/lib/agenda/tipos";
-import { dataISO, mesISO } from "@/lib/formato";
+import { hojeNaBarbearia, mesISO } from "@/lib/formato";
 
-export function Agenda({ mesInicial }: { mesInicial: string }) {
+export function Agenda({
+  mesInicial,
+  slug,
+}: {
+  mesInicial: string;
+  /** Apelido público da barbearia. Ausente = conta sem linha em `barbearias`. */
+  slug?: string;
+}) {
   const [mes, setMes] = useState(mesInicial);
-  const [dia, setDia] = useState(() => dataISO(new Date()));
+  // `hojeNaBarbearia()` e nao `new Date()`: o servidor renderiza esta tela
+  // antes do navegador, e em producao ele roda em UTC. Com dois relogios
+  // diferentes, servidor e cliente escreviam datas diferentes no painel do
+  // dia — que e exatamente o erro de hidratacao "server rendered text didn't
+  // match". Com o fuso fixado, os dois chegam na mesma string.
+  const [dia, setDia] = useState(hojeNaBarbearia);
   const [servicosAtivos, setServicosAtivos] = useState<Set<string>>(new Set());
-  /** Agenda própria: quem está selecionado na barra (persistido no localStorage). */
-  const [barbeiroId, setBarbeiroId] = useState<string | null>(() =>
-    lerBarbeiroSalvo(),
-  );
+  /**
+   * Agenda própria: quem está selecionado na barra.
+   *
+   * Começa em `null` nas DUAS pontas, mesmo havendo escolha salva. Ler o
+   * localStorage aqui era o erro de hidratação: no servidor não existe
+   * `window`, então vinha `null` e o seletor renderizava "Barbeiro"; no
+   * navegador vinha "Pablo" já no primeiro render. Textos diferentes no mesmo
+   * nó = React joga fora a árvore e refaz tudo no cliente.
+   *
+   * Quem lê o que ficou salvo é o efeito lá embaixo, depois da hidratação.
+   */
+  const [barbeiroId, setBarbeiroId] = useState<string | null>(null);
 
   // `sessao` sobe a cada abertura e vira `key` do conteudo do modal: assim os
   // campos renascem com o que esta no banco, sem efeito colateral.
   const [config, setConfig] = useState({ aberto: false, sessao: 0 });
+  const [linkAberto, setLinkAberto] = useState(false);
   // `emEdicao` presente = o mesmo modal abre no modo editar. Um modal só
   // para os dois: o formulário é o mesmo, e duplicá-lo seria duplicar também
   // a linha do tempo e a checagem de conflito.
@@ -188,9 +210,11 @@ export function Agenda({ mesInicial }: { mesInicial: string }) {
   }
 
   function irParaHoje() {
-    const agora = new Date();
-    setMes(mesISO(agora));
-    setDia(dataISO(agora));
+    // Mesmo relógio do estado inicial — senão "Hoje" levaria para outro dia
+    // depois das 21h em produção, que é justamente o fim do expediente.
+    const hoje = hojeNaBarbearia();
+    setMes(hoje.slice(0, 7));
+    setDia(hoje);
   }
 
   function alternarServico(id: string) {
@@ -233,6 +257,7 @@ export function Agenda({ mesInicial }: { mesInicial: string }) {
         aoConfigurar={() =>
           setConfig((c) => ({ aberto: true, sessao: c.sessao + 1 }))
         }
+        aoCriarLink={slug ? () => setLinkAberto(true) : undefined}
         aoNovoAgendamento={abrirNovoAgendamento}
         totalNoMes={visiveis.length}
         barbeiros={barbeiros}
@@ -304,6 +329,15 @@ export function Agenda({ mesInicial }: { mesInicial: string }) {
         configuracao={configuracao}
         servicos={servicos}
       />
+
+      {slug ? (
+        <DialogoLinkAgendamento
+          aberto={linkAberto}
+          aoMudarAberto={setLinkAberto}
+          slug={slug}
+          semEquipe={barbeiros.length === 0}
+        />
+      ) : null}
 
       <DialogoComanda
         aberto={comanda.aberto}

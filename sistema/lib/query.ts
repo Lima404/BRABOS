@@ -45,6 +45,12 @@ export const chaves = {
     comanda: (agendamentoId: string) =>
       ["agenda", "comanda", agendamentoId] as const,
   },
+  /** Tela publica de agendamento — cache por barbearia e dia. */
+  agendarPublico: {
+    todas: ["agendar-publico"] as const,
+    dia: (slug: string, data: string) =>
+      ["agendar-publico", slug, data] as const,
+  },
   dashboard: {
     todas: ["dashboard"] as const,
     /** Intervalo + filtros — chave completa do resumo. */

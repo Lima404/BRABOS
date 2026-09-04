@@ -17,11 +17,12 @@ const ROTAS_DE_ENTRADA = [
 /**
  * Rotas abertas: não exigem sessão.
  *
- * `/loja` é aberta mas NÃO é rota de entrada — quem lê o QR code na parede da
- * barbearia não tem conta, e a dona logada precisa poder abrir a própria loja
- * sem ser expulsa pra agenda. Confundir as duas listas quebra um dos dois.
+ * `/loja` e `/agendar` são abertas mas NÃO são rotas de entrada — quem lê o QR
+ * code na parede da barbearia, ou recebe o link de agendamento no WhatsApp,
+ * não tem conta; e a dona logada precisa poder abrir as duas telas sem ser
+ * expulsa pra agenda. Confundir as duas listas quebra um dos dois lados.
  */
-const ROTAS_ABERTAS = [...ROTAS_DE_ENTRADA, "/loja"];
+const ROTAS_ABERTAS = [...ROTAS_DE_ENTRADA, "/loja", "/agendar"];
 
 function comecaCom(caminho: string, rotas: string[]): boolean {
   return rotas.some(
