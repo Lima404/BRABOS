@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { CalendarX } from "lucide-react";
 
 import { AgendarPublico } from "@/components/agendamento-online/agendar-publico";
 import { Alerta } from "@/components/ui/alerta";
+import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { obterSessao } from "@/lib/conta";
 import { obterAgendaPublica } from "@/lib/agendamento-online/repositorio";
 import { hojeNaBarbearia } from "@/lib/formato";
@@ -11,16 +13,16 @@ type Props = PageProps<"/agendar/[barbearia]">;
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { barbearia } = await params;
-  const agenda = await obterAgendaPublica(barbearia, hojeNaBarbearia());
+  const leitura = await obterAgendaPublica(barbearia, hojeNaBarbearia());
 
   // O título é o que aparece na aba e no link colado no WhatsApp —
   // "Agendar | BARBOS" não diz de quem é.
-  return agenda
+  return leitura.ok
     ? {
-        title: `Agendar na ${agenda.barbearia.nome}`,
-        description: `Escolha o horário na ${agenda.barbearia.nome}.`,
+        title: `Agendar na ${leitura.agenda.barbearia.nome}`,
+        description: `Escolha o horário na ${leitura.agenda.barbearia.nome}.`,
       }
-    : { title: "Barbearia não encontrada" };
+    : { title: "Agendamento indisponível" };
 }
 
 /**
@@ -29,17 +31,43 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  *
  * Quem diz de qual barbearia é a agenda é o apelido na URL, não o cookie: o
  * cliente que recebeu o link não tem conta nenhuma.
+ *
+ * Três saídas, e não duas: apelido errado é 404 de verdade; banco sem
+ * resposta é uma tela que EXPLICA. Antes as duas caíam no mesmo 404 mudo, e
+ * uma migração pendente virava "This page could not be found" — o erro morria
+ * no log do servidor, que é exatamente o que o AGENTS.md manda não fazer.
  */
 export default async function AgendarPage({ params }: Props) {
   const { barbearia: slug } = await params;
 
-  const [agenda, sessao] = await Promise.all([
+  const [leitura, sessao] = await Promise.all([
     obterAgendaPublica(slug, hojeNaBarbearia()),
     obterSessao(),
   ]);
 
-  if (!agenda) notFound();
+  if (!leitura.ok && leitura.motivo === "nao-encontrada") notFound();
 
+  if (!leitura.ok) {
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-4 py-6">
+        <EstadoVazio
+          icone={CalendarX}
+          titulo="Agendamento fora do ar"
+          descricao="Não consegui carregar os horários desta barbearia agora. Tente de novo em alguns minutos, ou fale com ela direto."
+        />
+
+        {/* O detalhe técnico só para quem tem conta — é dono de barbearia, e
+            é quem pode resolver. O cliente não tem o que fazer com isso. */}
+        {sessao.logado ? (
+          <Alerta tom="aviso" titulo="Detalhe para você, dono">
+            {leitura.detalhe}
+          </Alerta>
+        ) : null}
+      </div>
+    );
+  }
+
+  const agenda = leitura.agenda;
   const ehDona = sessao.barbearia?.id === agenda.barbearia.id;
 
   return (

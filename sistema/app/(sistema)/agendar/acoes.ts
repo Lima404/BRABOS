@@ -134,5 +134,8 @@ export async function buscarDiaPublico(
   data: string,
 ): Promise<AgendaPublica | null> {
   if (!slug || !/^\d{4}-\d{2}-\d{2}$/.test(data)) return null;
-  return obterAgendaPublica(slug, data);
+  const leitura = await obterAgendaPublica(slug, data);
+  // A tela já está montada quando isto roda: se o dia novo falhar, ela segue
+  // com o dia anterior em vez de piscar vazia.
+  return leitura.ok ? leitura.agenda : null;
 }
