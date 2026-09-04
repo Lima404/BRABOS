@@ -124,18 +124,58 @@ export const DIAS_SEMANA = [
 export type ConfiguracaoAgenda = {
   /** Dias em que a barbearia atende. */
   diasAtendimento: number[];
-  /** HH:MM, hora local da barbearia. */
+  /**
+   * Envelope do dia (HH:MM): com turno desligado = o único intervalo;
+   * com turno ligado = abre da manhã → fecha da tarde.
+   */
   abre: string;
-  /** HH:MM, hora local da barbearia. */
+  fecha: string;
+  /** Se true, o expediente é manhã / tarde. */
+  porTurno: boolean;
+  manha: TurnoHorario;
+  tarde: TurnoHorario;
+};
+
+/** Um turno: abertura e fechamento. */
+export type TurnoHorario = {
+  abre: string;
   fecha: string;
 };
+
+export const TURNOS_PADRAO = {
+  manha: { abre: "09:00", fecha: "12:00" } satisfies TurnoHorario,
+  tarde: { abre: "14:00", fecha: "18:00" } satisfies TurnoHorario,
+} as const;
 
 /** Usado quando a barbearia ainda não tem linha de configuração. */
 export const CONFIGURACAO_PADRAO: ConfiguracaoAgenda = {
   diasAtendimento: [1, 2, 3, 4, 5, 6],
   abre: "09:00",
   fecha: "19:00",
+  porTurno: false,
+  manha: { ...TURNOS_PADRAO.manha },
+  tarde: { ...TURNOS_PADRAO.tarde },
 };
+
+/**
+ * Um dia avulso em que a barbearia não abre — feriado, viagem, casamento.
+ *
+ * É a EXCEÇÃO, e por isso vive fora de `diasAtendimento`: desmarcar segunda
+ * pra fechar num feriado fecharia todas as segundas do ano.
+ *
+ * Folga **não cancela ninguém**. Ela fecha o dia para horário NOVO; quem já
+ * estava marcado continua na agenda, e avisar é da dona — apagar agendamento
+ * por tabela seria decidir no lugar dela.
+ */
+export type Folga = {
+  /** AAAA-MM-DD */
+  data: string;
+};
+
+/** Conjunto de datas para consulta rápida — `folgas.has("2026-09-07")`. */
+export function datasDeFolga(folgas: Folga[]): Set<string> {
+  return new Set(folgas.map((f) => f.data));
+}
 
 // ============================================================
 // Agendamento

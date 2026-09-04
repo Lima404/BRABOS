@@ -3,17 +3,21 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  CalendarOff,
   ChevronRight,
   Clock,
   EyeOff,
   Loader2,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 
 import {
   alternarServicoAtivo,
+  desmarcarFolga,
   excluirServico,
+  marcarFolga,
   salvarConfiguracao,
   salvarServico,
   type DadosServico,
@@ -23,33 +27,45 @@ import {
   FormularioServico,
   ID_FORMULARIO_SERVICO,
 } from "@/components/agenda/formulario-servico";
+import { MiniCalendario } from "@/components/agenda/mini-calendario";
 import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
+import { Opcao } from "@/components/ui/campo";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
+import { Switch } from "@/components/ui/switch";
 import { chaves } from "@/lib/query";
 import {
   CLASSES_SERVICO,
   DIAS_SEMANA,
+  TURNOS_PADRAO,
+  datasDeFolga,
   type ConfiguracaoAgenda,
+  type Folga,
   type Servico,
+  type TurnoHorario,
 } from "@/lib/agenda/tipos";
-import { duracaoPorExtenso, moeda } from "@/lib/formato";
+import {
+  diaComSemana,
+  duracaoPorExtenso,
+  hojeNaBarbearia,
+  moeda,
+} from "@/lib/formato";
 import { cn } from "@/lib/utils";
 
 /**
  * Modal de configuração da agenda. Usa o `Modal` padrão do projeto — largura,
  * rolagem e comportamento no celular vêm de lá, não daqui.
  *
- * Duas coisas convivem neste modal de propósito, porque na cabeça do dono são
+ * Três coisas convivem neste modal de propósito, porque na cabeça do dono são
  * uma só ("como minha agenda funciona"): dias e horário de atendimento, que
- * salvam juntos no rodapé, e o cardápio de serviços, onde cada serviço é um
- * registro que salva sozinho.
+ * salvam juntos no rodapé; o cardápio de serviços; e as folgas — estas duas
+ * últimas gravam sozinhas, cada registro no seu momento.
  *
- * O cadastro de serviço TROCA o conteúdo do modal e acende a seta de voltar,
- * em vez de abrir um segundo modal por cima.
+ * Serviço e folga TROCAM o conteúdo do modal e acendem a seta de voltar, em
+ * vez de abrir um segundo modal por cima.
  */
 export function DialogoConfiguracao({
   aberto,
@@ -57,6 +73,7 @@ export function DialogoConfiguracao({
   aoMudarAberto,
   configuracao,
   servicos,
+  folgas,
 }: {
   aberto: boolean;
   /** Muda a cada abertura: remonta o conteúdo com os valores do banco. */
@@ -64,6 +81,8 @@ export function DialogoConfiguracao({
   aoMudarAberto: (aberto: boolean) => void;
   configuracao: ConfiguracaoAgenda;
   servicos: Servico[];
+  /** Dias avulsos fechados (migração 0020). */
+  folgas: Folga[];
 }) {
   return (
     <Conteudo
@@ -72,6 +91,7 @@ export function DialogoConfiguracao({
       aoMudarAberto={aoMudarAberto}
       configuracao={configuracao}
       servicos={servicos}
+      folgas={folgas}
     />
   );
 }
@@ -84,19 +104,37 @@ function Conteudo({
   aoMudarAberto,
   configuracao,
   servicos,
+  folgas,
 }: {
   aberto: boolean;
   aoMudarAberto: (aberto: boolean) => void;
   configuracao: ConfiguracaoAgenda;
   servicos: Servico[];
+  folgas: Folga[];
 }) {
   const clienteQuery = useQueryClient();
 
   const [dias, setDias] = useState<number[]>(configuracao.diasAtendimento);
   const [abre, setAbre] = useState(configuracao.abre);
   const [fecha, setFecha] = useState(configuracao.fecha);
+  const [porTurno, setPorTurno] = useState(configuracao.porTurno);
+  const [manha, setManha] = useState<TurnoHorario>(configuracao.manha);
+  const [tarde, setTarde] = useState<TurnoHorario>(configuracao.tarde);
   const [erro, setErro] = useState<string | null>(null);
   const [emEdicao, setEmEdicao] = useState<EmEdicao>(undefined);
+
+  // ---- folgas ----
+  // Passo próprio do modal, como o cadastro de serviço: TROCA o conteúdo e
+  // acende a seta de voltar. Modal por cima de modal, nunca.
+  const [emFolgas, setEmFolgas] = useState(false);
+  const hoje = hojeNaBarbearia();
+  const [mesFolga, setMesFolga] = useState(() => hoje.slice(0, 7));
+  const [avisoFolga, setAvisoFolga] = useState<string | null>(null);
+
+  const marcadas = datasDeFolga(folgas);
+  // Só as que ainda vão acontecer. Folga que já passou virou histórico: o
+  // calendário continua sombreando o dia, e desmarcar não desfaz nada.
+  const proximas = folgas.filter((f) => f.data >= hoje);
 
   /** Toda escrita recarrega configuração e agenda: a cor e a duração do
    *  serviço mudam o desenho dos eventos já na tela. */
@@ -153,6 +191,25 @@ function Conteudo({
     onError: semRede,
   });
 
+  /**
+   * Folga salva na hora, sem passar pelo "Salvar configuração".
+   *
+   * Mesmo contrato do cardápio de serviços, que também salva sozinho: marcar
+   * um dia é um fato ("dia 7 eu não abro"), não um rascunho de formulário. O
+   * botão do rodapé continua sendo só de dias da semana e horário.
+   */
+  const alternarFolga = useMutation({
+    mutationFn: (data: string) =>
+      marcadas.has(data) ? desmarcarFolga(data) : marcarFolga(data),
+    onSuccess: (r) => {
+      // `aviso` só vem de marcar, e conta quantas pessoas já estão naquele
+      // dia — a folga não cancela ninguém, e sumir com isso seria mentir.
+      setAvisoFolga(r.ok ? (r.aviso ?? null) : null);
+      aoEscrever(r);
+    },
+    onError: semRede,
+  });
+
   function alternarDia(numero: number) {
     setDias((antes) =>
       antes.includes(numero)
@@ -163,7 +220,106 @@ function Conteudo({
 
   function voltarParaLista() {
     setErro(null);
+    setAvisoFolga(null);
     setEmEdicao(undefined);
+    setEmFolgas(false);
+  }
+
+  // ---------------- etapa: folgas ----------------
+
+  if (emFolgas) {
+    return (
+      <Modal
+        aberto={aberto}
+        aoMudarAberto={aoMudarAberto}
+        tamanho="grande"
+        titulo="Folgas"
+        descricao="Dias avulsos em que a barbearia não abre."
+        aoVoltar={voltarParaLista}
+        rodape={
+          <Button type="button" size="lg" onClick={voltarParaLista}>
+            Concluir
+          </Button>
+        }
+      >
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <MiniCalendario
+            mes={mesFolga}
+            aoMudarMes={setMesFolga}
+            marcados={marcadas}
+            aoAlternar={(data) => alternarFolga.mutate(data)}
+            minimo={hoje}
+            hoje={hoje}
+            desabilitado={alternarFolga.isPending}
+          />
+
+          <div className="flex min-w-0 flex-1 flex-col gap-4">
+            <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+              <p>
+                Toque no dia para marcar; toque de novo para desmarcar. O dia
+                fica <strong>hachurado no calendário</strong> e o sistema
+                recusa horário novo nele — inclusive pelo link de agendamento
+                online.
+              </p>
+              <p>
+                Quem <strong>já estava marcado</strong> continua na agenda: a
+                folga não cancela ninguém. Avisar ou remarcar é com você.
+              </p>
+            </div>
+
+            {avisoFolga ? (
+              <Alerta tom="aviso" titulo="Esse dia não está vazio">
+                {avisoFolga}
+              </Alerta>
+            ) : null}
+
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-semibold">
+                Próximas folgas{" "}
+                <span className="font-normal text-muted-foreground">
+                  (<span data-numero>{proximas.length}</span>)
+                </span>
+              </h3>
+
+              {proximas.length === 0 ? (
+                <p className="rounded-lg border border-border bg-secondary/40 px-3 py-3 text-sm text-muted-foreground">
+                  Nenhuma folga marcada daqui pra frente.
+                </p>
+              ) : (
+                <ul className="flex flex-col gap-2">
+                  {proximas.map((f) => (
+                    <li
+                      key={f.data}
+                      className="flex min-h-11 items-center gap-2 rounded-lg border border-border px-3"
+                    >
+                      <CalendarOff
+                        className="size-4 shrink-0 text-muted-foreground"
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1 truncate text-sm">
+                        {diaComSemana(f.data)}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Desmarcar folga de ${diaComSemana(f.data)}`}
+                        disabled={alternarFolga.isPending}
+                        onClick={() => alternarFolga.mutate(f.data)}
+                      >
+                        <X />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {erro ? <Alerta>{erro}</Alerta> : null}
+          </div>
+        </div>
+      </Modal>
+    );
   }
 
   // ---------------- etapa: cadastro / edição de serviço ----------------
@@ -276,7 +432,14 @@ function Conteudo({
             size="lg"
             disabled={gravarConfiguracao.isPending}
             onClick={() =>
-              gravarConfiguracao.mutate({ diasAtendimento: dias, abre, fecha })
+              gravarConfiguracao.mutate({
+                diasAtendimento: dias,
+                abre,
+                fecha,
+                porTurno,
+                manha,
+                tarde,
+              })
             }
           >
             {gravarConfiguracao.isPending ? (
@@ -319,9 +482,35 @@ function Conteudo({
                   </button>
                 );
               })}
+
+              {/* Na mesma fileira dos dias, empurrado para a direita: a
+                  semana e a exceção da semana são a mesma pergunta ("quando
+                  eu abro"), e separar em outra seção faria procurar. */}
+              <Button
+                type="button"
+                className="ml-auto"
+                onClick={() => {
+                  setErro(null);
+                  setAvisoFolga(null);
+                  setEmFolgas(true);
+                }}
+              >
+                <CalendarOff />
+                Folgas
+                {proximas.length > 0 ? (
+                  <span
+                    data-numero
+                    className="rounded-full bg-primary-foreground/20 px-1.5 text-xs font-semibold text-primary-foreground"
+                  >
+                    {proximas.length}
+                  </span>
+                ) : null}
+              </Button>
             </div>
             <p className="text-sm text-muted-foreground">
-              Os dias sem atendimento aparecem sombreados no calendário.
+              Os dias sem atendimento aparecem sombreados no calendário. Para
+              fechar <strong>um dia só</strong> — feriado, viagem — use Folgas:
+              desmarcar a segunda aqui fecharia todas as segundas.
             </p>
           </fieldset>
 
@@ -329,30 +518,70 @@ function Conteudo({
             <legend className="mb-3 text-sm leading-none font-semibold">
               Horário de atendimento
             </legend>
-            {/* Os dois campos são curtos: presos a `max-w-sm` eles ficam do
-                tamanho do dado, em vez de esticados de ponta a ponta. */}
-            <div className="grid max-w-sm grid-cols-2 gap-4">
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="config-abre">Abre</Label>
-                <Input
-                  id="config-abre"
-                  type="time"
-                  value={abre}
-                  onChange={(e) => setAbre(e.target.value)}
-                  required
+
+            <Opcao
+              htmlFor="config-por-turno"
+              rotulo="Horário separado por turno"
+              ajuda="Manhã e tarde com abertura e fechamento próprios."
+              controle={
+                <Switch
+                  id="config-por-turno"
+                  checked={porTurno}
+                  onCheckedChange={(ligado) => {
+                    setPorTurno(ligado);
+                    if (ligado) {
+                      // Se ainda não tinha turnos salvos, parte do padrão.
+                      setManha((a) =>
+                        a.abre && a.fecha ? a : { ...TURNOS_PADRAO.manha },
+                      );
+                      setTarde((a) =>
+                        a.abre && a.fecha ? a : { ...TURNOS_PADRAO.tarde },
+                      );
+                    }
+                  }}
+                />
+              }
+            />
+
+            {porTurno ? (
+              <div className="flex flex-col gap-4">
+                <ParTurno
+                  rotulo="Manhã"
+                  id="manha"
+                  valor={manha}
+                  aoMudar={setManha}
+                />
+                <ParTurno
+                  rotulo="Tarde"
+                  id="tarde"
+                  valor={tarde}
+                  aoMudar={setTarde}
                 />
               </div>
-              <div className="flex flex-col gap-2">
-                <Label htmlFor="config-fecha">Fecha</Label>
-                <Input
-                  id="config-fecha"
-                  type="time"
-                  value={fecha}
-                  onChange={(e) => setFecha(e.target.value)}
-                  required
-                />
+            ) : (
+              <div className="grid max-w-sm grid-cols-2 gap-4">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="config-abre">Abre</Label>
+                  <Input
+                    id="config-abre"
+                    type="time"
+                    value={abre}
+                    onChange={(e) => setAbre(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="config-fecha">Fecha</Label>
+                  <Input
+                    id="config-fecha"
+                    type="time"
+                    value={fecha}
+                    onChange={(e) => setFecha(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </fieldset>
         </div>
 
@@ -398,6 +627,46 @@ function Conteudo({
         {erro ? <Alerta>{erro}</Alerta> : null}
       </div>
     </Modal>
+  );
+}
+
+function ParTurno({
+  rotulo,
+  id,
+  valor,
+  aoMudar,
+}: {
+  rotulo: string;
+  id: string;
+  valor: TurnoHorario;
+  aoMudar: (v: TurnoHorario) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm font-medium">{rotulo}</p>
+      <div className="grid max-w-sm grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`config-${id}-abre`}>Abre</Label>
+          <Input
+            id={`config-${id}-abre`}
+            type="time"
+            value={valor.abre}
+            onChange={(e) => aoMudar({ ...valor, abre: e.target.value })}
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`config-${id}-fecha`}>Fecha</Label>
+          <Input
+            id={`config-${id}-fecha`}
+            type="time"
+            value={valor.fecha}
+            onChange={(e) => aoMudar({ ...valor, fecha: e.target.value })}
+            required
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 

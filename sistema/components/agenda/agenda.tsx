@@ -22,7 +22,11 @@ import {
 } from "@/lib/agenda/barbeiro-salvo";
 import { buscarBarbeiros } from "@/lib/barbearia/api";
 import { chaves } from "@/lib/query";
-import { CONFIGURACAO_PADRAO, type Agendamento } from "@/lib/agenda/tipos";
+import {
+  CONFIGURACAO_PADRAO,
+  datasDeFolga,
+  type Agendamento,
+} from "@/lib/agenda/tipos";
 import { hojeNaBarbearia, mesISO } from "@/lib/formato";
 
 export function Agenda({
@@ -166,6 +170,8 @@ export function Agenda({
 
   const configuracao = ajustes?.configuracao ?? CONFIGURACAO_PADRAO;
   const servicos = useMemo(() => ajustes?.servicos ?? [], [ajustes]);
+  const folgas = useMemo(() => ajustes?.folgas ?? [], [ajustes]);
+  const diasDeFolga = useMemo(() => datasDeFolga(folgas), [folgas]);
 
   // Desativado nao entra na legenda nem no filtro; o agendamento antigo dele
   // continua aparecendo no calendario, com a cor que tinha.
@@ -310,6 +316,7 @@ export function Agenda({
             aoSelecionarDia={setDia}
             aoMudarMes={setMes}
             configuracao={configuracao}
+            folgas={diasDeFolga}
           />
         </div>
       </div>
@@ -328,6 +335,7 @@ export function Agenda({
         aoMudarAberto={(aberto) => setConfig((c) => ({ ...c, aberto }))}
         configuracao={configuracao}
         servicos={servicos}
+        folgas={folgas}
       />
 
       {slug ? (
@@ -360,6 +368,7 @@ export function Agenda({
         barbeiroIdInicial={barbeiroId}
         agendamentos={agendamentos}
         configuracao={configuracao}
+        folgas={diasDeFolga}
       />
     </div>
   );

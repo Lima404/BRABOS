@@ -531,6 +531,79 @@ mesmo estando certo.
 comparar blocos vale mais que a coluna estreita de leitura. O respiro lateral
 vem do `<main>` do layout, que é margem e não caixa.
 
+## Folga é a exceção da semana, não a semana
+
+"Dias de atendimento" responde **toda semana** — desmarcar a segunda fecha
+todas as segundas do ano. Folga (tabela `folgas`, migração 0020) responde
+**um dia**: feriado, viagem, casamento. São perguntas diferentes e por isso
+moram em tabelas diferentes; a segunda foi feita porque a primeira não
+consegue dizer "dia 7 eu não abro".
+
+Na tela elas ficam juntas — o botão **Folgas** na mesma fileira dos dias da
+semana — porque na cabeça da dona a pergunta é uma só: "quando eu abro".
+
+**Folga NÃO cancela ninguém.** Ela fecha o dia para horário NOVO; quem já
+estava marcado continua na agenda. Apagar agendamento por tabela seria decidir
+no lugar da dona, e ela é quem sabe se já avisou o cliente. Por isso
+`marcarFolga` devolve `aviso` com quantas pessoas já estão naquele dia — a
+tela consegue contar isso sem ter o mês inteiro carregado, e sumir com o
+número seria mentir por omissão.
+
+**Três lugares recusam, e é de propósito:** o formulário (para dizer ONDE
+desmarcar), a ação de servidor (`criarAgendamento` e `atualizarAgendamento`,
+que é o endereço HTTP público) e a RPC pública `criar_agendamento_publico`.
+Editar também checa: mover um horário PARA um dia de folga é marcar num dia
+fechado. Já quem estava lá antes continua editável — a checagem é sobre a data
+de destino.
+
+**Folga tem hachura própria (`.dia-de-folga`), não entra no `businessHours`.**
+No `.fc-non-business` ela ficaria idêntica a um domingo, e "fechei neste
+feriado" viraria "nunca abro nesse dia". A hachura é mais densa e o rótulo
+"Folga" fica escrito na célula — nunca só o cinza.
+
+**A tela pública recebe um booleano, não a lista.** `agenda_publica` devolve
+`folga` do dia consultado. Mandar as folgas do mês contaria pra fora quando a
+barbearia está vazia, e quem abre o link não tem o que fazer com isso.
+
+**Sem a 0020 a agenda continua abrindo.** `listarFolgas` devolve `[]` no
+`42P01` em vez de estourar: essa leitura vem grudada na configuração e no
+cardápio, e derrubá-la levaria junto a legenda e a lista de serviços. Quem
+tentar MARCAR uma folga é que recebe o erro, com o nome do arquivo.
+
+**Folga que já passou não se desmarca.** O mini calendário não deixa marcar
+antes de hoje, e a lista só mostra as próximas: o dia acabou, e o sombreado no
+calendário é histórico — desfazer não desfaz nada.
+
+## O modal abre no próximo horário livre
+
+`proximoHorarioLivre` (`lib/agenda/horarios.ts`) escolhe o horário que o campo
+mostra ao abrir "Novo agendamento" — e o mesmo vale para a tela pública. Antes
+era sempre a abertura da loja, o que só estava certo às 9 da manhã: às 15h,
+com a manhã cheia, quem marcava corrigia o campo toda vez, e quem esquecia
+levava um "horário ocupado" que ele mesmo tinha acabado de causar.
+
+A varredura anda de 15 em 15 — o mesmo `PASSO_MIN` do arraste e do `step` do
+campo — e um horário só serve se **termina** antes de fechar: sugerir 18:45
+para um corte de 1h numa loja que fecha às 19h empurra o problema pro barbeiro.
+Quem responde se está livre é a `conflitoCom` do formulário, a mesma; duas
+respostas diferentes para a mesma pergunta é como o aviso e a tela divergem.
+
+**Sendo hoje, o piso é o relógio**, arredondado pra cima: às 14:07 o próximo
+começo é 14:15. Em outro dia o piso é a abertura — a hora do relógio não tem
+nada a ver com terça que vem.
+
+**Nada disso pode ler o relógio durante a hidratação.** O modal só calcula com
+`aberto` verdadeiro (a `key={sessao}` remonta a cada abertura, então o cálculo
+cai na hora do clique); a tela pública recebe o valor **pronto do servidor**,
+por prop. Ler `agoraNaBarbearia()` num `useState` que roda no servidor repete
+o defeito do seletor de barbeiro: o HTML sai com uma hora, o navegador hidrata
+com outra.
+
+Sem vaga nenhuma — dia cheio, ou já passou da hora de fechar — a função
+devolve `null`, e quem chama volta pra abertura. `null` explícito em vez de um
+"09:00" silencioso: o dia escolhido é que está errado, e o conserto é trocar a
+data.
+
 ## O bloco de horário arrasta
 
 Na linha do tempo do modal de agendamento, o bloco âmbar é arrastável. Três

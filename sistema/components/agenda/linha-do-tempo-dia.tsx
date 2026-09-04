@@ -4,6 +4,12 @@ import { useMemo, useRef, useEffect, useState } from "react";
 import { GripVertical } from "lucide-react";
 
 import {
+  encaixarInicioNoExpediente,
+  intervalosDoDia,
+  lacunasDoDia,
+  PASSO_DO_HORARIO_MIN,
+} from "@/lib/agenda/horarios";
+import {
   CLASSES_SERVICO,
   type Agendamento,
   type ConfiguracaoAgenda,
@@ -21,7 +27,7 @@ const PX_POR_HORA = 56;
  * fino, o bloco pararia em 16:07 e o clique em 16:00, e o dedo passaria a
  * dar um resultado diferente do outro dedo.
  */
-const PASSO_MIN = 15;
+const PASSO_MIN = PASSO_DO_HORARIO_MIN;
 
 function minutosDe(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
@@ -84,8 +90,19 @@ export function LinhaDoTempoDia({
   const arrastandoRef = useRef(false);
   const partidaRef = useRef<{ y: number; minuto: number } | null>(null);
 
-  const abreMin = minutosDe(configuracao.abre);
-  const fechaMin = minutosDe(configuracao.fecha);
+  const faixas = useMemo(
+    () => intervalosDoDia(configuracao),
+    [configuracao],
+  );
+  const lacunas = useMemo(
+    () => lacunasDoDia(configuracao),
+    [configuracao],
+  );
+
+  const abreMin = minutosDe(faixas[0]?.abre ?? configuracao.abre);
+  const fechaMin = minutosDe(
+    faixas[faixas.length - 1]?.fecha ?? configuracao.fecha,
+  );
   const totalMin = Math.max(fechaMin - abreMin, 60);
   const altura = (totalMin / 60) * PX_POR_HORA;
 
@@ -122,20 +139,32 @@ export function LinhaDoTempoDia({
     el.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }, [data, selecao, abreMin]);
 
-  /** Último início que ainda cabe antes de fechar. */
-  const ultimoInicio = Math.max(fechaMin - Math.max(duracaoMin, 15), abreMin);
+  /** Último início possível no dia (último turno). */
+  const ultimoInicio = useMemo(() => {
+    const dur = Math.max(duracaoMin, 15);
+    let max = abreMin;
+    for (const f of faixas) {
+      max = Math.max(max, minutosDe(f.fecha) - dur);
+    }
+    return Math.max(max, abreMin);
+  }, [faixas, duracaoMin, abreMin]);
 
   /**
-   * Encaixa, limita ao expediente e avisa o formulário.
+   * Encaixa, limita ao expediente (sem cair no intervalo entre turnos) e
+   * avisa o formulário.
    *
    * O `if` de igualdade não é economia à toa: durante o arraste isto roda a
    * cada pixel, e sem ele cada pixel viraria um render do modal inteiro —
    * inclusive da checagem de conflito.
    */
   function definirInicio(minutosBrutos: number) {
-    const encaixado = Math.round(minutosBrutos / PASSO_MIN) * PASSO_MIN;
-    const limitado = Math.min(Math.max(encaixado, abreMin), ultimoInicio);
-    const novo = hhmmDe(limitado);
+    const novo = encaixarInicioNoExpediente(
+      minutosBrutos,
+      Math.max(duracaoMin, 15),
+      configuracao,
+      PASSO_MIN,
+    );
+    if (!novo) return;
     if (novo !== horario) aoEscolherHorario(novo);
   }
 
@@ -247,6 +276,29 @@ export function LinhaDoTempoDia({
                     />
                   </div>
                 </div>
+              </div>
+            );
+          })}
+
+          {/* Intervalo entre turnos — não agenda */}
+          {lacunas.map((lacuna) => {
+            const inicio = minutosDe(lacuna.abre);
+            const fim = minutosDe(lacuna.fecha);
+            const top = ((inicio - abreMin) / 60) * PX_POR_HORA;
+            const h = Math.max(((fim - inicio) / 60) * PX_POR_HORA, 28);
+            return (
+              <div
+                key={`${lacuna.abre}-${lacuna.fecha}`}
+                className="pointer-events-none absolute right-1 left-12 flex items-center justify-center overflow-hidden rounded-md border border-dashed border-border bg-muted/70 px-2"
+                style={{ top, height: h }}
+                title={`Intervalo ${lacuna.abre}–${lacuna.fecha} — sem atendimento`}
+              >
+                <p className="text-center text-[11px] font-medium text-muted-foreground">
+                  Intervalo
+                  <span className="mt-0.5 block tabular-nums">
+                    {lacuna.abre}–{lacuna.fecha}
+                  </span>
+                </p>
               </div>
             );
           })}

@@ -78,6 +78,9 @@ export async function obterAgendaPublica(
           typeof cfg.abre === "string" ? cfg.abre : CONFIGURACAO_PADRAO.abre,
         fecha:
           typeof cfg.fecha === "string" ? cfg.fecha : CONFIGURACAO_PADRAO.fecha,
+        porTurno: cfg.porTurno === true,
+        manha: turnoPublico(cfg.manha, CONFIGURACAO_PADRAO.manha),
+        tarde: turnoPublico(cfg.tarde, CONFIGURACAO_PADRAO.tarde),
       },
       servicos: lista(r.servicos).map((s) => ({
         id: texto(s.id),
@@ -93,6 +96,9 @@ export async function obterAgendaPublica(
         id: texto(b.id),
         nome: texto(b.nome),
       })),
+      // Ausente = banco ainda sem a 0020. Sem folga nenhuma é como o sistema
+      // funcionava antes dela, então `false` é o padrão certo.
+      folga: r.folga === true,
       ocupados: lista(r.ocupados).map((o) => ({
         barbeiroId: texto(o.barbeiroId),
         horario: texto(o.horario),
@@ -113,4 +119,16 @@ function texto(valor: unknown): string {
 function inteiro(valor: unknown): number {
   const n = Number(valor);
   return Number.isFinite(n) ? Math.round(n) : 0;
+}
+
+function turnoPublico(
+  bruto: unknown,
+  padrao: { abre: string; fecha: string },
+): { abre: string; fecha: string } {
+  if (!bruto || typeof bruto !== "object") return { ...padrao };
+  const o = bruto as Record<string, unknown>;
+  return {
+    abre: typeof o.abre === "string" ? o.abre : padrao.abre,
+    fecha: typeof o.fecha === "string" ? o.fecha : padrao.fecha,
+  };
 }

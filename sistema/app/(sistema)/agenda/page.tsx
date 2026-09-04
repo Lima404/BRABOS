@@ -4,6 +4,7 @@ import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 import { Agenda } from "@/components/agenda/agenda";
 import {
   listarAgendamentosDoMes,
+  listarFolgas,
   listarServicos,
   obterConfiguracaoAgenda,
 } from "@/lib/agenda/repositorio";
@@ -35,6 +36,7 @@ export default async function AgendaPage() {
       queryFn: async () => ({
         configuracao: await obterConfiguracaoAgenda(),
         servicos: await listarServicos(),
+        folgas: await listarFolgas(),
       }),
     }),
   ]);

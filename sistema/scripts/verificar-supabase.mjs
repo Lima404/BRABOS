@@ -116,6 +116,7 @@ const TABELAS = [
   "vendas", // 0007
   "itens_venda", // 0007
   "barbeiros", // 0014
+  "folgas", // 0020
 ];
 const faltando = [];
 

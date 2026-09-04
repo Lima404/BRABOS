@@ -19,7 +19,7 @@ export default async function LayoutSistema({ children }: LayoutProps<"/">) {
 
   return (
     <div className="flex flex-1">
-      <Sidebar logado={logado} nomeBarbearia={nome} />
+      <Sidebar logado={logado} />
 
       {/* min-w-0 impede que conteudo largo (tabela, nome comprido) empurre
           a coluna e estoure a largura da pagina. */}

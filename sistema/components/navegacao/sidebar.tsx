@@ -10,13 +10,7 @@ import { Logo } from "@/components/marca/logo";
  * Sem sessao ela nao aparece: quem chega pela loja e cliente da barbearia, e
  * uma coluna de links que so levam a tela de login nao serve pra nada.
  */
-export function Sidebar({
-  logado,
-  nomeBarbearia,
-}: {
-  logado: boolean;
-  nomeBarbearia?: string;
-}) {
+export function Sidebar({ logado }: { logado: boolean }) {
   if (!logado) return null;
 
   return (
@@ -29,11 +23,6 @@ export function Sidebar({
         >
           <Logo largura={132} />
         </Link>
-        {nomeBarbearia ? (
-          <p className="mt-2 truncate text-sm text-muted-foreground">
-            {nomeBarbearia}
-          </p>
-        ) : null}
       </div>
 
       <ListaRotas className="p-3" logado={logado} />

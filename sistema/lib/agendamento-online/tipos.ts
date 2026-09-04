@@ -1,3 +1,4 @@
+import { proximoHorarioLivre } from "@/lib/agenda/horarios";
 import type {
   Agendamento,
   ConfiguracaoAgenda,
@@ -31,6 +32,12 @@ export type AgendaPublica = {
   servicos: Servico[];
   barbeiros: BarbeiroPublico[];
   ocupados: HorarioOcupado[];
+  /**
+   * O dia consultado é folga? Só o booleano do dia pedido — devolver a lista
+   * de folgas do mês contaria pra fora quando a barbearia está vazia, e quem
+   * abre o link não tem o que fazer com isso.
+   */
+  folga: boolean;
 };
 
 /**
@@ -64,4 +71,37 @@ export function ocupadoComoAgendamento(
     precoCentavos: 0,
     duracaoMin: o.duracaoMin,
   };
+}
+
+/**
+ * O horário em que o formulário público abre.
+ *
+ * Calculado no SERVIDOR e descido como prop, não lido no navegador: o valor
+ * depende do relógio, e um `useState` que lê a hora faz o HTML do servidor
+ * discordar da hidratação. Como prop, os dois lados enxergam o mesmo número.
+ *
+ * Vale para a primeira combinação que o formulário mostra — primeiro
+ * barbeiro, primeiro serviço —, que é a que o cliente vê antes de mexer em
+ * nada. Sem vaga, cai na abertura, e a faixa cheia ao lado conta o porquê.
+ */
+export function horarioInicialPublico(
+  agenda: AgendaPublica,
+  data: string,
+  agora: string | null,
+): string {
+  const barbeiroId = agenda.barbeiros[0]?.id ?? "";
+  const duracaoMin = agenda.servicos[0]?.duracaoMin ?? 30;
+
+  return (
+    proximoHorarioLivre({
+      data,
+      duracaoMin,
+      barbeiroId,
+      agendamentos: agenda.ocupados
+        .filter((o) => o.barbeiroId === barbeiroId)
+        .map((o, i) => ocupadoComoAgendamento(o, data, i)),
+      configuracao: agenda.configuracao,
+      agora,
+    }) ?? agenda.configuracao.abre
+  );
 }

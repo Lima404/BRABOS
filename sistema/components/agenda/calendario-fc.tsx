@@ -14,6 +14,7 @@ import {
   type Agendamento,
   type ConfiguracaoAgenda,
 } from "@/lib/agenda/tipos";
+import { intervalosDoDia } from "@/lib/agenda/horarios";
 import { dataISO } from "@/lib/formato";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export function CalendarioFC({
   aoSelecionarDia,
   aoMudarMes,
   configuracao,
+  folgas,
 }: {
   /** AAAA-MM — o mês que deve estar visível. */
   mes: string;
@@ -42,6 +44,12 @@ export function CalendarioFC({
   aoMudarMes: (mes: string) => void;
   /** Dias e horário de atendimento — sombreiam os dias fechados. */
   configuracao: ConfiguracaoAgenda;
+  /**
+   * Datas AAAA-MM-DD de folga. Vêm como conjunto pronto: `dayCellClassNames`
+   * roda uma vez por célula, e reconstruir a lista a cada uma seria varrer as
+   * folgas 42 vezes por mês desenhado.
+   */
+  folgas: Set<string>;
 }) {
   const ref = useRef<FullCalendar>(null);
 
@@ -87,11 +95,11 @@ export function CalendarioFC({
         // Dia fechado nao some da grade: some seria mentira (o mes tem aquele
         // dia). Ele fica sombreado, e o `.fc-non-business` do globals.css
         // desenha a faixa diagonal — nunca so o cinza.
-        businessHours={{
+        businessHours={intervalosDoDia(configuracao).map((faixa) => ({
           daysOfWeek: configuracao.diasAtendimento,
-          startTime: configuracao.abre,
-          endTime: configuracao.fecha,
-        }}
+          startTime: faixa.abre,
+          endTime: faixa.fecha,
+        }))}
         // Sempre HH:MM. O padrão do FullCalendar omite os minutos zerados
         // ("09" ao lado de "09:30"), o que desalinha a coluna de horário —
         // justamente a que o barbeiro percorre com o olho.
@@ -102,9 +110,16 @@ export function CalendarioFC({
         }}
         // O dia selecionado é marcado por classe, não por cor inline: assim
         // respeita o tema claro e o escuro sem duplicar valor.
-        dayCellClassNames={(arg) =>
-          dataISO(arg.date) === diaSelecionado ? ["dia-selecionado"] : []
-        }
+        // Folga é EXCEÇÃO, e por isso tem classe própria em vez de entrar no
+        // `businessHours`: no `.fc-non-business` ela ficaria idêntica a um
+        // domingo, e "fechei no feriado" viraria "nunca abro nesse dia".
+        dayCellClassNames={(arg) => {
+          const data = dataISO(arg.date);
+          const classes: string[] = [];
+          if (data === diaSelecionado) classes.push("dia-selecionado");
+          if (folgas.has(data)) classes.push("dia-de-folga");
+          return classes;
+        }}
         dateClick={(info) => aoSelecionarDia(info.dateStr)}
         eventClick={(info) => {
           const inicio = info.event.start;

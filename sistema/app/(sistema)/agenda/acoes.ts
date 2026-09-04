@@ -30,7 +30,8 @@ import {
  * que a agenda mostra em toast em vez de só no rodapé do formulário.
  */
 export type Resultado =
-  { ok: true } | { ok: false; erro: string; motivo?: "conflito" };
+  | { ok: true; aviso?: string }
+  | { ok: false; erro: string; motivo?: "conflito" };
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -140,14 +141,46 @@ export async function salvarConfiguracao(
     if (dias.length === 0) {
       return { ok: false, erro: "Escolha pelo menos um dia de atendimento." };
     }
-    if (!HORA.test(entrada.abre) || !HORA.test(entrada.fecha)) {
-      return { ok: false, erro: "Informe o horário no formato 00:00." };
+
+    function validarPar(abre: string, fecha: string, rotulo: string): string | null {
+      if (!HORA.test(abre) || !HORA.test(fecha)) {
+        return `Informe o horário ${rotulo} no formato 00:00.`;
+      }
+      if (fecha <= abre) {
+        return `No turno ${rotulo}, fechar precisa ser depois de abrir.`;
+      }
+      return null;
     }
-    if (entrada.fecha <= entrada.abre) {
-      return {
-        ok: false,
-        erro: "O horário de fechar precisa ser depois do de abrir.",
-      };
+
+    let abre = entrada.abre;
+    let fecha = entrada.fecha;
+    const manha = entrada.manha;
+    const tarde = entrada.tarde;
+
+    if (entrada.porTurno) {
+      const erroManha = validarPar(manha.abre, manha.fecha, "da manhã");
+      if (erroManha) return { ok: false, erro: erroManha };
+      const erroTarde = validarPar(tarde.abre, tarde.fecha, "da tarde");
+      if (erroTarde) return { ok: false, erro: erroTarde };
+      if (manha.fecha > tarde.abre) {
+        return {
+          ok: false,
+          erro: "A manhã precisa terminar antes (ou quando) a tarde começa.",
+        };
+      }
+      // Envelope do dia — calendário e linha do tempo ainda leem abre/fecha.
+      abre = manha.abre;
+      fecha = tarde.fecha;
+    } else {
+      if (!HORA.test(abre) || !HORA.test(fecha)) {
+        return { ok: false, erro: "Informe o horário no formato 00:00." };
+      }
+      if (fecha <= abre) {
+        return {
+          ok: false,
+          erro: "O horário de fechar precisa ser depois do de abrir.",
+        };
+      }
     }
 
     const supabase = await criarClienteServidor();
@@ -162,8 +195,13 @@ export async function salvarConfiguracao(
       {
         barbearia_id: user.id,
         dias_atendimento: dias,
-        abre: entrada.abre,
-        fecha: entrada.fecha,
+        abre,
+        fecha,
+        por_turno: entrada.porTurno,
+        manha_abre: entrada.porTurno ? manha.abre : null,
+        manha_fecha: entrada.porTurno ? manha.fecha : null,
+        tarde_abre: entrada.porTurno ? tarde.abre : null,
+        tarde_fecha: entrada.porTurno ? tarde.fecha : null,
       },
       { onConflict: "barbearia_id" },
     );
@@ -173,6 +211,119 @@ export async function salvarConfiguracao(
     revalidatePath("/agenda");
     return { ok: true };
   });
+}
+
+// ============================================================
+// Folgas
+// ============================================================
+
+const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Marca um dia avulso em que a barbearia não abre (migração 0020).
+ *
+ * NÃO cancela quem já está marcado — a folga fecha o dia para horário NOVO.
+ * Quem já tem hora continua na agenda, e avisar é da dona; apagar
+ * agendamento por tabela seria decidir no lugar dela. Por isso a resposta
+ * volta com `aviso` contando quantas pessoas já estão naquele dia: a tela
+ * consegue dizer isso sem ter o mês inteiro carregado.
+ *
+ * Marcar duas vezes é a mesma folga, não duas — o `unique` do banco garante,
+ * e o 23505 daqui vira sucesso silencioso em vez de erro que não é erro.
+ */
+export async function marcarFolga(data: string): Promise<Resultado> {
+  return protegido("marcar folga", async () => {
+    if (!DATA_ISO.test(data)) {
+      return { ok: false, erro: "Data inválida." };
+    }
+
+    const supabase = await criarClienteServidor();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+    const { error } = await supabase
+      .from("folgas")
+      .insert({ barbearia_id: user.id, data });
+
+    if (error) {
+      if (error.code === "42P01") {
+        return {
+          ok: false,
+          erro: "A tabela de folgas ainda não existe. Rode a migração 0020_folgas.sql.",
+        };
+      }
+      // 23505 = já era folga. O resultado que a dona queria já está no banco.
+      if (error.code !== "23505") return traduzir("marcar folga", error);
+    }
+
+    const { count } = await supabase
+      .from("agendamentos")
+      .select("id", { count: "exact", head: true })
+      .eq("data", data)
+      .neq("estado", "cancelado");
+
+    revalidatePath("/agenda");
+
+    if (count && count > 0) {
+      return {
+        ok: true,
+        aviso:
+          count === 1
+            ? "Tem 1 pessoa já marcada nesse dia. A folga não cancela ninguém — avise ou remarque."
+            : `Tem ${count} pessoas já marcadas nesse dia. A folga não cancela ninguém — avise ou remarque.`,
+      };
+    }
+
+    return { ok: true };
+  });
+}
+
+/** Desmarca a folga — o dia volta a seguir a regra da semana. */
+export async function desmarcarFolga(data: string): Promise<Resultado> {
+  return protegido("desmarcar folga", async () => {
+    if (!DATA_ISO.test(data)) {
+      return { ok: false, erro: "Data inválida." };
+    }
+
+    const supabase = await criarClienteServidor();
+
+    // Sem filtro por barbearia: quem isola é o RLS.
+    const { error } = await supabase.from("folgas").delete().eq("data", data);
+
+    if (error) return traduzir("desmarcar folga", error);
+
+    revalidatePath("/agenda");
+    return { ok: true };
+  });
+}
+
+/**
+ * O dia está marcado como folga?
+ *
+ * Barreira de verdade da marcação: o formulário também checa, mas ele só
+ * conhece as folgas que a tela carregou.
+ */
+async function ehFolga(
+  supabase: Awaited<ReturnType<typeof criarClienteServidor>>,
+  data: string,
+): Promise<boolean> {
+  const { data: linha, error } = await supabase
+    .from("folgas")
+    .select("data")
+    .eq("data", data)
+    .maybeSingle();
+
+  // Tabela ausente (migração pendente) não pode BLOQUEAR agendamento: o
+  // sistema funcionava sem folga nenhuma antes da 0020.
+  if (error) {
+    console.error("[BARBOS] checar folga:", error.code ?? "", error.message);
+    return false;
+  }
+
+  return Boolean(linha);
 }
 
 // ============================================================
@@ -365,6 +516,16 @@ export async function criarAgendamento(
     } = await supabase.auth.getUser();
     if (!user) return { ok: false, erro: "Sessão expirada. Entre de novo." };
 
+    // Folga bloqueia horário NOVO, não o que já está marcado. Aqui é sempre
+    // horário novo, então recusa direto — com a saída no texto, porque quem
+    // realmente quer marcar nesse dia é quem tira a folga.
+    if (await ehFolga(supabase, d.data)) {
+      return {
+        ok: false,
+        erro: "Esse dia está marcado como folga. Desmarque em Configurar agenda ou escolha outra data.",
+      };
+    }
+
     const { data: servico, error: erroServico } = await supabase
       .from("servicos")
       .select("id, preco_centavos, duracao_min, ativo")
@@ -442,6 +603,16 @@ export async function atualizarAgendamento(
     if (problema) return { ok: false, erro: problema };
 
     const supabase = await criarClienteServidor();
+
+    // Mover um horário PARA um dia de folga é marcar num dia fechado, então
+    // vale a mesma recusa. Quem já estava lá antes da folga continua lá — a
+    // checagem é sobre a data de destino, não sobre a de origem.
+    if (await ehFolga(supabase, d.data)) {
+      return {
+        ok: false,
+        erro: "Esse dia está marcado como folga. Desmarque em Configurar agenda ou escolha outra data.",
+      };
+    }
 
     const { data: servico, error: erroServico } = await supabase
       .from("servicos")

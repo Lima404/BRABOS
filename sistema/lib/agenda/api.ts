@@ -1,6 +1,7 @@
 import type {
   Agendamento,
   ConfiguracaoAgenda,
+  Folga,
   ItemDaComanda,
   Servico,
 } from "@/lib/agenda/tipos";
@@ -39,6 +40,8 @@ export async function buscarAgendaDoMes(mes: string): Promise<Agendamento[]> {
 export type ConfiguracaoCompleta = {
   configuracao: ConfiguracaoAgenda;
   servicos: Servico[];
+  /** Dias avulsos fechados. Vazio quando a barbearia não marcou nenhum. */
+  folgas: Folga[];
 };
 
 export async function buscarConfiguracao(): Promise<ConfiguracaoCompleta> {

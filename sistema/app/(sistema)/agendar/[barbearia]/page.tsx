@@ -7,7 +7,8 @@ import { Alerta } from "@/components/ui/alerta";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { obterSessao } from "@/lib/conta";
 import { obterAgendaPublica } from "@/lib/agendamento-online/repositorio";
-import { hojeNaBarbearia } from "@/lib/formato";
+import { horarioInicialPublico } from "@/lib/agendamento-online/tipos";
+import { agoraNaBarbearia, hojeNaBarbearia } from "@/lib/formato";
 
 type Props = PageProps<"/agendar/[barbearia]">;
 
@@ -40,8 +41,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function AgendarPage({ params }: Props) {
   const { barbearia: slug } = await params;
 
+  const hoje = hojeNaBarbearia();
+
   const [leitura, sessao] = await Promise.all([
-    obterAgendaPublica(slug, hojeNaBarbearia()),
+    obterAgendaPublica(slug, hoje),
     obterSessao(),
   ]);
 
@@ -92,7 +95,11 @@ export default async function AgendarPage({ params }: Props) {
         </Alerta>
       ) : null}
 
-      <AgendarPublico inicial={agenda} slug={slug} />
+      <AgendarPublico
+        inicial={agenda}
+        slug={slug}
+        horarioInicial={horarioInicialPublico(agenda, hoje, agoraNaBarbearia())}
+      />
     </div>
   );
 }

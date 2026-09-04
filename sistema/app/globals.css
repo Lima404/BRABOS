@@ -350,6 +350,36 @@
   opacity: 0.55;
 }
 
+/* Folga: dia avulso fechado. Hachura MAIS densa que a do dia sem atendimento
+   e um rótulo escrito — a diferença entre "nunca abro no domingo" e "fechei
+   neste feriado" precisa ser visível, e sombra igual apagaria as duas. */
+.calendario-barbos .dia-de-folga .fc-daygrid-day-frame {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--muted),
+    var(--muted) 3px,
+    var(--border) 3px,
+    var(--border) 5px
+  );
+  position: relative;
+}
+
+.calendario-barbos .dia-de-folga .fc-daygrid-day-frame::after {
+  content: "Folga";
+  position: absolute;
+  left: 0.25rem;
+  bottom: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  background: var(--card);
+  border-radius: 0.25rem;
+  padding: 0 0.25rem;
+  pointer-events: none;
+}
+
 /* Eventos: quem pinta é o nosso eventContent, não o FullCalendar */
 .calendario-barbos .fc-daygrid-event {
   background: transparent;

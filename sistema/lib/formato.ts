@@ -41,6 +41,22 @@ export function hojeNaBarbearia(): string {
   }).format(new Date());
 }
 
+/**
+ * Agora em HH:MM no fuso da barbearia.
+ *
+ * O mesmo motivo do `hojeNaBarbearia`: o servidor da Vercel roda em UTC, e
+ * "que horas são" precisa ser a hora do relógio da parede da barbearia — às
+ * 21h de Sao Paulo o UTC já virou o dia seguinte.
+ */
+export function agoraNaBarbearia(): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: FUSO_DA_BARBEARIA,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date());
+}
+
 /** Data de hoje em YYYY-MM-DD, no fuso local. */
 export function hojeISO(): string {
   const d = new Date();

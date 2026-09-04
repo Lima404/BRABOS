@@ -37,15 +37,22 @@ import { diaComSemana, hojeNaBarbearia } from "@/lib/formato";
 export function AgendarPublico({
   inicial,
   slug,
+  horarioInicial,
 }: {
   inicial: AgendaPublica;
   slug: string;
+  /**
+   * Próximo horário livre, calculado no servidor (`horarioInicialPublico`).
+   * Vem pronto de lá porque depende do relógio: calcular aqui faria o HTML
+   * do servidor discordar da hidratação.
+   */
+  horarioInicial: string;
 }) {
   const [data, setData] = useState(() => hojeNaBarbearia());
   const [clienteNome, setClienteNome] = useState("");
   const [barbeiroId, setBarbeiroId] = useState(inicial.barbeiros[0]?.id ?? "");
   const [servicoId, setServicoId] = useState(inicial.servicos[0]?.id ?? "");
-  const [horario, setHorario] = useState(inicial.configuracao.abre);
+  const [horario, setHorario] = useState(horarioInicial);
   const [observacao, setObservacao] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [pendente, setPendente] = useState(false);
@@ -63,6 +70,11 @@ export function AgendarPublico({
   });
 
   const agenda = dia ?? inicial;
+
+  // Enquanto a busca do novo dia não volta, `agenda` ainda é o dia anterior —
+  // e o `folga` dele também. Dizer "fechado" sobre a data errada é pior que
+  // não dizer nada, então o aviso espera a resposta chegar.
+  const ehFolga = agenda.folga && !isFetching;
 
   const servico = useMemo(
     () => agenda.servicos.find((s) => s.id === servicoId),
@@ -92,6 +104,10 @@ export function AgendarPublico({
     }
     if (!dados.servicoId) {
       setErro("Escolha o serviço.");
+      return;
+    }
+    if (ehFolga) {
+      setErro("A barbearia não abre nesse dia. Escolha outra data.");
       return;
     }
 
@@ -209,11 +225,18 @@ export function AgendarPublico({
           size="lg"
           form={ID_FORMULARIO_AGENDAMENTO}
           className="mt-5 w-full sm:w-auto"
-          disabled={pendente || agenda.servicos.length === 0}
+          disabled={pendente || agenda.servicos.length === 0 || ehFolga}
         >
           {pendente ? <Loader2 className="animate-spin" /> : <CalendarPlus />}
           Confirmar horário
         </Button>
+
+        {ehFolga ? (
+          <Alerta tom="aviso" titulo="Fechado nesse dia" className="mt-4">
+            A barbearia não abre em {diaComSemana(data)}. Escolha outra data no
+            campo acima.
+          </Alerta>
+        ) : null}
 
         {agenda.servicos.length === 0 ? (
           <Alerta tom="aviso" className="mt-4">

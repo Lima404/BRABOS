@@ -7,6 +7,7 @@ import {
   type ConfiguracaoAgenda,
   type CorServico,
   type EstadoAgendamento,
+  type Folga,
   type ItemDaComanda,
   type Servico,
 } from "@/lib/agenda/tipos";
@@ -82,7 +83,21 @@ type LinhaConfiguracao = {
   dias_atendimento: number[];
   abre: string;
   fecha: string;
+  por_turno: boolean | null;
+  manha_abre: string | null;
+  manha_fecha: string | null;
+  tarde_abre: string | null;
+  tarde_fecha: string | null;
 };
+
+function turnoDaLinha(
+  abre: string | null,
+  fecha: string | null,
+  padrao: { abre: string; fecha: string },
+) {
+  if (abre && fecha) return { abre: hhmm(abre), fecha: hhmm(fecha) };
+  return { ...padrao };
+}
 
 /**
  * Configuração da barbearia logada.
@@ -95,7 +110,9 @@ export async function obterConfiguracaoAgenda(): Promise<ConfiguracaoAgenda> {
 
   const { data, error } = await supabase
     .from("configuracao_agenda")
-    .select("dias_atendimento, abre, fecha")
+    .select(
+      "dias_atendimento, abre, fecha, por_turno, manha_abre, manha_fecha, tarde_abre, tarde_fecha",
+    )
     .maybeSingle();
 
   if (error) {
@@ -106,11 +123,66 @@ export async function obterConfiguracaoAgenda(): Promise<ConfiguracaoAgenda> {
   if (!data) return CONFIGURACAO_PADRAO;
 
   const l = data as LinhaConfiguracao;
+  const manha = turnoDaLinha(
+    l.manha_abre,
+    l.manha_fecha,
+    CONFIGURACAO_PADRAO.manha,
+  );
+  const tarde = turnoDaLinha(
+    l.tarde_abre,
+    l.tarde_fecha,
+    CONFIGURACAO_PADRAO.tarde,
+  );
+
   return {
     diasAtendimento: [...l.dias_atendimento].sort((a, b) => a - b),
     abre: hhmm(l.abre),
     fecha: hhmm(l.fecha),
+    porTurno: Boolean(l.por_turno),
+    manha,
+    tarde,
   };
+}
+
+// ============================================================
+// Folgas
+// ============================================================
+
+/**
+ * Os dias avulsos em que a barbearia não abre (migração 0020).
+ *
+ * Traz TODAS, inclusive as que já passaram: o calendário navega para trás, e
+ * um setembro que aparece aberto depois de a barbearia ter fechado no dia 7
+ * conta uma história errada sobre o próprio histórico.
+ *
+ * Tabela minúscula por natureza — feriado e viagem se contam em dezenas por
+ * ano, não em milhares. Se um dia deixar de ser, o corte é por intervalo de
+ * datas, não por `limit`.
+ */
+export async function listarFolgas(): Promise<Folga[]> {
+  const supabase = await criarClienteServidor();
+
+  const { data, error } = await supabase
+    .from("folgas")
+    .select("data")
+    .order("data", { ascending: true });
+
+  if (error) {
+    console.error("[BARBOS] erro ao ler folgas:", error.code ?? "", error.message);
+
+    // Tabela ausente (42P01) = a 0020 ainda não rodou. Devolve vazio em vez
+    // de estourar: esta leitura vem grudada na configuração e no cardápio, e
+    // derrubá-la levaria junto a legenda e a lista de serviços — a agenda
+    // inteira quebrada por causa de um recurso que a barbearia nem usa ainda.
+    //
+    // Nada fica escondido: quem tentar MARCAR uma folga recebe o erro com o
+    // nome do arquivo, e o log acima registra o código cru.
+    if (error.code === "42P01") return [];
+
+    throw new Error("Não foi possível carregar as folgas.");
+  }
+
+  return (data ?? []).map((l) => ({ data: l.data as string }));
 }
 
 // ============================================================

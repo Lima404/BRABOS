@@ -17,6 +17,7 @@ import {
   ID_FORMULARIO_AGENDAMENTO,
 } from "@/components/agenda/formulario-agendamento";
 import { LinhaDoTempoDia } from "@/components/agenda/linha-do-tempo-dia";
+import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
@@ -26,6 +27,11 @@ import {
   type LinhaConsumo,
 } from "@/lib/agenda/comanda";
 import { conflitoCom, mensagemDeConflito } from "@/lib/agenda/conflitos";
+import {
+  cabeNoExpediente,
+  mensagemForaDoExpediente,
+  proximoHorarioLivre,
+} from "@/lib/agenda/horarios";
 import { buscarComanda } from "@/lib/agenda/api";
 import { buscarProdutos } from "@/lib/estoque/api";
 import { chaves } from "@/lib/query";
@@ -35,14 +41,21 @@ import type {
   Servico,
 } from "@/lib/agenda/tipos";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
-import { sanitizarNome } from "@/lib/formato";
+import {
+  agoraNaBarbearia,
+  diaComSemana,
+  ehHoje,
+  sanitizarNome,
+} from "@/lib/formato";
 
 /**
  * Modal de novo agendamento em duas colunas (referência tipo CRM/Outlook):
  * formulário à esquerda, linha do tempo do dia à direita.
  *
  * `sessao` remonta o conteúdo a cada abertura — data e horário nascem do
- * contexto da agenda, sem efeito colateral.
+ * contexto da agenda, sem efeito colateral. E o horário nasce no PRÓXIMO
+ * VAGO, não na abertura da loja: às 15h com a manhã cheia, "09:00" seria só
+ * uma correção a mais para quem está atendendo.
  */
 export function DialogoNovoAgendamento({
   aberto,
@@ -55,6 +68,7 @@ export function DialogoNovoAgendamento({
   barbeiroIdInicial,
   agendamentos,
   configuracao,
+  folgas,
 }: {
   aberto: boolean;
   sessao: number;
@@ -70,6 +84,8 @@ export function DialogoNovoAgendamento({
   /** Do mês carregado — a linha do tempo filtra pelo dia escolhido. */
   agendamentos: Agendamento[];
   configuracao: ConfiguracaoAgenda;
+  /** Datas AAAA-MM-DD em que a barbearia não abre (migração 0020). */
+  folgas: Set<string>;
 }) {
   return (
     <Conteudo
@@ -83,6 +99,7 @@ export function DialogoNovoAgendamento({
       barbeiroIdInicial={barbeiroIdInicial}
       agendamentos={agendamentos}
       configuracao={configuracao}
+      folgas={folgas}
     />
   );
 }
@@ -97,6 +114,7 @@ function Conteudo({
   barbeiroIdInicial,
   agendamentos,
   configuracao,
+  folgas,
 }: {
   aberto: boolean;
   aoMudarAberto: (aberto: boolean) => void;
@@ -107,6 +125,7 @@ function Conteudo({
   barbeiroIdInicial: string | null;
   agendamentos: Agendamento[];
   configuracao: ConfiguracaoAgenda;
+  folgas: Set<string>;
 }) {
   const clienteQuery = useQueryClient();
   const { avisar } = useToast();
@@ -124,9 +143,34 @@ function Conteudo({
     emEdicao?.servico.id ?? servicos[0]?.id ?? "",
   );
   const [data, setData] = useState(emEdicao?.data ?? diaInicial);
-  const [horario, setHorario] = useState(
-    emEdicao?.horario ?? configuracao.abre,
-  );
+  const [horario, setHorario] = useState(() => {
+    if (emEdicao) return emEdicao.horario;
+
+    // Só lê o relógio com o modal ABERTO. Este conteúdo existe no render do
+    // servidor com `aberto` falso, e ali `agoraNaBarbearia()` daria uma hora
+    // que o navegador não repete um instante depois — hidratação quebrada
+    // pelo mesmo motivo do seletor de barbeiro. Como a `key={sessao}` remonta
+    // tudo a cada abertura, o cálculo acontece na hora certa: quando a pessoa
+    // clica em "Novo agendamento".
+    if (!aberto) return configuracao.abre;
+
+    const duracaoMin =
+      servicos.find((s) => s.id === servicoId)?.duracaoMin ?? 30;
+
+    // Sem vaga hoje (dia cheio ou já passou de fechar) o campo volta para a
+    // abertura: o dia escolhido é que está errado, e trocar a data é o
+    // conserto — sugerir 18:45 num expediente que acabou seria pior.
+    return (
+      proximoHorarioLivre({
+        data: diaInicial,
+        duracaoMin,
+        barbeiroId,
+        agendamentos,
+        configuracao,
+        agora: ehHoje(diaInicial) ? agoraNaBarbearia() : null,
+      }) ?? configuracao.abre
+    );
+  });
   const [observacao, setObservacao] = useState(emEdicao?.observacao ?? "");
   const [erro, setErro] = useState<string | null>(null);
 
@@ -252,6 +296,28 @@ function Conteudo({
       setErro("Informe o horário.");
       return;
     }
+    // Aviso antes do servidor, que recusa de novo: aqui dá pra dizer ONDE
+    // desmarcar, e o servidor só sabe que o dia está fechado.
+    if (folgas.has(dados.data)) {
+      const frase =
+        "Esse dia está marcado como folga. Desmarque em Configurar agenda ou escolha outra data.";
+      setErro(frase);
+      avisar({ tom: "erro", titulo: "Dia de folga", descricao: frase });
+      return;
+    }
+
+    const duracao = servico?.duracaoMin ?? 30;
+    if (!cabeNoExpediente(dados.horario, duracao, configuracao)) {
+      const frase = mensagemForaDoExpediente(configuracao);
+      setErro(frase);
+      avisar({
+        tom: "erro",
+        titulo: "Fora do expediente",
+        descricao: frase,
+      });
+      return;
+    }
+
     // Aviso antes de ir ao servidor: aqui dá pra dizer QUEM ocupa o horário,
     // coisa que o erro do banco não conta. A barreira de verdade continua
     // sendo a restrição `agendamento_sem_sobreposicao` — esta checagem é
@@ -261,7 +327,7 @@ function Conteudo({
       {
         data: dados.data,
         horario: dados.horario,
-        duracaoMin: servico?.duracaoMin ?? 30,
+        duracaoMin: duracao,
         barbeiroId: dados.barbeiroId,
       },
       agendamentos,
@@ -343,6 +409,17 @@ function Conteudo({
             erro={erro}
             aoSalvar={tentarSalvar}
           />
+
+          {/* Fica visível enquanto a data estiver na folga — não some com o
+              próximo toque, porque o motivo continua valendo. */}
+          {folgas.has(data) ? (
+            <div className="mt-4">
+              <Alerta tom="aviso" titulo="Esse dia é folga">
+                A barbearia não abre em {diaComSemana(data)}. Escolha outra
+                data, ou desmarque a folga em Configurar agenda.
+              </Alerta>
+            </div>
+          ) : null}
 
           {/* Fora do <form>: os botões de quantidade são do rascunho, e
               dentro do formulário eles disputariam o Enter com o Salvar. */}
