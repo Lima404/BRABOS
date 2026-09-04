@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarPlus, Loader2 } from "lucide-react";
+import { CalendarPlus, Loader2, Trash2 } from "lucide-react";
 
 import {
   ajustarComanda,
   atualizarAgendamento,
   criarAgendamento,
+  excluirAgendamento,
   type DadosAgendamento,
   type Resultado,
 } from "@/app/(sistema)/agenda/acoes";
@@ -173,6 +174,9 @@ function Conteudo({
   });
   const [observacao, setObservacao] = useState(emEdicao?.observacao ?? "");
   const [erro, setErro] = useState<string | null>(null);
+  // Excluir é irreversível e mora ao lado de um "Cancelar" que significa
+  // outra coisa. Dois toques, com o aviso no meio.
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
   // ---- consumo (só na edição) ----
   const consulta = useQuery({
@@ -275,6 +279,29 @@ function Conteudo({
     onError: semRede,
   });
 
+  const apagar = useMutation({
+    mutationFn: () => excluirAgendamento(emEdicao!.id),
+    onSuccess: (resultado) => {
+      if (!resultado.ok) {
+        setErro(resultado.erro);
+        setConfirmandoExclusao(false);
+        return;
+      }
+
+      clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas });
+      // O dashboard soma agendamento concluído: sem isto o balanço do mês
+      // continuaria contando um atendimento que não existe mais.
+      clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
+      aoMudarAberto(false);
+      avisar({
+        tom: "sucesso",
+        titulo: "Agendamento excluído",
+        descricao: `${emEdicao!.clienteNome} · ${emEdicao!.data.split("-").reverse().join("/")} às ${emEdicao!.horario}`,
+      });
+    },
+    onError: semRede,
+  });
+
   function tentarSalvar(dados: DadosAgendamento) {
     if (dados.clienteNome.trim().length === 0) {
       setErro("Informe o nome do cliente.");
@@ -372,7 +399,7 @@ function Conteudo({
             type="button"
             variant="outline"
             onClick={() => aoMudarAberto(false)}
-            disabled={gravar.isPending}
+            disabled={gravar.isPending || apagar.isPending}
           >
             Cancelar
           </Button>
@@ -380,7 +407,9 @@ function Conteudo({
             type="submit"
             size="lg"
             form={ID_FORMULARIO_AGENDAMENTO}
-            disabled={gravar.isPending || semServico || semBarbeiro}
+            disabled={
+              gravar.isPending || apagar.isPending || semServico || semBarbeiro
+            }
           >
             {gravar.isPending ? <Loader2 className="animate-spin" /> : null}
             <CalendarPlus />
@@ -431,8 +460,91 @@ function Conteudo({
                 produtos={vendaveis}
                 carregando={consulta.isPending}
                 erro={consulta.isError}
-                desabilitado={gravar.isPending}
+                desabilitado={gravar.isPending || apagar.isPending}
               />
+            </div>
+          ) : null}
+
+          {/* Excluir mora no CORPO, não no rodapé: no rodapé ele ficaria
+              encostado no "Salvar" e no "Cancelar" — e "Cancelar" aqui
+              significa "fechar sem salvar", não "desmarcar o cliente". Duas
+              palavras parecidas com efeitos opostos, a um dedo de distância. */}
+          {emEdicao ? (
+            <div className="mt-5 flex flex-col gap-3 border-t border-border pt-5">
+              {confirmandoExclusao ? (
+                <>
+                  <Alerta tom="erro" titulo="Excluir este agendamento?">
+                    <div className="flex flex-col gap-1">
+                      <p>
+                        {emEdicao.clienteNome} ·{" "}
+                        {diaComSemana(emEdicao.data)} às {emEdicao.horario}. O
+                        registro some e não tem como voltar atrás.
+                      </p>
+                      {emEdicao.estado === "concluido" ? (
+                        <p>
+                          Este atendimento está <strong>concluído</strong>: o
+                          valor dele sai do balanço do mês.
+                        </p>
+                      ) : null}
+                      {originais.length > 0 ? (
+                        <p>
+                          As compras da loja lançadas aqui{" "}
+                          <strong>continuam no caixa</strong> — o dinheiro
+                          entrou. Elas só perdem a ligação com este
+                          atendimento.
+                        </p>
+                      ) : null}
+                    </div>
+                  </Alerta>
+
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="sm:flex-1"
+                      disabled={apagar.isPending}
+                      onClick={() => apagar.mutate()}
+                    >
+                      {apagar.isPending ? (
+                        <Loader2 className="animate-spin" />
+                      ) : (
+                        <Trash2 />
+                      )}
+                      Excluir mesmo assim
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="sm:flex-1"
+                      disabled={apagar.isPending}
+                      onClick={() => setConfirmandoExclusao(false)}
+                    >
+                      Manter agendamento
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Excluir apaga o registro. Para um cliente que desmarcou,
+                    isso perde a informação de que ele desmarcou — e o mês que
+                    vem vai querer saber quantos desmarcaram.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="sm:self-start"
+                    disabled={gravar.isPending}
+                    onClick={() => {
+                      setErro(null);
+                      setConfirmandoExclusao(true);
+                    }}
+                  >
+                    <Trash2 />
+                    Excluir agendamento
+                  </Button>
+                </>
+              )}
             </div>
           ) : null}
         </div>

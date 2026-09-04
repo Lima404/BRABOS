@@ -531,6 +531,31 @@ mesmo estando certo.
 comparar blocos vale mais que a coluna estreita de leitura. O respiro lateral
 vem do `<main>` do layout, que é margem e não caixa.
 
+## Excluir agendamento apaga; cancelar guarda
+
+O botão de excluir mora no CORPO do modal de editar, nunca no rodapé: lá ele
+ficaria encostado no "Cancelar", que ali significa "fechar sem salvar" e não
+"desmarcar o cliente". Duas palavras parecidas com efeitos opostos, a um dedo
+de distância.
+
+**Dois toques.** O primeiro troca o bloco por um `Alerta` que diz quem, quando
+e o que se perde; só o segundo apaga. Sem volta merece a pergunta.
+
+**Excluir ≠ cancelar.** `estado = 'cancelado'` libera o horário e MANTÉM a
+linha; excluir some com ela. Horário marcado por engano se exclui; cliente que
+desmarcou se cancela — o mês que vem vai querer saber quantos desmarcaram, e o
+registro apagado não conta isso. O texto na tela diz essa diferença, porque
+quem está com pressa não vai adivinhar.
+
+**As compras da loja não somem junto.** `vendas.agendamento_id` é
+`on delete set null` (0009): a venda aconteceu, o dinheiro entrou, e apagar
+receita porque o agendamento saiu seria o sistema mentindo sobre o caixa. A
+venda só perde a ligação — e o aviso da confirmação fala isso com todas as
+letras, junto com o de que atendimento concluído sai do balanço do mês.
+
+Excluir invalida também `chaves.dashboard.todas`: sem isso o balanço
+continuaria somando um atendimento que não existe mais.
+
 ## Folga é a exceção da semana, não a semana
 
 "Dias de atendimento" responde **toda semana** — desmarcar a segunda fecha

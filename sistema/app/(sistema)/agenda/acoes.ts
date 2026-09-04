@@ -700,6 +700,36 @@ export async function mudarEstadoAgendamento(
 }
 
 /**
+ * Apaga um agendamento de vez.
+ *
+ * Diferente de `estado = 'cancelado'`, que LIBERA o horário e mantém a linha:
+ * aqui a linha some, e com ela o histórico daquele cliente naquele dia. É o
+ * caminho certo pra horário marcado por engano, e o errado pra quem desmarcou
+ * — desmarcar é fato do negócio, e o mês que vem vai querer saber quantos
+ * desmarcaram.
+ *
+ * As compras da loja lançadas no atendimento NÃO somem junto:
+ * `vendas.agendamento_id` é `on delete set null` (migração 0009). A venda
+ * aconteceu, o dinheiro entrou, e apagar receita porque o agendamento saiu
+ * seria o sistema mentindo sobre o caixa. Ela só perde a ligação.
+ */
+export async function excluirAgendamento(id: string): Promise<Resultado> {
+  return protegido("excluir agendamento", async () => {
+    if (!id) return { ok: false, erro: "Agendamento não informado." };
+
+    const supabase = await criarClienteServidor();
+
+    // Sem filtro de dono: o RLS já recusa a linha de outra barbearia.
+    const { error } = await supabase.from("agendamentos").delete().eq("id", id);
+
+    if (error) return traduzir("excluir agendamento", error);
+
+    revalidatePath("/agenda");
+    return { ok: true };
+  });
+}
+
+/**
  * Aplica de uma vez as mudanças no consumo de um atendimento.
  *
  * A lista inteira vai junto de propósito: cada linha mexe no estoque, e a RPC
