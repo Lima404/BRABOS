@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# O molde, sim: ele nao tem valor nenhum dentro, so os nomes das variaveis.
+# Sem ele, quem clona o repositorio nao sabe o que precisa preencher.
+!.env.local.example
 
 # vercel
 .vercel
