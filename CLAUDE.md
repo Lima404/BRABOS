@@ -113,3 +113,70 @@ Quando o usuário pedir skill nova:
 4. Se a skill precisar de arquivos de apoio (templates, exemplos),
    criar dentro da pasta da skill
 5. Seguir o fluxo da skill-creator nativa do Claude Code
+
+---
+
+# BARBOS — perfil solopreneur
+
+> Bloco escrito pelo `/instalar`. Molde de **criador solo** adaptado: uma pessoa,
+> um produto próprio. O sistema gira em torno do que você constrói e publica.
+
+## O que é esse workspace
+
+Operação do BARBOS — sistema de gestão para barbearias. Aqui eu construo o
+produto, a marca por trás dele e o material que sai dele.
+
+**Estrutura de pastas:**
+- `_memoria/` — quem eu sou, como falo, o que tá em foco
+- `sistema/` — **o produto**: app Next.js (App Router) + Tailwind + shadcn +
+  React Query. Regras próprias em `sistema/AGENTS.md`
+- `identidade/` — manual de marca, tokens e biblioteca de logos
+- `marketing/` — conteúdo, SEO, campanhas (parado por enquanto)
+- `saidas/` — análises, emails, documentos pontuais
+- `dados/` — arquivos a analisar (CSV, PDF, planilha)
+- `scripts/` — utilitários
+- `templates/` — moldes de perfil e de skill
+
+## Quem sou
+
+Toco o BARBOS sozinho. Construo um sistema de gestão para barbearias — agenda,
+serviços e estoque — para donos que hoje ainda anotam tudo em caderno físico.
+
+## O que produzo
+
+- O sistema BARBOS (produto principal) — em `sistema/`, esqueleto no ar
+- Manual de marca do BARBOS: tipografia, paleta e logo — **v1 pronto** (`identidade/`)
+
+## Meu cliente
+
+Dono de barbearia com uma ou mais cadeiras, com estoque e serviços pra
+controlar, que atende e gerencia a agenda em caderno físico. Não é alguém
+migrando de outro software — é alguém saindo do papel.
+
+## Posicionamento
+
+O concorrente é o caderno. Simplicidade e velocidade de uso valem mais que
+lista de recurso.
+
+## Regras do sistema
+
+- Foco atual é produto e marca. Não sugerir conteúdo, anúncio ou campanha sem
+  eu pedir explicitamente.
+- Antes de qualquer coisa visual, ler `identidade/design-guide.md` — o manual
+  de marca está preenchido (v1). Toda cor sai de `identidade/tokens.css` ou
+  `tokens.json`; hex solto no código é erro de revisão.
+- Todo par texto/fundo novo precisa de 4,5:1 (texto) ou 3:1 (borda e ícone de
+  UI). Medir, não estimar no olho.
+- Alvo de toque nunca abaixo de 44px. Tema escuro nasce junto com o claro.
+- Não inventar tom de voz de marca — não tem exemplo de escrita minha ainda.
+- Resposta curta e direta, com recomendação em vez de menu de opções.
+
+## Ferramentas conectadas
+
+- [ ] Notion
+- [ ] Canva
+- [ ] Google Calendar
+- [ ] Meta Ads
+- [ ] Google Ads
+
+*(Marcar conforme for instalando os MCPs)*

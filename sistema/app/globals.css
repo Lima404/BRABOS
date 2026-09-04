@@ -1,0 +1,429 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+/* CSS do FullCalendar, extraido dos pacotes — ver scripts/extrair-css-fullcalendar.mjs */
+@import "./fullcalendar.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   BARBOS — tema
+   Traduzido de identidade/design-guide.md e identidade/tokens.css.
+   Regra: nenhum hex solto em componente. Tudo sai daqui.
+   ============================================================ */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-inter);
+  --font-marca: var(--font-archivo-black);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-heading: var(--font-inter);
+
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+
+  /* escala da marca, disponivel como utilitario quando o token semantico nao serve */
+  --color-graf-950: #0d0f12;
+  --color-graf-900: #14171c;
+  --color-graf-800: #1c2027;
+  --color-graf-700: #2a2f38;
+  --color-graf-500: #5b6472;
+  --color-graf-400: #7c8595;
+  --color-graf-300: #a8b0bc;
+  --color-graf-200: #c9cfd8;
+  --color-graf-100: #e4e7ec;
+  --color-graf-50: #f4f6f8;
+  --color-ambar-800: #8a5309;
+  --color-ambar-700: #a9660f;
+  --color-ambar-600: #d98e1e;
+  --color-ambar-500: #f0a93b;
+  --color-ambar-300: #f7ce8a;
+  --color-ambar-100: #fcedd3;
+
+  /* estados da agenda — o coracao do produto */
+  --color-agendado: var(--agendado);
+  --color-agendado-fundo: var(--agendado-fundo);
+  --color-confirmado: var(--confirmado);
+  --color-confirmado-fundo: var(--confirmado-fundo);
+  --color-atendendo: var(--atendendo);
+  --color-atendendo-fundo: var(--atendendo-fundo);
+  --color-concluido: var(--concluido);
+  --color-concluido-fundo: var(--concluido-fundo);
+  --color-faltou: var(--faltou);
+  --color-faltou-fundo: var(--faltou-fundo);
+  --color-cancelado: var(--cancelado);
+  --color-cancelado-fundo: var(--cancelado-fundo);
+
+  /* cores de servico — categoricas, para a legenda e os eventos do calendario.
+     Uma nova cor so entra aqui depois de medida nos dois temas. */
+  --color-serv-azul: var(--serv-azul);
+  --color-serv-azul-fundo: var(--serv-azul-fundo);
+  --color-serv-verde: var(--serv-verde);
+  --color-serv-verde-fundo: var(--serv-verde-fundo);
+  --color-serv-violeta: var(--serv-violeta);
+  --color-serv-violeta-fundo: var(--serv-violeta-fundo);
+  --color-serv-ciano: var(--serv-ciano);
+  --color-serv-ciano-fundo: var(--serv-ciano-fundo);
+  --color-serv-rosa: var(--serv-rosa);
+  --color-serv-rosa-fundo: var(--serv-rosa-fundo);
+  --color-serv-grafite: var(--serv-grafite);
+  --color-serv-grafite-fundo: var(--serv-grafite-fundo);
+
+  /* estoque */
+  --color-estoque-ok: var(--estoque-ok);
+  --color-estoque-baixo: var(--estoque-baixo);
+  --color-estoque-zero: var(--estoque-zero);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+
+  /* alvo de toque — 44px minimo, 48 ideal (design-guide) */
+  --spacing-toque: 2.75rem;
+  --spacing-toque-ideal: 3rem;
+}
+
+/* ---------- TEMA CLARO ---------- */
+:root {
+  --radius: 0.5rem; /* 8px: card, campo, botao */
+
+  --background: #f4f6f8; /* graf-50  */
+  --foreground: #14171c; /* graf-900 — 17,96:1 */
+  --card: #ffffff;
+  --card-foreground: #14171c;
+  --popover: #ffffff;
+  --popover-foreground: #14171c;
+
+  /* acao: ambar preenchido, texto grafite — 8,93:1 */
+  --primary: #f0a93b;
+  --primary-foreground: #14171c;
+
+  --secondary: #e4e7ec; /* graf-100 */
+  --secondary-foreground: #14171c;
+
+  --muted: #e4e7ec;
+  --muted-foreground: #5b6472; /* graf-500 — 5,98:1 */
+
+  --accent: #fcedd3; /* ambar-100 */
+  --accent-foreground: #8a5309; /* ambar-800 — 5,48:1 */
+
+  --destructive: #b42318; /* verm-700 — 6,57:1 sobre branco */
+  --destructive-foreground: #ffffff;
+
+  --border: #c9cfd8; /* graf-200: divisor, borda de card */
+  --input: #7c8595; /* graf-400: borda de CAMPO — 3,72:1, exigido por WCAG 1.4.11 */
+  --ring: #f0a93b; /* foco em ambar */
+
+  --agendado: #1b4fbf;
+  --agendado-fundo: #e4edfd;
+  --confirmado: #146c45;
+  --confirmado-fundo: #e1f4ea;
+  --atendendo: #8a5309;
+  --atendendo-fundo: #fcedd3;
+  --concluido: #146c45;
+  --concluido-fundo: #e1f4ea;
+  --faltou: #b42318;
+  --faltou-fundo: #fde7e5;
+  --cancelado: #5b6472;
+  --cancelado-fundo: #f4f6f8;
+
+  --estoque-ok: #146c45;
+  --estoque-baixo: #8a5309;
+  --estoque-zero: #b42318;
+
+  /* servicos — contraste medido sobre o proprio fundo (min 4,5:1) */
+  --serv-azul: #1b4fbf;           --serv-azul-fundo: #e4edfd;    /* 6,11 */
+  --serv-verde: #146c45;          --serv-verde-fundo: #e1f4ea;   /* 5,62 */
+  --serv-violeta: #5b3bb8;        --serv-violeta-fundo: #ebe6fb; /* 6,24 */
+  --serv-ciano: #0f6675;          --serv-ciano-fundo: #dff2f5;   /* 5,71 */
+  --serv-rosa: #a32463;           --serv-rosa-fundo: #fce4f0;    /* 5,85 */
+  --serv-grafite: #5b6472;        --serv-grafite-fundo: #e4e7ec; /* 4,83 */
+}
+
+/* ---------- TEMA ESCURO ----------
+   Barbearia as nove da noite, tela no balcao. Nasce junto, nao depois. */
+.dark {
+  --background: #0d0f12; /* graf-950 */
+  --foreground: #ffffff; /* 19,19:1  */
+  --card: #14171c;
+  --card-foreground: #ffffff;
+  --popover: #1c2027;
+  --popover-foreground: #ffffff;
+
+  --primary: #f0a93b; /* ambar nao muda: e a acao nos dois temas */
+  --primary-foreground: #14171c;
+
+  --secondary: #1c2027;
+  --secondary-foreground: #ffffff;
+
+  --muted: #1c2027;
+  --muted-foreground: #a8b0bc; /* graf-300 — 8,77:1 */
+
+  --accent: #2a2013;
+  --accent-foreground: #f0a93b;
+
+  --destructive: #f5837a;
+  --destructive-foreground: #14171c;
+
+  --border: #2a2f38; /* graf-700: divisor decorativo */
+  --input: #7c8595; /* graf-400 — 4,83:1. graf-700 aqui da 1,34:1 e o campo some */
+  --ring: #f0a93b;
+
+  --agendado: #9dbbfb;
+  --agendado-fundo: #16233d;
+  --confirmado: #6fd3a4;
+  --confirmado-fundo: #10281e;
+  --atendendo: #f0a93b;
+  --atendendo-fundo: #2a2013;
+  --concluido: #6fd3a4;
+  --concluido-fundo: #10281e;
+  --faltou: #f5837a;
+  --faltou-fundo: #2e1613;
+  --cancelado: #7c8595;
+  --cancelado-fundo: #1c2027;
+
+  --estoque-ok: #6fd3a4;
+  --estoque-baixo: #f0a93b;
+  --estoque-zero: #f5837a;
+
+  --serv-azul: #9dbbfb;           --serv-azul-fundo: #16233d;    /* 8,15 */
+  --serv-verde: #6fd3a4;          --serv-verde-fundo: #10281e;   /* 8,58 */
+  --serv-violeta: #bca6f5;        --serv-violeta-fundo: #221a3a; /* 7,76 */
+  --serv-ciano: #7fd3e0;          --serv-ciano-fundo: #0e2b31;   /* 8,73 */
+  --serv-rosa: #f49bc6;           --serv-rosa-fundo: #33132a;    /* 8,17 */
+  --serv-grafite: #a8b0bc;        --serv-grafite-fundo: #1c2027; /* 7,47 */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Horario, preco e quantidade. Sem isso a coluna de horario dança
+     a cada digito que muda — e e a tela que o barbeiro mais olha. */
+  time,
+  [data-numero],
+  table td {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+}
+
+/* Quem pediu menos movimento no sistema operacional recebe menos movimento.
+   Nao e so preferencia: animacao dispara enjoo e enxaqueca em muita gente. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer components {
+  /* Unico aceno visual ao oficio. Login, estado vazio, divisor de secao.
+     Nunca dentro do logo, nunca como fundo de tela inteira. */
+  .faixa-barbearia {
+    height: 6px;
+    background: repeating-linear-gradient(
+      45deg,
+      var(--color-ambar-500) 0 12px,
+      var(--color-graf-900) 12px 24px
+    );
+  }
+}
+
+/* ============================================================
+   FullCalendar na identidade BARBOS
+   Os seletores usam .calendario-barbos como prefixo de propósito: o CSS do
+   FullCalendar é injetado em runtime, depois da nossa folha, então precisamos
+   de especificidade maior para vencer sem espalhar !important.
+   ============================================================ */
+.calendario-barbos {
+  --fc-border-color: var(--border);
+  --fc-page-bg-color: var(--card);
+  --fc-neutral-bg-color: var(--muted);
+  --fc-today-bg-color: transparent; /* hoje é marcado no número, não no fundo */
+  --fc-event-bg-color: transparent;
+  --fc-event-border-color: transparent;
+  --fc-small-font-size: 0.8125rem;
+}
+
+.calendario-barbos .fc {
+  font-family: inherit;
+}
+
+/* Cabeçalho dos dias da semana */
+.calendario-barbos .fc-col-header-cell {
+  background: var(--muted);
+  padding: 0.5rem 0;
+}
+.calendario-barbos .fc-col-header-cell-cushion {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+  text-decoration: none;
+}
+
+/* Altura da célula: cabe o número + até 3 eventos sem espremer */
+.calendario-barbos .fc-daygrid-day-frame {
+  min-height: 6.5rem;
+  padding: 0.25rem;
+}
+
+/* Número do dia */
+.calendario-barbos .fc-daygrid-day-number {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+  padding: 0.25rem 0.375rem;
+  text-decoration: none;
+}
+
+/* Dias de outro mês: presentes, mas claramente fora */
+.calendario-barbos .fc-day-other .fc-daygrid-day-number {
+  opacity: 0.45;
+}
+
+/* Hoje: círculo âmbar com texto grafite — 8,93:1 */
+.calendario-barbos .fc-day-today .fc-daygrid-day-number {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 999px;
+  min-width: 1.65rem;
+  text-align: center;
+}
+
+/* Dia selecionado: fundo + anel. Nunca só cor. */
+.calendario-barbos .dia-selecionado .fc-daygrid-day-frame {
+  background: var(--secondary);
+  box-shadow: inset 0 0 0 2px var(--ring);
+  border-radius: 0.375rem;
+}
+
+/* Dia sem atendimento: sombra + hachura. Nunca só o cinza — quem enxerga
+   pouco contraste precisa da textura para distinguir de "dia vazio". */
+.calendario-barbos .fc-non-business {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--muted),
+    var(--muted) 6px,
+    var(--border) 6px,
+    var(--border) 7px
+  );
+  opacity: 0.55;
+}
+
+/* Eventos: quem pinta é o nosso eventContent, não o FullCalendar */
+.calendario-barbos .fc-daygrid-event {
+  background: transparent;
+  border: 0;
+  margin: 0 0 2px;
+  padding: 0;
+}
+.calendario-barbos .fc-daygrid-event-harness {
+  cursor: pointer;
+}
+.calendario-barbos .fc-event:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* "+2 mais" */
+.calendario-barbos .fc-daygrid-more-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  padding: 0 0.25rem;
+}
+.calendario-barbos .fc-daygrid-more-link:hover {
+  color: var(--foreground);
+  background: var(--secondary);
+  border-radius: 0.25rem;
+}
+
+/* Popover do "+N mais" */
+.calendario-barbos .fc-popover {
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(13 15 18 / 0.14);
+}
+.calendario-barbos .fc-popover-header {
+  background: var(--muted);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* A borda externa quem faz é o contêiner arredondado */
+.calendario-barbos .fc-scrollgrid {
+  border-width: 0;
+}
+.calendario-barbos .fc-scrollgrid td:last-of-type,
+.calendario-barbos .fc-scrollgrid th:last-of-type {
+  border-right-width: 0;
+}
+.calendario-barbos .fc-scrollgrid-section:last-of-type td {
+  border-bottom-width: 0;
+}
+
+/* Scrollbar fino — listas curtas (filtros, selects densos) */
+.barra-fina {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.barra-fina::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.barra-fina::-webkit-scrollbar-track {
+  background: transparent;
+}
+.barra-fina::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 9999px;
+}
+.barra-fina::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+.barra-fina::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}

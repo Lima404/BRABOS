@@ -1,0 +1,305 @@
+/* ============================================================
+   BARBOS — tokens de design
+   Gerado a partir de identidade/design-guide.md
+   Regra: nenhum hex solto no código do sistema. Tudo sai daqui.
+   ============================================================ */
+
+:root {
+  /* --- Escala grafite (estrutura) --- */
+  --graf-950: #0D0F12;
+  --graf-900: #14171C;
+  --graf-800: #1C2027;
+  --graf-700: #2A2F38;
+  --graf-500: #5B6472;
+  --graf-400: #7C8595;
+  --graf-300: #A8B0BC;
+  --graf-200: #C9CFD8;
+  --graf-100: #E4E7EC;
+  --graf-50:  #F4F6F8;
+  --branco:   #FFFFFF;
+
+  /* --- Escala âmbar (ação) --- */
+  --ambar-800: #8A5309;  /* âmbar como TEXTO no claro — 6,32:1 */
+  --ambar-700: #A9660F;
+  --ambar-600: #D98E1E;  /* hover do primário */
+  --ambar-500: #F0A93B;  /* preenchimento do CTA e da marca */
+  --ambar-300: #F7CE8A;  /* anel de foco */
+  --ambar-100: #FCEDD3;
+
+  /* --- Cores funcionais --- */
+  --azul-700:  #1B4FBF;
+  --azul-500:  #2F6FED;
+  --azul-100:  #E4EDFD;
+  --verde-700: #146C45;
+  --verde-600: #1E8E5A;
+  --verde-100: #E1F4EA;
+  --verm-700:  #B42318;
+  --verm-600:  #D92D20;
+  --verm-100:  #FDE7E5;
+
+  /* --- Papéis semânticos: TEMA CLARO (padrão) --- */
+  --fundo-app:        var(--graf-50);
+  --fundo-superficie: var(--branco);
+  --fundo-elevado:    var(--branco);
+  --fundo-neutro:     var(--graf-100);
+
+  --texto-principal:    var(--graf-900);  /* 17,96:1 sobre superfície */
+  --texto-secundario:   var(--graf-500);  /*  5,98:1 */
+  --texto-desabilitado: var(--graf-400);
+  --texto-sobre-acao:   var(--graf-900);  /*  8,93:1 sobre âmbar */
+  --texto-acao:         var(--ambar-800); /*  6,32:1 — âmbar legível como texto */
+
+  --borda-campo:   var(--graf-400);  /* 3,72:1 — limite identificável (WCAG 1.4.11) */
+  --borda-divisor: var(--graf-100);  /* decorativo, isento */
+  --borda-forte:   var(--graf-200);
+
+  --acao:           var(--ambar-500);
+  --acao-hover:     var(--ambar-600);
+  --acao-pressed:   var(--ambar-700);
+  --acao-suave:     var(--ambar-100);
+  --foco-anel:      var(--ambar-300);
+
+  /* --- Estados da agenda (claro) --- */
+  --ag-agendado-txt:   var(--azul-700);   --ag-agendado-bg:   var(--azul-100);
+  --ag-confirmado-txt: var(--verde-700);  --ag-confirmado-bg: var(--verde-100);
+  --ag-atendendo-txt:  var(--ambar-800);  --ag-atendendo-bg:  var(--ambar-100);
+  --ag-concluido-txt:  var(--graf-500);   --ag-concluido-bg:  var(--graf-100);
+  --ag-faltou-txt:     var(--verm-700);   --ag-faltou-bg:     var(--verm-100);
+  --ag-cancelado-txt:  var(--graf-500);   --ag-cancelado-bg:  var(--graf-50);
+
+  /* --- Estoque --- */
+  --estoque-ok:    var(--verde-700);
+  --estoque-baixo: var(--ambar-800);
+  --estoque-zero:  var(--verm-700);
+
+  /* --- Feedback --- */
+  --ok-txt:     var(--verde-700);  --ok-bg:     var(--verde-100);
+  --erro-txt:   var(--verm-700);   --erro-bg:   var(--verm-100);
+  --alerta-txt: var(--ambar-800);  --alerta-bg: var(--ambar-100);
+  --info-txt:   var(--azul-700);   --info-bg:   var(--azul-100);
+
+  /* --- Tipografia --- */
+  --fonte-marca: "Archivo Black", "Arial Black", system-ui, sans-serif; /* SÓ o logotipo */
+  --fonte-ui: Inter, -apple-system, "Segoe UI", Roboto, system-ui, sans-serif;
+
+  --t-display:  2rem;     --lh-display:  2.5rem;   /* 32/40 700 */
+  --t-h1:       1.5rem;   --lh-h1:       2rem;     /* 24/32 700 */
+  --t-h2:       1.25rem;  --lh-h2:       1.75rem;  /* 20/28 600 */
+  --t-h3:       1.0625rem;--lh-h3:       1.5rem;   /* 17/24 600 */
+  --t-corpo:    1rem;     --lh-corpo:    1.5rem;   /* 16/24 400 — base */
+  --t-pequeno:  0.875rem; --lh-pequeno:  1.25rem;  /* 14/20 400 */
+  --t-rotulo:   0.8125rem;--lh-rotulo:   1rem;     /* 13/16 600 caixa alta */
+  --t-legenda:  0.75rem;  --lh-legenda:  1rem;     /* 12/16 400 — mínimo */
+
+  --peso-regular: 400;
+  --peso-medio:   500;
+  --peso-semi:    600;
+  --peso-bold:    700;
+  --track-rotulo: 0.04em;
+
+  /* --- Espaçamento (grade de 4px) --- */
+  --e-1: 4px;   --e-2: 8px;   --e-3: 12px;  --e-4: 16px;
+  --e-6: 24px;  --e-8: 32px;  --e-12: 48px; --e-16: 64px; --e-24: 96px;
+
+  /* --- Raio --- */
+  --r-card: 8px;    /* card, campo, botão */
+  --r-modal: 12px;  /* modal, bottom sheet */
+  --r-pill: 999px;  /* badge, pill */
+
+  /* --- Sombra (dois níveis, só) --- */
+  --sombra-1: 0 1px 2px rgba(13,15,18,.06), 0 1px 3px rgba(13,15,18,.10);
+  --sombra-2: 0 8px 24px rgba(13,15,18,.14);
+
+  /* --- Alvo de toque --- */
+  --toque-min: 44px;
+  --toque-ideal: 48px;
+
+  /* --- Faixa barbearia (único aceno ao ofício) --- */
+  --faixa-barbearia: repeating-linear-gradient(45deg,
+    var(--ambar-500) 0 12px, var(--graf-900) 12px 24px);
+}
+
+/* ============================================================
+   TEMA ESCURO — nasce junto com o claro, nunca "depois".
+   Barbearia à noite, tela no balcão.
+   ============================================================ */
+:root[data-tema="escuro"] {
+  --fundo-app:        var(--graf-950);
+  --fundo-superficie: var(--graf-900);
+  --fundo-elevado:    var(--graf-800);
+  --fundo-neutro:     var(--graf-800);
+
+  --texto-principal:    var(--branco);     /* 19,19:1 */
+  --texto-secundario:   var(--graf-300);   /*  8,77:1 */
+  --texto-desabilitado: var(--graf-400);   /*  5,16:1 */
+  --texto-sobre-acao:   var(--graf-900);   /* âmbar continua com texto grafite */
+  --texto-acao:         var(--ambar-500);  /*  9,54:1 sobre graf-950 */
+
+  --borda-campo:   var(--graf-400);  /* 4,83:1 — graf-700 dava 1,34:1 */
+  --borda-divisor: var(--graf-800);
+  --borda-forte:   var(--graf-700);
+
+  --ag-agendado-txt:   #9DBBFB;  --ag-agendado-bg:   #16233D;
+  --ag-confirmado-txt: #6FD3A4;  --ag-confirmado-bg: #10281E;
+  --ag-atendendo-txt:  var(--ambar-500); --ag-atendendo-bg: #2A2013;
+  --ag-concluido-txt:  var(--graf-300);  --ag-concluido-bg: var(--graf-800);
+  --ag-faltou-txt:     #F5837A;  --ag-faltou-bg:     #2E1613;
+  --ag-cancelado-txt:  var(--graf-400);  --ag-cancelado-bg: var(--graf-800);
+
+  --ok-txt:     #6FD3A4;  --ok-bg:     #10281E;
+  --erro-txt:   #F5837A;  --erro-bg:   #2E1613;
+  --alerta-txt: var(--ambar-500); --alerta-bg: #2A2013;
+  --info-txt:   #9DBBFB;  --info-bg:   #16233D;
+
+  --sombra-1: 0 1px 2px rgba(0,0,0,.40), 0 1px 3px rgba(0,0,0,.30);
+  --sombra-2: 0 8px 24px rgba(0,0,0,.55);
+}
+
+/* Segue a preferência do sistema quando o usuário não escolheu tema */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --fundo-app:        var(--graf-950);
+    --fundo-superficie: var(--graf-900);
+    --fundo-elevado:    var(--graf-800);
+    --fundo-neutro:     var(--graf-800);
+    --texto-principal:    var(--branco);
+    --texto-secundario:   var(--graf-300);
+    --texto-desabilitado: var(--graf-400);
+    --texto-acao:         var(--ambar-500);
+    --borda-campo:   var(--graf-400);  /* 4,83:1 — graf-700 dava 1,34:1 */
+    --borda-divisor: var(--graf-800);
+    --borda-forte:   var(--graf-700);
+    --ag-agendado-txt:   #9DBBFB;  --ag-agendado-bg:   #16233D;
+    --ag-confirmado-txt: #6FD3A4;  --ag-confirmado-bg: #10281E;
+    --ag-atendendo-txt:  var(--ambar-500); --ag-atendendo-bg: #2A2013;
+    --ag-concluido-txt:  var(--graf-300);  --ag-concluido-bg: var(--graf-800);
+    --ag-faltou-txt:     #F5837A;  --ag-faltou-bg:     #2E1613;
+    --ag-cancelado-txt:  var(--graf-400);  --ag-cancelado-bg: var(--graf-800);
+    --ok-txt:     #6FD3A4;  --ok-bg:     #10281E;
+    --erro-txt:   #F5837A;  --erro-bg:   #2E1613;
+    --alerta-txt: var(--ambar-500); --alerta-bg: #2A2013;
+    --info-txt:   #9DBBFB;  --info-bg:   #16233D;
+    --sombra-1: 0 1px 2px rgba(0,0,0,.40), 0 1px 3px rgba(0,0,0,.30);
+    --sombra-2: 0 8px 24px rgba(0,0,0,.55);
+  }
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+body {
+  margin: 0;
+  background: var(--fundo-app);
+  color: var(--texto-principal);
+  font-family: var(--fonte-ui);
+  font-size: var(--t-corpo);
+  line-height: var(--lh-corpo);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Horário, preço e quantidade. Sem isso a coluna de horário dança. */
+.num, time, .preco, .qtd, table td {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Foco visível — nunca remover outline sem repor um anel */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--acao);
+  outline-offset: 2px;
+  border-radius: var(--r-card);
+}
+
+/* ============================================================
+   COMPONENTES-BASE
+   Ordem de construção: Botão → Campo → Badge → Card → Grade
+   ============================================================ */
+
+.btn {
+  min-height: var(--toque-ideal);
+  padding: 0 var(--e-4);
+  border-radius: var(--r-card);
+  border: 1px solid transparent;
+  font: var(--peso-semi) var(--t-corpo)/1 var(--fonte-ui);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--e-2);
+}
+
+/* Um por tela. No máximo. */
+.btn--primario { background: var(--acao); color: var(--texto-sobre-acao); }
+.btn--primario:hover { background: var(--acao-hover); }
+.btn--primario:active { background: var(--acao-pressed); }
+
+.btn--secundario {
+  background: transparent;
+  color: var(--texto-principal);
+  border-color: var(--borda-campo);
+}
+
+.btn--fantasma { background: transparent; color: var(--texto-principal); }
+
+/* Sempre atrás de confirmação */
+.btn--destrutivo { background: var(--erro-bg); color: var(--erro-txt); }
+
+.btn:disabled { color: var(--texto-desabilitado); background: var(--fundo-neutro); cursor: not-allowed; }
+
+.campo {
+  min-height: var(--toque-ideal);
+  width: 100%;
+  padding: 0 var(--e-3);
+  background: var(--fundo-superficie);
+  color: var(--texto-principal);
+  border: 1px solid var(--borda-campo);
+  border-radius: var(--r-card);
+  font: var(--peso-regular) var(--t-corpo)/1.5 var(--fonte-ui);
+}
+.campo::placeholder { color: var(--texto-desabilitado); }
+.campo[aria-invalid="true"] { border-color: var(--erro-txt); }
+
+.rotulo {
+  display: block;
+  margin-bottom: var(--e-1);
+  font: var(--peso-semi) var(--t-rotulo)/var(--lh-rotulo) var(--fonte-ui);
+  letter-spacing: var(--track-rotulo);
+  text-transform: uppercase;
+  color: var(--texto-secundario);
+}
+
+/* Badge de estado — SEMPRE texto + cor, nunca cor sozinha */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e-1);
+  padding: var(--e-1) var(--e-3);
+  border-radius: var(--r-pill);
+  font: var(--peso-semi) var(--t-pequeno)/1.25 var(--fonte-ui);
+  white-space: nowrap;
+}
+.badge--agendado   { color: var(--ag-agendado-txt);   background: var(--ag-agendado-bg); }
+.badge--confirmado { color: var(--ag-confirmado-txt); background: var(--ag-confirmado-bg); }
+.badge--atendendo  { color: var(--ag-atendendo-txt);  background: var(--ag-atendendo-bg); }
+.badge--concluido  { color: var(--ag-concluido-txt);  background: var(--ag-concluido-bg); }
+.badge--faltou     { color: var(--ag-faltou-txt);     background: var(--ag-faltou-bg); }
+.badge--cancelado  { color: var(--ag-cancelado-txt);  background: var(--ag-cancelado-bg); text-decoration: line-through; }
+
+.card {
+  background: var(--fundo-superficie);
+  border: 1px solid var(--borda-divisor);
+  border-radius: var(--r-card);
+  padding: var(--e-4);
+}
+
+/* Card de agendamento: barra de estado à esquerda + toque cheio */
+.card-agendamento {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--e-3);
+  align-items: center;
+  min-height: var(--toque-ideal);
+  border-left: 4px solid var(--ag-agendado-txt);
+}
+
+.faixa-barbearia { height: 6px; background: var(--faixa-barbearia); }

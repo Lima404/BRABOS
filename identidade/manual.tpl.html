@@ -1,0 +1,502 @@
+<title>Manual de Marca BARBOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&display=swap">
+
+<style>
+:root{
+  --graf-950:#0D0F12; --graf-900:#14171C; --graf-800:#1C2027; --graf-700:#2A2F38;
+  --graf-500:#5B6472; --graf-400:#7C8595; --graf-300:#A8B0BC; --graf-200:#C9CFD8;
+  --graf-100:#E4E7EC; --graf-50:#F4F6F8; --branco:#FFFFFF;
+  --ambar-800:#8A5309; --ambar-700:#A9660F; --ambar-600:#D98E1E;
+  --ambar-500:#F0A93B; --ambar-300:#F7CE8A; --ambar-100:#FCEDD3;
+  --azul-700:#1B4FBF; --azul-100:#E4EDFD;
+  --verde-700:#146C45; --verde-100:#E1F4EA;
+  --verm-700:#B42318; --verm-100:#FDE7E5;
+
+  --fundo:var(--graf-50);
+  --superficie:var(--branco);
+  --elevado:var(--branco);
+  --neutro:var(--graf-100);
+  --txt:var(--graf-900);
+  --txt-2:var(--graf-500);
+  --txt-3:var(--graf-400);
+  --borda:var(--graf-200);
+  --borda-forte:var(--graf-400);
+  --acao-txt:var(--ambar-800);
+
+  --ag-agendado-t:var(--azul-700);   --ag-agendado-b:var(--azul-100);
+  --ag-confirmado-t:var(--verde-700);--ag-confirmado-b:var(--verde-100);
+  --ag-atendendo-t:var(--ambar-800); --ag-atendendo-b:var(--ambar-100);
+  --ag-concluido-t:var(--graf-500);  --ag-concluido-b:var(--graf-100);
+  --ag-faltou-t:var(--verm-700);     --ag-faltou-b:var(--verm-100);
+  --ag-cancelado-t:var(--graf-500);  --ag-cancelado-b:var(--graf-50);
+
+  --logo-topo:url("{{LOGO_CLARO}}");
+
+  --marca:"Archivo Black","Arial Black",system-ui,sans-serif;
+  --ui:Inter,-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;
+  --sombra:0 1px 2px rgba(13,15,18,.06),0 1px 3px rgba(13,15,18,.10);
+  --max:78rem;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fundo:var(--graf-950); --superficie:var(--graf-900); --elevado:var(--graf-800);
+    --neutro:var(--graf-800);
+    --txt:var(--branco); --txt-2:var(--graf-300); --txt-3:var(--graf-400);
+    --borda:var(--graf-700); --borda-forte:var(--graf-400);
+    --acao-txt:var(--ambar-500);
+    --ag-agendado-t:#9DBBFB;  --ag-agendado-b:#16233D;
+    --ag-confirmado-t:#6FD3A4;--ag-confirmado-b:#10281E;
+    --ag-atendendo-t:#F0A93B; --ag-atendendo-b:#2A2013;
+    --ag-concluido-t:#A8B0BC; --ag-concluido-b:#1C2027;
+    --ag-faltou-t:#F5837A;    --ag-faltou-b:#2E1613;
+    --ag-cancelado-t:#7C8595; --ag-cancelado-b:#1C2027;
+    --logo-topo:url("{{LOGO_ESCURO}}");
+    --sombra:0 1px 2px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --fundo:var(--graf-950); --superficie:var(--graf-900); --elevado:var(--graf-800);
+  --neutro:var(--graf-800);
+  --txt:var(--branco); --txt-2:var(--graf-300); --txt-3:var(--graf-400);
+  --borda:var(--graf-700); --borda-forte:var(--graf-400);
+  --acao-txt:var(--ambar-500);
+  --ag-agendado-t:#9DBBFB;  --ag-agendado-b:#16233D;
+  --ag-confirmado-t:#6FD3A4;--ag-confirmado-b:#10281E;
+  --ag-atendendo-t:#F0A93B; --ag-atendendo-b:#2A2013;
+  --ag-concluido-t:#A8B0BC; --ag-concluido-b:#1C2027;
+  --ag-faltou-t:#F5837A;    --ag-faltou-b:#2E1613;
+  --ag-cancelado-t:#7C8595; --ag-cancelado-b:#1C2027;
+  --logo-topo:url("{{LOGO_ESCURO}}");
+  --sombra:0 1px 2px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--fundo); color:var(--txt);
+  font-family:var(--ui); font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.faixa{height:6px;background:repeating-linear-gradient(45deg,var(--ambar-500) 0 12px,var(--graf-900) 12px 24px)}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 clamp(16px,4vw,40px)}
+
+/* ---------- cabecalho ---------- */
+header{padding:clamp(32px,6vw,64px) 0 clamp(28px,5vw,48px)}
+.marca-topo{
+  background-image:var(--logo-topo);
+  background-repeat:no-repeat;background-size:contain;background-position:left center;
+  width:min(340px,72vw);aspect-ratio:1758/400;
+}
+.tese{
+  margin:clamp(20px,3vw,32px) 0 0;max-width:34ch;
+  font-size:clamp(1.5rem,3.4vw,2rem);line-height:1.25;font-weight:700;
+  letter-spacing:-.02em;text-wrap:balance;
+}
+.tese em{font-style:normal;color:var(--acao-txt)}
+.meta{
+  margin-top:20px;display:flex;flex-wrap:wrap;gap:8px 20px;
+  font-size:.8125rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--txt-2);
+}
+
+/* ---------- secoes ---------- */
+section{padding:clamp(36px,5vw,56px) 0;border-top:1px solid var(--borda)}
+.eyebrow{
+  font-size:.8125rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--acao-txt);margin:0 0 10px;
+}
+h2{margin:0 0 8px;font-size:clamp(1.4rem,2.6vw,1.75rem);line-height:1.2;letter-spacing:-.015em;text-wrap:balance}
+.lead{margin:0 0 28px;max-width:62ch;color:var(--txt-2);font-size:1.0625rem}
+h3{margin:32px 0 12px;font-size:1.0625rem;font-weight:600}
+p{max-width:65ch}
+
+/* ---------- cores ---------- */
+.escala{display:grid;grid-template-columns:repeat(auto-fit,minmax(122px,1fr));gap:2px;
+  border:1px solid var(--borda);border-radius:8px;overflow:hidden;margin-bottom:28px}
+/* colunas fixas onde cabem, pra nenhuma escala terminar com celula vazia */
+@media (min-width:700px){
+  .escala--graf{grid-template-columns:repeat(5,1fr)}
+  .escala--ambar{grid-template-columns:repeat(6,1fr)}
+}
+.tom{padding:14px 12px 12px;min-height:104px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px}
+.tom b{font-size:.8125rem;font-weight:700;letter-spacing:.02em}
+.tom span{font-size:.75rem;font-variant-numeric:tabular-nums;opacity:.85}
+
+.pares{width:100%;border-collapse:collapse;font-size:.9375rem}
+.pares th{
+  text-align:left;padding:0 12px 10px 0;font-size:.75rem;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--txt-2);white-space:nowrap;
+}
+.pares td{padding:10px 12px 10px 0;border-top:1px solid var(--borda);vertical-align:middle}
+.pares td.n{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.rolagem{overflow-x:auto}
+.selo{
+  display:inline-block;padding:2px 8px;border-radius:999px;
+  font-size:.75rem;font-weight:600;letter-spacing:.02em;
+}
+.selo--ok{color:var(--ag-confirmado-t);background:var(--ag-confirmado-b)}
+.selo--nao{color:var(--ag-faltou-t);background:var(--ag-faltou-b)}
+
+/* especimen do erro */
+.par-especimen{display:flex;flex-wrap:wrap;gap:16px;margin:20px 0 0}
+.especimen{
+  flex:1 1 240px;border-radius:8px;padding:20px;border:1px solid var(--borda);
+  display:flex;flex-direction:column;gap:10px;justify-content:space-between;min-height:132px;
+}
+.especimen .amostra{font-size:1.125rem;font-weight:600}
+.especimen .nota{font-size:.8125rem;font-weight:600;font-variant-numeric:tabular-nums}
+.ex-bom{background:var(--ambar-500)}
+.ex-bom .amostra,.ex-bom .nota{color:var(--graf-900)}
+.ex-ruim{background:var(--ambar-500)}
+.ex-ruim .amostra{color:#FFFFFF}
+.ex-ruim .nota{color:var(--graf-900)}
+
+/* ---------- badges de agenda ---------- */
+.badges{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.badge{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
+  font-size:.875rem;font-weight:600;
+}
+.badge b{font-variant-numeric:tabular-nums;font-weight:600;opacity:.75;font-size:.75rem}
+.b-agendado{color:var(--ag-agendado-t);background:var(--ag-agendado-b)}
+.b-confirmado{color:var(--ag-confirmado-t);background:var(--ag-confirmado-b)}
+.b-atendendo{color:var(--ag-atendendo-t);background:var(--ag-atendendo-b)}
+.b-concluido{color:var(--ag-concluido-t);background:var(--ag-concluido-b)}
+.b-faltou{color:var(--ag-faltou-t);background:var(--ag-faltou-b)}
+.b-cancelado{color:var(--ag-cancelado-t);background:var(--ag-cancelado-b);text-decoration:line-through}
+
+/* amostra de agenda real */
+.agenda{
+  border:1px solid var(--borda);border-radius:8px;overflow:hidden;
+  background:var(--superficie);max-width:32rem;margin-top:20px;
+}
+.linha{
+  display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+  padding:12px 14px;border-top:1px solid var(--borda);border-left:4px solid transparent;
+}
+.linha:first-child{border-top:0}
+.linha time{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9375rem;color:var(--txt-2)}
+.linha .nome{font-weight:600}
+.linha .serv{font-size:.8125rem;color:var(--txt-2)}
+.l-atendendo{border-left-color:var(--ag-atendendo-t);background:var(--ag-atendendo-b)}
+.l-confirmado{border-left-color:var(--ag-confirmado-t)}
+.l-agendado{border-left-color:var(--ag-agendado-t)}
+.l-faltou{border-left-color:var(--ag-faltou-t)}
+
+/* ---------- logo ---------- */
+.logos{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.quadro{
+  border:1px solid var(--borda);border-radius:8px;padding:24px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;min-height:170px;
+}
+.quadro img{display:block}
+.quadro .cap{
+  font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--txt-2);text-align:center;
+}
+.q-claro{background:var(--graf-50)}
+.q-claro .cap{color:var(--graf-500)}
+.q-escuro{background:var(--graf-950)}
+.q-escuro .cap{color:var(--graf-300)}
+
+.teste-px{
+  display:flex;flex-wrap:wrap;gap:28px;align-items:flex-end;
+  border:1px solid var(--borda);border-radius:8px;padding:24px;background:var(--superficie);
+}
+.px-item{display:flex;flex-direction:column;align-items:center;gap:10px}
+.px-item img{image-rendering:auto}
+.px-item .cap{font-size:.75rem;font-weight:600;color:var(--txt-2);font-variant-numeric:tabular-nums}
+
+/* ---------- tipografia ---------- */
+.tipo-linha{
+  display:grid;grid-template-columns:8.5rem 1fr;gap:16px;align-items:baseline;
+  padding:14px 0;border-top:1px solid var(--borda);
+}
+.tipo-linha:first-of-type{border-top:0}
+.tipo-linha .spec{
+  font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--txt-2);font-variant-numeric:tabular-nums;
+}
+.amostra-tipo{min-width:0}
+.t-display{font-size:2rem;line-height:2.5rem;font-weight:700;letter-spacing:-.02em}
+.t-h1{font-size:1.5rem;line-height:2rem;font-weight:700;letter-spacing:-.015em}
+.t-h2{font-size:1.25rem;line-height:1.75rem;font-weight:600}
+.t-corpo{font-size:1rem;line-height:1.5rem}
+.t-pequeno{font-size:.875rem;line-height:1.25rem}
+.t-rotulo{font-size:.8125rem;line-height:1rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.t-marca{font-family:var(--marca);font-size:1.75rem;letter-spacing:-.02em}
+
+.num-demo{display:flex;gap:32px;flex-wrap:wrap;margin-top:20px}
+.num-demo div{border:1px solid var(--borda);border-radius:8px;padding:14px 18px}
+.num-demo .cap{font-size:.75rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--txt-2);margin-bottom:8px}
+.num-demo ol{margin:0;padding:0;list-style:none;font-size:1rem;line-height:1.6}
+.tab{font-variant-numeric:tabular-nums}
+.prop{font-variant-numeric:proportional-nums}
+
+/* ---------- listas de regra ---------- */
+.regras{margin:0;padding:0;list-style:none;display:grid;gap:2px}
+.regras li{
+  padding:14px 16px;background:var(--superficie);border:1px solid var(--borda);
+  border-radius:8px;max-width:70ch;
+}
+.regras b{display:block;margin-bottom:2px}
+.regras span{color:var(--txt-2);font-size:.9375rem}
+
+.nunca{margin:0;padding:0;list-style:none;display:grid;gap:8px;max-width:70ch}
+.nunca li{
+  padding-left:26px;position:relative;color:var(--txt);font-size:.9375rem;
+}
+.nunca li::before{
+  content:"×";position:absolute;left:0;top:-1px;
+  color:var(--ag-faltou-t);font-weight:700;font-size:1.125rem;line-height:1.4;
+}
+
+.passos{margin:0;padding:0;list-style:none;counter-reset:p;display:grid;gap:12px;max-width:70ch}
+.passos li{counter-increment:p;display:grid;grid-template-columns:2rem 1fr;gap:14px;align-items:start}
+.passos li::before{
+  content:counter(p);
+  font-size:.8125rem;font-weight:700;font-variant-numeric:tabular-nums;
+  width:2rem;height:2rem;border-radius:999px;display:grid;place-items:center;
+  background:var(--neutro);color:var(--txt-2);
+}
+.passos b{display:block}
+.passos span{color:var(--txt-2);font-size:.9375rem}
+
+code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.875em;background:var(--neutro);padding:1px 5px;border-radius:4px;
+}
+
+footer{padding:40px 0 64px;border-top:1px solid var(--borda);color:var(--txt-2);font-size:.875rem}
+footer p{max-width:60ch}
+
+@media (max-width:560px){
+  .tipo-linha{grid-template-columns:1fr;gap:6px}
+  .pares{font-size:.875rem}
+}
+@media (max-width:440px){
+  .linha{grid-template-columns:auto 1fr;row-gap:8px}
+  .linha .badge{grid-column:1 / -1;justify-self:start}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="faixa"></div>
+
+<div class="wrap">
+
+<header>
+  <div class="marca-topo" role="img" aria-label="BARBOS"></div>
+  <p class="tese">O concorrente do BARBOS não é outro software. É o <em>caderno de capa dura</em> em cima do balcão.</p>
+  <div class="meta">
+    <span>Manual de marca · v1.0</span>
+    <span>Sistema de gestão de barbearia</span>
+    <span>Contrastes medidos em WCAG 2.1</span>
+  </div>
+</header>
+
+<section>
+  <p class="eyebrow">Direção</p>
+  <h2>Três caminhos recusados, e o porquê</h2>
+  <p class="lead">A marca de um produto que substitui papel tem um trabalho só: parecer mais confiável que o papel. Isso elimina mais opções do que abre.</p>
+  <ul class="regras">
+    <li><b>Azul-SaaS genérico</b><span>O BARBOS não está numa lista de ferramentas disputando clique. Está sendo comparado com um caderno que nunca deu tela azul. Parecer software genérico é o argumento do lado errado.</span></li>
+    <li><b>Vintage de barbearia</b><span>Poste listrado, navalha, bigode, madeira. Envelhece rápido, todo concorrente já usou, e some por completo num ícone de 16 pixels — que é onde a marca mais aparece.</span></li>
+    <li><b>Cor de marca em tudo</b><span>Se a tela inteira é da cor da marca, nada nela é ação. O âmbar do BARBOS existe pra dizer “toque aqui”, e por isso aparece uma vez por tela.</span></li>
+  </ul>
+  <p style="margin-top:28px"><strong>O que sobrou:</strong> grafite frio como estrutura, âmbar como ação e nada mais. O aceno ao ofício é uma faixa diagonal — a que corre no topo desta página — usada em login, estado vazio e divisor. Nunca dentro do símbolo.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Logotipo</p>
+  <h2>Um B que sobrevive a 16 pixels</h2>
+  <p class="lead">Squircle âmbar, “B” em Archivo Black ocupando 54% da altura do badge, wordmark em caixa alta com tracking de −1,8%. Archivo Black assina a marca e não aparece em mais nenhum lugar do sistema.</p>
+
+  <div class="logos">
+    <div class="quadro q-claro"><img src="{{LOGO_CLARO}}" alt="Lockup horizontal do BARBOS sobre fundo claro" width="240"><span class="cap">Horizontal · fundo claro</span></div>
+    <div class="quadro q-escuro"><img src="{{LOGO_ESCURO}}" alt="Lockup horizontal do BARBOS sobre fundo escuro" width="240"><span class="cap">Horizontal · fundo escuro</span></div>
+    <div class="quadro q-claro"><img src="{{VERTICAL}}" alt="Lockup vertical do BARBOS" width="104"><span class="cap">Vertical · espaço estreito</span></div>
+    <div class="quadro q-claro"><img src="{{SIMBOLO}}" alt="Símbolo isolado do BARBOS" width="88"><span class="cap">Símbolo · ícone do app</span></div>
+  </div>
+
+  <h3>O teste de tamanho mínimo</h3>
+  <p>O símbolo padrão vira mancha abaixo de 32px. Por isso existe uma variante óptica com o “B” a 74% e o canto menos arredondado — a diferença aparece em tamanho real, aqui embaixo:</p>
+  <div class="teste-px">
+    <div class="px-item"><img src="{{PADRAO16}}" alt="Símbolo padrão a 16 pixels, ilegível" width="16" height="16"><span class="cap">padrão · 16px</span><span class="selo selo--nao">vira mancha</span></div>
+    <div class="px-item"><img src="{{MICRO16}}" alt="Variante óptica a 16 pixels, legível" width="16" height="16"><span class="cap">micro · 16px</span><span class="selo selo--ok">legível</span></div>
+    <div class="px-item"><img src="{{MICRO32}}" alt="Variante óptica a 32 pixels" width="32" height="32"><span class="cap">micro · 32px</span></div>
+    <div class="px-item"><img src="{{SIMBOLO}}" alt="Símbolo padrão a 64 pixels" width="64" height="64"><span class="cap">padrão · 64px</span></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Cor</p>
+  <h2>Grafite constrói, âmbar age</h2>
+  <p class="lead">O grafite puxa levemente pro azul — cinza neutro puro parece sujo em tela de celular sob sol. O âmbar existe só onde o usuário deve tocar.</p>
+
+  <div class="escala escala--graf">
+    <div class="tom" style="background:#0D0F12;color:#fff"><b>graf-950</b><span>#0D0F12</span></div>
+    <div class="tom" style="background:#14171C;color:#fff"><b>graf-900</b><span>#14171C</span></div>
+    <div class="tom" style="background:#1C2027;color:#fff"><b>graf-800</b><span>#1C2027</span></div>
+    <div class="tom" style="background:#2A2F38;color:#fff"><b>graf-700</b><span>#2A2F38</span></div>
+    <div class="tom" style="background:#5B6472;color:#fff"><b>graf-500</b><span>#5B6472</span></div>
+    <div class="tom" style="background:#7C8595;color:#14171C"><b>graf-400</b><span>#7C8595</span></div>
+    <div class="tom" style="background:#A8B0BC;color:#14171C"><b>graf-300</b><span>#A8B0BC</span></div>
+    <div class="tom" style="background:#C9CFD8;color:#14171C"><b>graf-200</b><span>#C9CFD8</span></div>
+    <div class="tom" style="background:#E4E7EC;color:#14171C"><b>graf-100</b><span>#E4E7EC</span></div>
+    <div class="tom" style="background:#F4F6F8;color:#14171C"><b>graf-50</b><span>#F4F6F8</span></div>
+  </div>
+
+  <div class="escala escala--ambar">
+    <div class="tom" style="background:#8A5309;color:#fff"><b>ambar-800</b><span>#8A5309</span></div>
+    <div class="tom" style="background:#A9660F;color:#fff"><b>ambar-700</b><span>#A9660F</span></div>
+    <div class="tom" style="background:#D98E1E;color:#14171C"><b>ambar-600</b><span>#D98E1E</span></div>
+    <div class="tom" style="background:#F0A93B;color:#14171C"><b>ambar-500</b><span>#F0A93B</span></div>
+    <div class="tom" style="background:#F7CE8A;color:#14171C"><b>ambar-300</b><span>#F7CE8A</span></div>
+    <div class="tom" style="background:#FCEDD3;color:#14171C"><b>ambar-100</b><span>#FCEDD3</span></div>
+  </div>
+
+  <h3>A regra dura do âmbar</h3>
+  <p>Âmbar é preenchimento, nunca texto claro. Texto sobre âmbar é sempre grafite. Isso não é gosto — é a diferença entre 8,93 e 2,01.</p>
+  <div class="par-especimen">
+    <div class="especimen ex-bom">
+      <span class="amostra">Confirmar agendamento</span>
+      <span class="nota">grafite sobre âmbar · 8,93:1 · aprovado</span>
+    </div>
+    <div class="especimen ex-ruim">
+      <span class="amostra">Confirmar agendamento</span>
+      <span class="nota">branco sobre âmbar · 2,01:1 · reprovado</span>
+    </div>
+  </div>
+
+  <h3>Pares medidos</h3>
+  <div class="rolagem">
+    <table class="pares">
+      <thead><tr><th>Uso</th><th>Par</th><th>Contraste</th><th>Mínimo</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Texto principal, tema claro</td><td><code>graf-900</code> / branco</td><td class="n">17,96:1</td><td class="n">4,5</td><td><span class="selo selo--ok">aprovado</span></td></tr>
+        <tr><td>Texto secundário, tema claro</td><td><code>graf-500</code> / branco</td><td class="n">5,98:1</td><td class="n">4,5</td><td><span class="selo selo--ok">aprovado</span></td></tr>
+        <tr><td>Texto principal, tema escuro</td><td>branco / <code>graf-950</code></td><td class="n">19,19:1</td><td class="n">4,5</td><td><span class="selo selo--ok">aprovado</span></td></tr>
+        <tr><td>Texto do botão de ação</td><td><code>graf-900</code> / <code>ambar-500</code></td><td class="n">8,93:1</td><td class="n">4,5</td><td><span class="selo selo--ok">aprovado</span></td></tr>
+        <tr><td>Âmbar como texto, tema claro</td><td><code>ambar-800</code> / branco</td><td class="n">6,32:1</td><td class="n">4,5</td><td><span class="selo selo--ok">aprovado</span></td></tr>
+        <tr><td>Borda de campo, tema claro</td><td><code>graf-400</code> / branco</td><td class="n">3,72:1</td><td class="n">3,0</td><td><span class="selo selo--ok">aprovado</span></td></tr>
+        <tr><td>Borda de campo, tema escuro</td><td><code>graf-700</code> / <code>graf-900</code></td><td class="n">1,34:1</td><td class="n">3,0</td><td><span class="selo selo--nao">reprovado → usa <code>graf-400</code></span></td></tr>
+        <tr><td>Texto claro sobre âmbar</td><td>branco / <code>ambar-500</code></td><td class="n">2,01:1</td><td class="n">4,5</td><td><span class="selo selo--nao">proibido</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Estados</p>
+  <h2>A agenda é o produto</h2>
+  <p class="lead">Seis estados, cada um com par de cor próprio nos dois temas. Nenhum deles comunica só por cor: barbeiro daltônico existe, e sol na vitrine lava cor da tela.</p>
+
+  <div class="badges">
+    <span class="badge b-agendado">Agendado <b>6,11:1</b></span>
+    <span class="badge b-confirmado">Confirmado <b>5,62:1</b></span>
+    <span class="badge b-atendendo">Em atendimento <b>5,48:1</b></span>
+    <span class="badge b-concluido">Concluído <b>—</b></span>
+    <span class="badge b-faltou">⚠ Não compareceu <b>5,55:1</b></span>
+    <span class="badge b-cancelado">Cancelado <b>—</b></span>
+  </div>
+  <p style="font-size:.9375rem;color:var(--txt-2);margin-top:14px">Os dois estados que geram prejuízo — não compareceu e cancelado — carregam ícone ou tachado além da cor. Os números são o contraste medido de cada par no tema claro.</p>
+
+  <h3>Como isso se parece na tela de hoje</h3>
+  <div class="agenda">
+    <div class="linha l-atendendo">
+      <time>09:30</time>
+      <div><div class="nome">Rafael Nunes</div><div class="serv">Corte + barba · R$ 70,00</div></div>
+      <span class="badge b-atendendo">Em atendimento</span>
+    </div>
+    <div class="linha l-confirmado">
+      <time>10:15</time>
+      <div><div class="nome">Diego Marques</div><div class="serv">Corte na máquina · R$ 40,00</div></div>
+      <span class="badge b-confirmado">Confirmado</span>
+    </div>
+    <div class="linha l-agendado">
+      <time>11:00</time>
+      <div><div class="nome">Ana Prado</div><div class="serv">Corte social · R$ 45,00</div></div>
+      <span class="badge b-agendado">Agendado</span>
+    </div>
+    <div class="linha l-faltou">
+      <time>11:45</time>
+      <div><div class="nome">Cliente sem cadastro</div><div class="serv">Barba · R$ 30,00</div></div>
+      <span class="badge b-faltou">⚠ Não compareceu</span>
+    </div>
+  </div>
+  <p style="font-size:.8125rem;color:var(--txt-3);margin-top:10px">Dados de exemplo, para demonstrar o padrão visual.</p>
+</section>
+
+<section>
+  <p class="eyebrow">Tipografia</p>
+  <h2>Uma fonte pra marca, uma pro sistema</h2>
+  <p class="lead">Archivo Black assina e sai de cena. Inter faz a interface inteira — família única significa app mais leve e nenhuma decisão de fonte no meio do desenvolvimento.</p>
+
+  <div class="tipo-linha"><span class="spec">Archivo Black<br>só o logotipo</span><div class="amostra-tipo"><span class="t-marca">BARBOS</span></div></div>
+  <div class="tipo-linha"><span class="spec">Display<br>32 / 40 · 700</span><div class="amostra-tipo t-display">R$ 1.840,00</div></div>
+  <div class="tipo-linha"><span class="spec">Título H1<br>24 / 32 · 700</span><div class="amostra-tipo t-h1">Agenda de hoje</div></div>
+  <div class="tipo-linha"><span class="spec">Seção H2<br>20 / 28 · 600</span><div class="amostra-tipo t-h2">Próximo cliente</div></div>
+  <div class="tipo-linha"><span class="spec">Corpo<br>16 / 24 · 400</span><div class="amostra-tipo t-corpo">Base do sistema. Nunca abaixo de 16px em tela de toque — o barbeiro lê isso de pé, com a tela suja de talco.</div></div>
+  <div class="tipo-linha"><span class="spec">Pequeno<br>14 / 20 · 400</span><div class="amostra-tipo t-pequeno">Apoio e metadado. Informação crítica nunca desce até aqui.</div></div>
+  <div class="tipo-linha"><span class="spec">Rótulo<br>13 / 16 · 600</span><div class="amostra-tipo t-rotulo">Serviços do dia</div></div>
+
+  <h3>Números alinham ou a agenda dança</h3>
+  <p>Horário, preço e quantidade sempre com <code>tabular-nums</code>. A coluna de horário é a que o barbeiro mais olha; sem largura fixa, cada dígito diferente empurra a linha.</p>
+  <div class="num-demo">
+    <div><div class="cap">tabular-nums · correto</div><ol class="tab"><li>09:30 — R$ 70,00</li><li>11:15 — R$ 40,00</li><li>14:00 — R$ 145,00</li></ol></div>
+    <div><div class="cap">proporcional · a coluna dança</div><ol class="prop"><li>09:30 — R$ 70,00</li><li>11:15 — R$ 40,00</li><li>14:00 — R$ 145,00</li></ol></div>
+  </div>
+</section>
+
+<section>
+  <p class="eyebrow">Contexto</p>
+  <h2>Seis fatos que decidem cada regra acima</h2>
+  <p class="lead">Nenhuma decisão deste manual é estética pura. Todas saem de onde o app é aberto.</p>
+  <ul class="regras">
+    <li><b>Ele usa com uma mão só</b><span>A outra segura máquina, tesoura ou o celular do cliente. Ação principal fica na metade inferior da tela, ao alcance do polegar.</span></li>
+    <li><b>A tela está suja, molhada ou com talco</b><span>Alvo de toque de 44px no mínimo, 48 de preferência, e 8px de distância entre dois alvos.</span></li>
+    <li><b>Tem sol batendo na vitrine</b><span>Por isso o texto secundário é <code>graf-500</code> e não um cinza claro qualquer, e por isso nada crítico em 12px.</span></li>
+    <li><b>Tema escuro não é enfeite</b><span>É a barbearia às nove da noite com a tela no balcão. Nasce junto com o tema claro, nunca depois.</span></li>
+    <li><b>A tela inicial é a agenda de hoje</b><span>Não é painel, não é resumo, não é gráfico. É a lista do dia por horário, com o próximo cliente em destaque.</span></li>
+    <li><b>Ele vem do caderno</b><span>Já sabe o que quer ver. O sistema tem que parecer uma página de caderno que se organiza sozinha — não um ERP.</span></li>
+  </ul>
+</section>
+
+<section>
+  <p class="eyebrow">Construção</p>
+  <h2>A ordem de montar o sistema</h2>
+  <p class="lead">Cada etapa usa a anterior. Sair da ordem custa retrabalho.</p>
+  <ol class="passos">
+    <li><div><b>tokens.css na raiz</b><span>Antes de qualquer componente. Depois disso, hex solto no código é erro de revisão.</span></div></li>
+    <li><div><b>Botão → Campo → Badge de estado → Card de agendamento → Grade da agenda</b><span>Nessa sequência porque cada componente consome o anterior.</span></div></li>
+    <li><div><b>Agenda de hoje primeiro, sempre</b><span>Depois: novo agendamento, cliente, serviços, estoque, relatório. A agenda é a única tela aberta todo dia — se ela não estiver boa, o resto não importa.</span></div></li>
+    <li><div><b>Tema escuro em cada componente, no mesmo commit</b><span>Escuro adiado vira escuro remendado.</span></div></li>
+  </ol>
+</section>
+
+<section>
+  <p class="eyebrow">Limites</p>
+  <h2>O que nunca fazer</h2>
+  <ul class="nunca">
+    <li>Texto branco sobre âmbar — 2,01:1, ilegível</li>
+    <li>Mais de um botão âmbar na mesma tela</li>
+    <li>Comunicar estado de agendamento só por cor, sem texto</li>
+    <li>Archivo Black fora do logotipo</li>
+    <li>Informação crítica abaixo de 14px, ou qualquer texto abaixo de 12px</li>
+    <li>Alvo de toque menor que 44px</li>
+    <li>Distorcer, girar, ou aplicar sombra, gradiente e contorno no logo</li>
+    <li>Escrever “Barbos” ou “BarbOS” — é <strong>BARBOS</strong>, caixa alta</li>
+    <li>Poste de barbeiro, tesoura, navalha ou bigode como ícone da marca</li>
+    <li>Estado vazio sem saída: “Nenhum agendamento” sem o botão de criar um</li>
+  </ul>
+</section>
+
+<footer>
+  <p><strong>Manual de marca BARBOS · v1.0</strong> — fonte da verdade em <code>identidade/design-guide.md</code>. Tokens em <code>identidade/tokens.css</code> e <code>tokens.json</code>. Logos geradas por <code>identidade/logo/gerar-logo.py</code>: se a marca mudar, edite as constantes e rode de novo, não edite PNG na mão.</p>
+  <p style="margin-top:12px">Archivo Black e Inter, ambas sob SIL Open Font License. Todos os contrastes desta página foram medidos, não estimados.</p>
+</footer>
+
+</div>
