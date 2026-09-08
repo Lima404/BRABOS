@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Campo, Opcao } from "@/components/ui/campo";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Esqueleto } from "@/components/ui/esqueleto";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -343,6 +344,33 @@ export function Amostruario() {
             descricao="Sem serviço não dá pra marcar horário. Comece pelo mais pedido."
           />
         </div>
+      </Secao>
+
+      <Secao
+        titulo="Esqueleto"
+        nota="O bloco que ocupa o lugar do conteúdo enquanto ele não chega. Tem que ter a FORMA do que vai chegar — esqueleto genérico faz a tela pular quando o conteúdo entra. Quem anuncia pro leitor de tela é o contêiner da tela, uma vez só; o bloco é aria-hidden. A animação respeita prefers-reduced-motion."
+      >
+        <Amostra rotulo="Uma tela em carregamento" coluna>
+          <div className="flex w-full flex-col gap-3 rounded-lg border border-border p-4">
+            <Esqueleto className="h-5 w-40" />
+            <Esqueleto className="h-11" />
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Esqueleto className="h-20" />
+              <Esqueleto className="h-20" />
+              <Esqueleto className="h-20" />
+            </div>
+          </div>
+        </Amostra>
+
+        <Amostra rotulo="Onde ele mora">
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Em <code className="font-mono">loading.tsx</code>, na pasta da
+            rota. Toda tela daqui é dinâmica: a navegação espera o servidor
+            falar com o Supabase, e sem esse arquivo o navegador segura a tela
+            ANTERIOR parada durante a espera — o barbeiro toca de novo achando
+            que não pegou.
+          </p>
+        </Amostra>
       </Secao>
 
       <Secao

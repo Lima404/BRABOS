@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
+import { Loader2 } from "lucide-react";
 
 import { rotasVisiveis } from "@/components/navegacao/rotas";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,11 @@ import { cn } from "@/lib/utils";
  * O item ativo e marcado por TRES coisas ao mesmo tempo — fundo, peso da fonte
  * e uma barra ambar a esquerda. Nunca so por cor: sol na vitrine lava cor da
  * tela, e o barbeiro precisa saber onde esta num relance.
+ *
+ * Cada link carrega um `Indo`, que acende no instante do toque. Toda tela do
+ * sistema e dinamica: a navegacao espera o servidor falar com o Supabase, e
+ * ate o esqueleto do `loading.tsx` aparecer passa um piscar. Sem esse retorno,
+ * quem esta no 4G da rua toca duas vezes achando que nao pegou.
  */
 export function ListaRotas({
   logado,
@@ -57,9 +63,34 @@ export function ListaRotas({
           >
             <Icone className="size-5 shrink-0" aria-hidden="true" />
             {rotulo}
+            <Indo />
           </Link>
         );
       })}
     </nav>
+  );
+}
+
+/**
+ * O rodinha que aparece no link tocado enquanto a rota carrega.
+ *
+ * Precisa ser um componente separado: `useLinkStatus` so responde DENTRO do
+ * `<Link>`, e le o estado daquele link especifico — por isso um por item, e
+ * nao um estado no topo da lista.
+ *
+ * `aria-hidden`: quem usa leitor de tela ja e avisado pelo `role="status"` do
+ * `loading.tsx` que a tela esta carregando. Dois anuncios pra mesma espera
+ * atrapalham em vez de ajudar.
+ */
+function Indo() {
+  const { pending } = useLinkStatus();
+
+  if (!pending) return null;
+
+  return (
+    <Loader2
+      aria-hidden="true"
+      className="ml-auto size-4 shrink-0 animate-spin text-muted-foreground"
+    />
   );
 }

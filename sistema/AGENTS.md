@@ -102,11 +102,21 @@ A agenda primeiro porque é a única tela aberta todo dia.
 
 ## Testar: sempre na barbearia "Gabriel Teste"
 
-**Nunca criar conta pra testar.** Conta criada por conveniência vira lixo
-permanente: apagar usuário exige a chave `service_role`, que não entra neste
-projeto. Já sobraram várias `@mailinator.com` órfãs assim — e uma delas chegou
-a virar uma SEGUNDA barbearia chamada "Gabriel Teste", disputando o apelido
-público da verdadeira.
+**Nunca criar conta pra testar.** Já sobraram várias `@mailinator.com` órfãs
+assim — e uma delas chegou a virar uma SEGUNDA barbearia chamada "Gabriel
+Teste", disputando o apelido público da verdadeira.
+
+Correção do que este arquivo dizia antes: apagar conta **não** é impossível
+nem exige a chave `service_role`. O SQL Editor do Supabase roda como
+`postgres` e alcança `auth.users`. O que atrapalha é outra coisa — três chaves
+`on delete restrict` (`itens_venda → produtos`, `agendamentos → servicos`,
+`agendamentos → barbeiros`) travam o cascata no meio, então a limpeza tem que
+ser feita na ordem certa. O roteiro está em
+`supabase/manutencao/apagar-barbearia.sql`.
+
+A regra continua de pé pelo motivo verdadeiro: é cirurgia manual num banco de
+produção, com id colado à mão e sem desfazer. Não é o preço de "só queria
+testar uma coisinha".
 
 As credenciais moram em `.env.local` (fora do git), em `BARBOS_EMAIL_TESTE` e
 `BARBOS_SENHA_TESTE`. Antes de testar:
@@ -530,6 +540,80 @@ mesmo estando certo.
 **A tela ocupa a largura toda:** sem `max-w`, sem `mx-auto`. É a única em que
 comparar blocos vale mais que a coluna estreita de leitura. O respiro lateral
 vem do `<main>` do layout, que é margem e não caixa.
+
+## Navegação: toda tela é dinâmica, então toda tela tem `loading.tsx`
+
+`/agenda`, `/estoque`, `/dashboard` e `/barbearia` são todas `ƒ` no build.
+Cada clique espera DUAS idas ao Supabase antes de qualquer pixel mudar: o
+`getUser()` do `proxy.ts` e a consulta do componente de servidor.
+
+Sem `loading.tsx`, o navegador segura a tela **anterior** parada durante essa
+espera — zero retorno. O barbeiro toca de novo achando que não pegou. Era
+exatamente esse o sintoma de "sistema lento": não era o tempo, era o silêncio.
+
+O `loading.tsx` resolve duas coisas de uma vez, e a segunda é a que quase
+ninguém lembra: além do esqueleto imediato, ele é o que **permite o prefetch**
+de rota dinâmica. Sem ele o `<Link>` não tem casca pra buscar adiantado, e o
+prefetch não faz nada.
+
+**O título vem escrito, não em cinza.** Ele é estático, o sistema já sabe qual
+é antes de falar com o banco, e ver "Agenda" no instante do toque é o que diz
+"peguei". Cinza no lugar do título esconderia o que já se tem. A exceção é o
+subtítulo do dashboard, que diz o período escolhido — esse vira barra, porque
+inventar um texto ali faria a linha TROCAR de conteúdo na chegada.
+
+**O esqueleto tem a forma do que vai chegar.** Mesmas alturas, mesma grade,
+mesma ordem de DOM (no celular o painel do dia vem antes do calendário nos
+dois). Esqueleto genérico faz a tela pular quando o conteúdo entra.
+
+**Cada link da navegação acende ao toque** (`useLinkStatus`, num componente
+DENTRO do `<Link>` — o hook só responde ali). É o retorno do piscar entre o
+toque e o esqueleto. Fica `aria-hidden`: quem usa leitor de tela já ouve o
+`role="status"` do `loading.tsx`, e dois anúncios pra mesma espera atrapalham.
+
+## Catálogo global de nomes: tentado e desfeito
+
+A 0024 criou `nomes_de_servico` / `nomes_de_produto` — uma linha por nome no
+banco inteiro, com `servicos.nome_id` apontando pra lá. A **0025 desfez**, a
+pedido do Gabriel. As duas ficam na pasta: a 0024 chegou a rodar no banco, e
+apagar o arquivo esconderia isso de quem replicar as migrações.
+
+Se a ideia voltar, o que derrubou ela na prática foi o custo: compartilhar o
+nome obriga a compartilhar a **grafia** (quem cadastra primeiro decide se é
+"CABELO" ou "Cabelo" pra todo mundo), e tirar a coluna `nome` de verdade
+exigiria reescrever sete funções do banco mais a camada TypeScript — em troca
+de economizar alguns bytes de texto.
+
+`normalizar_nome()` sobreviveu à 0025. É função pura de texto (sem acento,
+minúsculo, espaços colapsados) e serve pra qualquer comparação de nome.
+
+## Barbearia nova nasce com o cardápio vazio
+
+Até a migração 0021 o gatilho `ao_criar_usuario` semeava Cabelo, Barba e
+Cabelo + Barba com preço e duração inventados por nós. Isso veio da 0003, e era
+**migração de dado**: os serviços saíram de um enum fixo no código e tinham que
+continuar aparecendo pra quem já usava o sistema. Virou fato consumado para
+conta nova sem nunca ter sido decidido como produto.
+
+**A 0021 tirou.** O preço de um corte é a coisa mais particular de cada
+barbearia: R$ 45,00 chutado por nós ou vira o preço errado no primeiro
+agendamento, ou vira mais um item pra apagar antes de começar.
+
+**O que continua nascendo pronto:** a linha em `barbearias` (com o apelido
+público) e a linha em `configuracao_agenda` (horário padrão). Sem a
+configuração o calendário não sabe quando a loja abre e a tela abre torta.
+Horário padrão é palpite corrigível; preço não é.
+
+**Cardápio vazio é a primeira tela de todo dono novo, então ela tem que ter
+saída.** A `Legenda` sem serviço nenhum deixa de ser filtro e vira o convite
+("Cadastrar serviço", abrindo a configuração) — um "Todos" sozinho filtrando
+nada seria a primeira coisa que ele veria na vida. O modal de agendamento e a
+tela pública já diziam o que falta; o aviso do link de agendamento online
+agora também, porque conta nova não tem serviço **nem** equipe.
+
+Se um dia o cardápio de exemplo voltar, que volte como ESCOLHA na tela de
+cadastro ("começar com um cardápio de exemplo?"), nunca como fato consumado
+dentro do gatilho.
 
 ## Excluir agendamento apaga; cancelar guarda
 

@@ -21,12 +21,15 @@ export function DialogoLinkAgendamento({
   aoMudarAberto,
   slug,
   semEquipe,
+  semServico,
 }: {
   aberto: boolean;
   aoMudarAberto: (aberto: boolean) => void;
   slug: string;
   /** Sem barbeiro cadastrado o cliente não tem com quem marcar. */
   semEquipe: boolean;
+  /** Sem serviço não há o que marcar — desde a 0021 é o estado inicial. */
+  semServico: boolean;
 }) {
   const caminho = `/agendar/${slug}`;
 
@@ -71,10 +74,17 @@ export function DialogoLinkAgendamento({
           </p>
         </div>
 
-        {semEquipe ? (
-          <Alerta tom="aviso" titulo="Cadastre um barbeiro antes de mandar">
-            A tela pede com quem o cliente quer se atender, e a sua equipe está
-            vazia. Quem abrir o link agora não consegue concluir.
+        {semEquipe || semServico ? (
+          <Alerta tom="aviso" titulo="Ainda falta coisa pro link funcionar">
+            {/* Os dois faltando é o caso mais provável: barbearia recém
+                criada nasce sem serviço (0021) e sem equipe. Um alerta só,
+                dizendo o que falta — dois avisos empilhados viram parede. */}
+            {semEquipe && semServico
+              ? "A tela pede o serviço e com quem se atender, e você ainda não cadastrou nenhum dos dois."
+              : semServico
+                ? "A tela pede qual serviço o cliente quer, e o seu cardápio está vazio."
+                : "A tela pede com quem o cliente quer se atender, e a sua equipe está vazia."}{" "}
+            Quem abrir o link agora não consegue concluir.
           </Alerta>
         ) : null}
 

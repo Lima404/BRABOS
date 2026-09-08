@@ -80,6 +80,10 @@ export function Agenda({
   const { avisar } = useToast();
   const clienteQuery = useQueryClient();
 
+  function abrirConfiguracao() {
+    setConfig((c) => ({ aberto: true, sessao: c.sessao + 1 }));
+  }
+
   function abrirNovoAgendamento() {
     setNovo((n) => ({
       aberto: true,
@@ -260,9 +264,7 @@ export function Agenda({
         mes={mes}
         aoIrParaHoje={irParaHoje}
         aoMudarMes={mudarMes}
-        aoConfigurar={() =>
-          setConfig((c) => ({ aberto: true, sessao: c.sessao + 1 }))
-        }
+        aoConfigurar={abrirConfiguracao}
         aoCriarLink={slug ? () => setLinkAberto(true) : undefined}
         aoNovoAgendamento={abrirNovoAgendamento}
         totalNoMes={visiveis.length}
@@ -284,6 +286,7 @@ export function Agenda({
           aoAlternar={alternarServico}
           aoLimpar={() => setServicosAtivos(new Set())}
           contagens={contagens}
+          aoConfigurar={abrirConfiguracao}
         />
       )}
 
@@ -344,6 +347,7 @@ export function Agenda({
           aoMudarAberto={setLinkAberto}
           slug={slug}
           semEquipe={barbeiros.length === 0}
+          semServico={servicosVisiveis.length === 0}
         />
       ) : null}
 
