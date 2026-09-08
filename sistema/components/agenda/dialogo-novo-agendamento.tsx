@@ -46,6 +46,7 @@ import {
   agoraNaBarbearia,
   diaComSemana,
   ehHoje,
+  moeda,
   sanitizarNome,
 } from "@/lib/formato";
 
@@ -195,6 +196,17 @@ function Conteudo({
 
   const originais = useMemo(() => consulta.data ?? [], [consulta.data]);
 
+  // O que está GRAVADO, não o rascunho: excluir desfaz o que já foi salvo, e
+  // é isso que o aviso precisa nomear.
+  const unidadesLancadas = useMemo(
+    () => originais.reduce((s, i) => s + i.quantidade, 0),
+    [originais],
+  );
+  const totalLancado = useMemo(
+    () => originais.reduce((s, i) => s + i.precoCentavos * i.quantidade, 0),
+    [originais],
+  );
+
   // `null` = ninguém mexeu ainda, então a tela mostra o que veio do banco.
   // Sem efeito de sincronia: não dá para editar antes de carregar (o bloco
   // mostra esqueleto), então o rascunho nunca nasce de dado velho.
@@ -292,11 +304,18 @@ function Conteudo({
       // O dashboard soma agendamento concluído: sem isto o balanço do mês
       // continuaria contando um atendimento que não existe mais.
       clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
+      // E o consumo lançado nele voltou pra prateleira (migração 0026).
+      clienteQuery.invalidateQueries({ queryKey: chaves.estoque.todas });
       aoMudarAberto(false);
+
+      const quando = `${emEdicao!.data.split("-").reverse().join("/")} às ${emEdicao!.horario}`;
+
       avisar({
         tom: "sucesso",
         titulo: "Agendamento excluído",
-        descricao: `${emEdicao!.clienteNome} · ${emEdicao!.data.split("-").reverse().join("/")} às ${emEdicao!.horario}`,
+        descricao: resultado.aviso
+          ? `${emEdicao!.clienteNome} · ${quando}. ${resultado.aviso}`
+          : `${emEdicao!.clienteNome} · ${quando}`,
       });
     },
     onError: semRede,
@@ -461,6 +480,7 @@ function Conteudo({
                 carregando={consulta.isPending}
                 erro={consulta.isError}
                 desabilitado={gravar.isPending || apagar.isPending}
+                concluido={emEdicao.estado === "concluido"}
               />
             </div>
           ) : null}
@@ -488,10 +508,17 @@ function Conteudo({
                       ) : null}
                       {originais.length > 0 ? (
                         <p>
-                          As compras da loja lançadas aqui{" "}
-                          <strong>continuam no caixa</strong> — o dinheiro
-                          entrou. Elas só perdem a ligação com este
-                          atendimento.
+                          O consumo lançado aqui sai junto:{" "}
+                          <strong>
+                            {unidadesLancadas} un. ({moeda(totalLancado)})
+                          </strong>{" "}
+                          {unidadesLancadas === 1 ? "volta" : "voltam"} para o
+                          estoque
+                          {emEdicao.estado === "concluido"
+                            ? " e o valor sai do caixa"
+                            : ""}
+                          . Se a compra foi mesmo paga, lance de novo pela loja
+                          como avulsa.
                         </p>
                       ) : null}
                     </div>

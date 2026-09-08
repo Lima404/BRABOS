@@ -28,6 +28,8 @@ import {
 } from "@/lib/estoque/tipos";
 import {
   centavosDeTexto,
+  inteiroDeTexto,
+  mascararInteiro,
   mascararPreco,
   moeda,
   sanitizarNome,
@@ -82,7 +84,7 @@ export function CabecalhoCadastroProduto({
   function escolherProduto(p: Produto) {
     setIdEdicao(p.id);
     setNome(sanitizarNome(p.nome));
-    setUnidades(String(p.unidades));
+    setUnidades(mascararInteiro(String(p.unidades)));
     setPreco(textoDeCentavos(p.precoCentavos));
     setTipo(p.tipo);
     setListaAberta(false);
@@ -132,8 +134,10 @@ export function CabecalhoCadastroProduto({
       return;
     }
 
-    const nUnidades = Number(unidades);
-    if (!Number.isInteger(nUnidades) || nUnidades < 0) {
+    // `Number("1.200")` daria 1.2 — o campo agora vem mascarado, então quem
+    // lê é o `inteiroDeTexto`, que tira o ponto de milhar antes de converter.
+    const nUnidades = inteiroDeTexto(unidades);
+    if (nUnidades === null || nUnidades < 0) {
       setErro("Informe quantas unidades (zero ou mais).");
       return;
     }
@@ -258,6 +262,10 @@ export function CabecalhoCadastroProduto({
             </div>
           </Campo>
 
+          {/* Unidade e item contado, nao dinheiro: a coluna no banco e
+              `integer`, e "2,5 unidades" nao existe. Por isso o placeholder
+              e "0" e nao "0,00" — este ultimo era heranca de copiar o campo
+              de preco ao lado. A mascara desenha o ponto de milhar. */}
           <Campo
             id="produto-unidades"
             rotulo="Unidades"
@@ -265,7 +273,7 @@ export function CabecalhoCadastroProduto({
           >
             <Input
               value={unidades}
-              onChange={(e) => setUnidades(e.target.value.replace(/\D/g, ""))}
+              onChange={(e) => setUnidades(mascararInteiro(e.target.value))}
               inputMode="numeric"
               placeholder="0"
               required

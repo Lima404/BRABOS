@@ -33,6 +33,7 @@ export function ConsumoDoAtendimento({
   carregando,
   erro,
   desabilitado,
+  concluido,
 }: {
   linhas: LinhaConsumo[];
   aoMudarLinhas: (linhas: LinhaConsumo[]) => void;
@@ -41,6 +42,8 @@ export function ConsumoDoAtendimento({
   carregando: boolean;
   erro: boolean;
   desabilitado: boolean;
+  /** O atendimento já foi concluído — e então este consumo já é caixa. */
+  concluido: boolean;
 }) {
   const [aAcrescentar, setAAcrescentar] = useState("");
 
@@ -212,8 +215,15 @@ export function ConsumoDoAtendimento({
             </p>
           )}
 
+          {/* Duas coisas diferentes, e o barbeiro precisa das duas: o
+              estoque muda no Salvar; o CAIXA só muda no Concluir. Sem esta
+              segunda frase, ele lança o refrigerante, olha o dashboard, não
+              vê o dinheiro e acha que o lançamento se perdeu. */}
           <p className="text-sm text-muted-foreground">
-            O estoque só muda quando você salvar.
+            O estoque só muda quando você salvar.{" "}
+            {linhas.length > 0 && !concluido
+              ? "O valor entra no caixa quando você concluir o atendimento."
+              : null}
           </p>
         </>
       )}

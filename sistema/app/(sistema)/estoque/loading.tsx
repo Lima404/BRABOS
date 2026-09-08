@@ -7,12 +7,13 @@ export default function Carregando() {
       descricao="Mercearia e produtos de salão, lado a lado com o que tem na prateleira"
     >
       <Esqueleto className="h-12" />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {/* Seis linhas: o bastante pra preencher a dobra sem fingir uma
-            lista longa que talvez nem exista. */}
-        {Array.from({ length: 6 }, (_, i) => (
-          <Esqueleto key={i} className="h-20" />
-        ))}
+
+      {/* As duas tabelas: empilhadas até `lg`, lado a lado dali pra cima.
+          Mesmo ponto de corte da tela real — esqueleto com outra forma faz o
+          conteúdo saltar de lugar quando chega. */}
+      <div className="flex w-full flex-col gap-4 lg:flex-row">
+        <Esqueleto className="h-64 min-w-0 flex-1" />
+        <Esqueleto className="h-64 min-w-0 flex-1" />
       </div>
     </TelaCarregando>
   );

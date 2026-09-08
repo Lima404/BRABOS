@@ -21,7 +21,7 @@ import {
 } from "@/lib/dashboard/filtros";
 import { buscarProdutos } from "@/lib/estoque/api";
 import { NOME_DO_TIPO } from "@/lib/estoque/tipos";
-import { moeda } from "@/lib/formato";
+import { moeda, sanitizarTextoLivre } from "@/lib/formato";
 import { chaves } from "@/lib/query";
 import { cn } from "@/lib/utils";
 
@@ -441,7 +441,7 @@ function PainelLista({
         />
         <Input
           value={busca}
-          onChange={(e) => aoMudarBusca(e.target.value)}
+          onChange={(e) => aoMudarBusca(sanitizarTextoLivre(e.target.value))}
           placeholder="Pesquisar"
           className="pl-9"
           aria-label="Pesquisar na lista"
@@ -572,7 +572,7 @@ function PainelLoja({
           />
           <Input
             value={busca}
-            onChange={(e) => aoMudarBusca(e.target.value)}
+            onChange={(e) => aoMudarBusca(sanitizarTextoLivre(e.target.value))}
             placeholder="Pesquisar produto"
             className="pl-9"
             aria-label="Pesquisar produtos da loja"

@@ -54,8 +54,15 @@ export function Estoque() {
     <div className="flex w-full flex-col gap-6">
       <CabecalhoCadastroProduto produtos={produtos} />
 
+      {/* Empilhadas até `lg`, lado a lado dali pra cima.
+          Antes era `flex-row` sem ponto de corte, e no celular as duas tabelas
+          de três colunas (nome, unidades, preço) dividiam ~180px cada — o nome
+          do produto virava uma letra por linha.
+          `lg` e não `md` porque é o mesmo ponto em que a sidebar aparece e a
+          agenda vira duas colunas: o sistema inteiro troca de forma de uma vez
+          só, e não uma tela por vez. */}
       {isPending ? (
-        <div className="flex w-full flex-row items-stretch gap-4">
+        <div className="flex w-full flex-col items-stretch gap-4 lg:flex-row">
           <div
             role="status"
             aria-label="Carregando estoque"
@@ -67,7 +74,7 @@ export function Estoque() {
           />
         </div>
       ) : (
-        <div className="flex w-full flex-row items-stretch gap-4">
+        <div className="flex w-full flex-col items-stretch gap-4 lg:flex-row">
           <TabelaProdutos
             id="mercearia"
             titulo={NOME_DO_TIPO.mercearia}

@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
-import { sanitizarNomeDeItem } from "@/lib/formato";
+import {
+  nomeDeItemParaBanco,
+  nomeParaBanco,
+  textoLivreParaBanco,
+} from "@/lib/formato";
 import {
   DURACAO_MAX,
   DURACAO_MIN,
@@ -340,19 +344,6 @@ export type DadosServico = {
   cor: CorServico;
 };
 
-/**
- * Nome como ele vai pro banco: caixa alta, sem caractere estranho, espaços
- * colapsados e pontas aparadas.
- *
- * O formulário já sanitiza a cada tecla, mas isso é conveniência de quem
- * digita — uma ação de servidor é um endereço HTTP público, e quem chamar
- * direto manda o que quiser. O colapso de espaço fica só aqui: fazer isso a
- * cada tecla tirava o espaço da mão de quem ainda estava escrevendo.
- */
-function nomeDeItemParaBanco(texto: string): string {
-  return sanitizarNomeDeItem(texto).replace(/ {2,}/g, " ").trim();
-}
-
 function validarServico(d: DadosServico): string | null {
   const nome = nomeDeItemParaBanco(d.nome);
 
@@ -466,10 +457,14 @@ export type DadosAgendamento = {
 };
 
 function validarAgendamento(d: DadosAgendamento): string | null {
-  if (d.clienteNome.trim().length === 0) {
-    return "Informe o nome do cliente.";
+  // Depois de sanitizar: quem mandou só "###" enviou três caracteres e não
+  // sobrou nenhum. Aceitar isso gravaria um agendamento sem nome.
+  const cliente = nomeParaBanco(d.clienteNome);
+
+  if (cliente.length === 0) {
+    return "Informe o nome do cliente com letras ou números.";
   }
-  if (d.clienteNome.trim().length > 80) {
+  if (cliente.length > 80) {
     return "O nome do cliente está longo demais.";
   }
   if (!d.servicoId) return "Escolha o serviço.";
@@ -562,11 +557,11 @@ export async function criarAgendamento(
     const barbeiro = await obterBarbeiroDaConta(supabase, d.barbeiroId);
     if (!barbeiro.ok) return barbeiro;
 
-    const observacao = d.observacao?.trim();
+    const observacao = textoLivreParaBanco(d.observacao ?? "");
 
     const { error } = await supabase.from("agendamentos").insert({
       barbearia_id: user.id,
-      cliente_nome: d.clienteNome.trim(),
+      cliente_nome: nomeParaBanco(d.clienteNome),
       servico_id: d.servicoId,
       barbeiro_id: d.barbeiroId,
       data: d.data,
@@ -650,13 +645,13 @@ export async function atualizarAgendamento(
     const barbeiro = await obterBarbeiroDaConta(supabase, d.barbeiroId);
     if (!barbeiro.ok) return barbeiro;
 
-    const observacao = d.observacao?.trim();
+    const observacao = textoLivreParaBanco(d.observacao ?? "");
 
     // Sem filtro de dono: o RLS já recusa a linha de outra barbearia.
     const { error } = await supabase
       .from("agendamentos")
       .update({
-        cliente_nome: d.clienteNome.trim(),
+        cliente_nome: nomeParaBanco(d.clienteNome),
         servico_id: d.servicoId,
         barbeiro_id: d.barbeiroId,
         data: d.data,
@@ -726,10 +721,15 @@ export async function mudarEstadoAgendamento(
  * — desmarcar é fato do negócio, e o mês que vem vai querer saber quantos
  * desmarcaram.
  *
- * As compras da loja lançadas no atendimento NÃO somem junto:
- * `vendas.agendamento_id` é `on delete set null` (migração 0009). A venda
- * aconteceu, o dinheiro entrou, e apagar receita porque o agendamento saiu
- * seria o sistema mentindo sobre o caixa. Ela só perde a ligação.
+ * O consumo lançado no atendimento SOME JUNTO, e as unidades voltam pro
+ * estoque (RPC `excluir_agendamento`, migração 0026). Compra lançada num
+ * agendamento só entra no caixa quando ele é concluído — se o atendimento
+ * nunca vai existir, ela também não. Quem quer guardar a venda lança de novo
+ * como avulsa, pela loja.
+ *
+ * Um delete direto na tabela não serve mais: ele deixaria a venda para trás,
+ * e `vendas.agendamento_id` órfão é indistinguível de compra avulsa — a
+ * receita voltaria sozinha ao caixa, que era o bug.
  */
 export async function excluirAgendamento(id: string): Promise<Resultado> {
   return protegido("excluir agendamento", async () => {
@@ -737,13 +737,42 @@ export async function excluirAgendamento(id: string): Promise<Resultado> {
 
     const supabase = await criarClienteServidor();
 
-    // Sem filtro de dono: o RLS já recusa a linha de outra barbearia.
-    const { error } = await supabase.from("agendamentos").delete().eq("id", id);
+    const { data, error } = await supabase.rpc("excluir_agendamento", {
+      p_id: id,
+    });
 
-    if (error) return traduzir("excluir agendamento", error);
+    if (error) {
+      if (error.message?.includes("excluir_agendamento")) {
+        return {
+          ok: false,
+          erro: "A exclusão de agendamento ainda não está ligada no banco. Rode a migração 0026.",
+        };
+      }
+
+      return traduzir("excluir agendamento", error);
+    }
+
+    const resposta = data as {
+      ok?: boolean;
+      erro?: string;
+      unidadesDevolvidas?: number;
+    } | null;
+
+    if (!resposta?.ok) {
+      return { ok: false, erro: resposta?.erro ?? "Não consegui excluir o agendamento." };
+    }
 
     revalidatePath("/agenda");
-    return { ok: true };
+    // O estoque muda junto quando havia consumo lançado.
+    if ((resposta.unidadesDevolvidas ?? 0) > 0) revalidatePath("/estoque");
+
+    return {
+      ok: true,
+      aviso:
+        (resposta.unidadesDevolvidas ?? 0) > 0
+          ? `${resposta.unidadesDevolvidas} un. voltaram para o estoque.`
+          : undefined,
+    };
   });
 }
 

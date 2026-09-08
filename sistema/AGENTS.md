@@ -477,6 +477,12 @@ falha no meio deixaria o estoque contando unidade que ninguém tirou da
 prateleira. A RPC aplica tudo ou nada — erro lá dentro é `raise`, não
 `return`, porque `return` no meio do laço já teria gravado o que passou.
 
+**O estoque muda no Salvar; o CAIXA muda no Concluir.** São dois momentos
+diferentes e a tela diz os dois, porque quem lança o refrigerante, olha o
+dashboard e não vê o dinheiro acha que o lançamento se perdeu. A venda fica
+gravada e fora do balanço até o atendimento concluir — ver `vendas_no_caixa`
+em **Dashboard**.
+
 Uma junta que NÃO é atômica: salvar o agendamento e salvar o consumo são duas
 chamadas. Se a segunda falhar, a primeira ficou. A mensagem diz isso com
 todas as letras ("O agendamento foi salvo, mas o consumo não…") em vez de um
@@ -494,16 +500,32 @@ consulta é pior que a comanda incompleta.
 Três leituras, em ordem de urgência: **quanto entrou este mês** (os cartões),
 **de onde veio** (as duas roscas), **como este mês se compara** (mês a mês).
 
-**A regra do que entra na conta mora no banco, em `resumo_dashboard` (0013),
-e é a única cópia dela:**
+**A regra do que entra na conta mora no banco e é a única cópia dela:**
 
 - serviço conta quando o agendamento está `concluido` — foi atendido e pago;
-- loja conta quando a venda está `confirmada`.
+- loja conta quando a venda está na view **`vendas_no_caixa` (0026)**.
 
-A venda NÃO exige agendamento concluído, e isso é decisão, não descuido: ela é
-o próprio pagamento. Quem leu o QR e levou o refrigerante pagou no balcão sem
-passar pela cadeira, e amarrar a receita da loja ao estado do agendamento
-apagaria toda a venda avulsa — que é para quem a loja foi feita.
+`vendas_no_caixa` são as vendas `confirmada` que, além disso, ou são
+**avulsas** (`agendamento_id` nulo — o balcão, o QR de quem só levou o
+refrigerante) ou estão penduradas num agendamento **`concluido`**. Lançar um
+produto na comanda não é receita ainda: vira receita no toque em Concluir.
+
+**Por que view derivada e não um status `'pendente'` gravado.** Status gravado
+desanda. Basta concluir sem querer e voltar o estado para `agendado` que a
+venda fica `confirmada` para sempre, contando um dinheiro que a agenda diz que
+não entrou — e ninguém percebe, porque o número está certo em uma tela e
+errado na outra. Com a view existe uma fonte da verdade só: o estado do
+agendamento. Concluir passa a contar, desconcluir para de contar, e não há o
+que ficar fora de sincronia porque não há nada duplicado.
+
+`resumo_dashboard` soma vendas em SEIS lugares (cartão, rosca de produtos,
+série de meses, e as variantes com filtro de produto). A view existe para que
+a regra não seja escrita seis vezes — é assim que se descobre, meses depois,
+que uma das cópias não foi atualizada junto.
+
+O MÊS da venda continua sendo o de `criado_em`, não o da conclusão: concluir
+hoje um atendimento de ontem faz o número de ONTEM crescer, e é o certo — o
+refrigerante saiu ontem.
 
 **Uma chamada só para a tela inteira.** Cartões, roscas e a série de todos os
 meses saem do mesmo resumo. Três requisições montariam a tela em pedaços, e
@@ -541,27 +563,41 @@ mesmo estando certo.
 comparar blocos vale mais que a coluna estreita de leitura. O respiro lateral
 vem do `<main>` do layout, que é margem e não caixa.
 
-## Nome de serviço é em caixa alta, e o `+` não é caractere especial
+## Nenhum input do sistema aceita acento
 
-`sanitizarNomeDeItem()` roda a cada tecla no campo de nome do serviço: caixa
-alta, e fora tudo que não for letra, número, espaço ou um dos quatro
-conectores `+ - & /`.
+Regra do projeto, não preferência de tela: til, circunflexo, agudo, grave e
+trema **não passam em campo nenhum**. Quem aplica é `semAcento()`, e as outras
+três funções de `lib/formato.ts` são construídas em cima dela — a regra mora
+num lugar só, senão um campo novo nasce esquecendo dela.
 
-**Os quatro conectores ficam porque são parte do nome.** O exemplo do próprio
-formulário é "CABELO + BARBA" — uma regra literal de "sem caractere especial"
-transformaria isso em "CABELO BARBA". Fora eles cai tudo: `@`, `#`, `<`,
-aspas, emoji.
+| função | onde | o que faz |
+|---|---|---|
+| `sanitizarNome` | cliente, barbearia, barbeiro, produto | maiúscula, sem acento, sem pontuação |
+| `sanitizarNomeDeItem` | nome de serviço | igual, mais `+ - & /` |
+| `sanitizarTextoLivre` | observação, pesquisa | só tira o acento |
 
-**O acento fica**, e aqui a regra diverge de `sanitizarNome` (nome de pessoa,
-que tira). Nome de serviço aparece no cardápio que o cliente lê na tela
-pública de agendamento, e "PIGMENTACAO" sem cedilha ali parece defeito.
+**O ç passa e vira Ç.** Não é acento, é outra letra, e "ACAO" no lugar de
+"AÇÃO" perde a palavra. Consequência visível: "Pigmentação" grava
+**"PIGMENTAÇAO"** — cedilha de pé, til caído. Se um dia o Ç tiver que cair
+também, o lugar é `semAcento()` e só ele.
 
-**Espaço duplo só é colapsado no servidor.** Colapsar a cada tecla tira o
+**Os quatro conectores `+ - & /` ficam no nome de serviço** porque são parte
+do nome: o exemplo do próprio formulário é "CABELO + BARBA", e a regra literal
+de "sem caractere especial" viraria "CABELO BARBA".
+
+**Texto livre não vira maiúscula e mantém pontuação.** A observação é uma
+frase ("corta baixo dos lados, deixa a franja"), e vírgula e ponto fazem parte
+dela. Na pesquisa a regra ainda ajuda a achar: os nomes gravados também não
+têm acento.
+
+**Espaço duplo só colapsa no servidor** (`nomeParaBanco`,
+`nomeDeItemParaBanco`, `textoLivreParaBanco`). A cada tecla isso tiraria o
 espaço da mão de quem ainda está digitando.
 
-**O servidor refaz tudo** (`nomeDeItemParaBanco`), porque uma ação de servidor
-é um endereço HTTP público. E valida o vazio DEPOIS de sanitizar: quem digitou
-só "###" mandou três caracteres e não sobrou nenhum.
+**E o servidor SEMPRE refaz.** Ação de servidor é endereço HTTP público: o
+campo é conveniência de quem digita, a barreira é lá. O vazio é conferido
+DEPOIS de sanitizar — quem mandou só "###" enviou três caracteres e não sobrou
+nenhum.
 
 ## Navegação: toda tela é dinâmica, então toda tela tem `loading.tsx`
 
@@ -653,14 +689,27 @@ desmarcou se cancela — o mês que vem vai querer saber quantos desmarcaram, e 
 registro apagado não conta isso. O texto na tela diz essa diferença, porque
 quem está com pressa não vai adivinhar.
 
-**As compras da loja não somem junto.** `vendas.agendamento_id` é
-`on delete set null` (0009): a venda aconteceu, o dinheiro entrou, e apagar
-receita porque o agendamento saiu seria o sistema mentindo sobre o caixa. A
-venda só perde a ligação — e o aviso da confirmação fala isso com todas as
-letras, junto com o de que atendimento concluído sai do balanço do mês.
+**O consumo lançado no atendimento SOME JUNTO, e o estoque volta.** Quem apaga
+é a RPC `excluir_agendamento` (0026), não um `delete` na tabela: ela devolve as
+unidades à prateleira, apaga as vendas e só então apaga o agendamento — tudo ou
+nada, porque três escritas separadas deixariam o estoque contando unidade que
+ninguém tirou da prateleira se a segunda falhasse. Excluir diz "isto nunca
+deveria ter existido", e então o que foi lançado dentro também não existiu. Se
+a compra foi mesmo paga, ela se lança de novo pela loja como avulsa — e o
+aviso da confirmação diz isso, nomeando quantas unidades e quantos reais
+voltam.
 
-Excluir invalida também `chaves.dashboard.todas`: sem isso o balanço
-continuaria somando um atendimento que não existe mais.
+**Isto já foi o contrário, e era um bug.** `vendas.agendamento_id` era
+`on delete set null`, sob o argumento de que "o dinheiro entrou". Só que venda
+com `agendamento_id` nulo é exatamente como uma compra AVULSA se parece: a
+venda de um agendamento apagado virava, sozinha, receita de balcão. A coluna é
+`on delete cascade` desde a 0026 — não como caminho normal (a RPC apaga as
+vendas antes), mas como rede de baixo para quem apagar a linha direto no painel
+do Supabase.
+
+Excluir invalida `chaves.dashboard.todas` **e** `chaves.estoque.todas`: o
+balanço não pode continuar somando um atendimento que não existe mais, e a tela
+de Estoque não pode continuar escondendo a unidade que acabou de voltar.
 
 ## Folga é a exceção da semana, não a semana
 

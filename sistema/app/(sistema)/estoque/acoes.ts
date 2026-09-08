@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import { ehTipoProduto, type TipoProduto } from "@/lib/estoque/tipos";
+import { nomeParaBanco } from "@/lib/formato";
 
 /**
  * Escrita do estoque.
@@ -120,7 +121,7 @@ export async function salvarProduto(d: DadosProduto): Promise<Resultado> {
     if (!user) return { ok: false, erro: "Sessão expirada. Entre de novo." };
 
     const campos = {
-      nome: d.nome.trim(),
+      nome: nomeParaBanco(d.nome),
       unidades: d.unidades,
       preco_centavos: d.precoCentavos,
       tipo: d.tipo,

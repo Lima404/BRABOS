@@ -14,9 +14,10 @@ import { cn } from "@/lib/utils";
  * onde veio?"). Por isso os dois trazem a fatia em porcentagem — R$ 300 de
  * serviço só quer dizer alguma coisa ao lado do total.
  *
- * O que entra na conta é decidido no banco (migração 0016): serviço só de
- * agendamento CONCLUÍDO, loja de toda venda confirmada — com filtros de
- * período, serviço, barbeiro e só loja.
+ * O que entra na conta é decidido no banco (view `vendas_no_caixa`, migração
+ * 0026): serviço só de agendamento CONCLUÍDO; loja de venda avulsa, ou de
+ * venda lançada num agendamento que já foi concluído. Produto lançado na
+ * comanda de um cliente que ainda não sentou na cadeira NÃO está aqui.
  */
 export function CartoesBalanco({ resumo }: { resumo: ResumoDashboard }) {
   const total = resumo.servicoCentavos + resumo.lojaCentavos;

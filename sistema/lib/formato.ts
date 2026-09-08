@@ -141,6 +141,41 @@ export function textoDeCentavos(centavos: number): string {
  * Máscara de preço: só dígitos entram; a vírgula dos centavos é colocada
  * sozinha. Digitar "1290" vira "12,90". Vazio permanece vazio.
  */
+/**
+ * Máscara de contagem inteira — as unidades do estoque.
+ *
+ * Digita "1200", vê "1.200". Só dígito entra, e o ponto de milhar é
+ * desenhado sozinho: com o limite de 999.999 do servidor, seis dígitos
+ * seguidos ("999999") são lidos errado de relance no meio do atendimento.
+ *
+ * **Não é preço.** O campo ficava com `placeholder="0,00"` — herança de
+ * copiar o campo de preço ao lado —, mas unidade é item contado: a coluna no
+ * banco é `integer`, e "2,5 unidades" não existe. Sem vírgula, sem centavo.
+ *
+ * Corta em 6 dígitos, o mesmo teto que a ação de servidor recusa. Deixar
+ * digitar 7 pra levar erro depois é fazer a pessoa apagar de novo.
+ */
+export function mascararInteiro(texto: string): string {
+  const digitos = texto.replace(/\D/g, "").slice(0, 6);
+  if (digitos === "") return "";
+
+  // Zero à esquerda cai, mas o "0" sozinho fica: estoque zerado é um valor
+  // legítimo, e é justamente o que se digita ao acabar o produto.
+  return Number(digitos).toLocaleString("pt-BR");
+}
+
+/**
+ * O caminho de volta de {@link mascararInteiro}: "1.200" vira 1200.
+ *
+ * `null` quando não sobrou dígito nenhum — quem chama decide se campo vazio
+ * é erro ou zero. `Number("1.200")` daria 1.2, então nunca ler o campo
+ * mascarado direto.
+ */
+export function inteiroDeTexto(texto: string): number | null {
+  const digitos = texto.replace(/\D/g, "");
+  return digitos === "" ? null : Number(digitos);
+}
+
 export function mascararPreco(texto: string): string {
   const digitos = texto.replace(/\D/g, "");
   if (digitos === "") return "";
@@ -170,49 +205,95 @@ export function digitosDoTelefone(texto: string): string {
 }
 
 /**
- * Nome em maiúsculas, sem acento (exceto ç).
+ * Tira til, circunflexo, agudo, grave e trema. **Nenhum campo do sistema
+ * aceita acento** — é regra do projeto, não preferência de tela.
  *
- * Digitar "Água sem gás" vira "AGUA SEM GAS". O ç passa e vira Ç.
- * Espaço e letra/número passam; o resto some.
+ * O ç passa e vira Ç. Ele não é acento: é outra letra, e "ACAO" no lugar de
+ * "AÇÃO" perde a palavra. O `\u0001` guarda o ç antes do NFD, que o quebraria
+ * em `c` + cedilha e o faria cair junto com os diacríticos.
+ *
+ * É a base das outras três daqui — a regra do acento mora em UM lugar só,
+ * senão um campo novo nasce esquecendo dela.
  */
-export function sanitizarNome(texto: string): string {
-  // Nome de PESSOA. Para nome de serviço ou produto use
-  // `sanitizarNomeDeItem`, que preserva acento e os conectores `+ - & /`.
-  // Guarda ç/Ç antes de tirar diacríticos — NFD transformaria ç em c + cedilha.
-  const comMarcador = texto.replace(/[çÇ]/g, "\u0001");
-
-  return comMarcador
+export function semAcento(texto: string): string {
+  return texto
+    .replace(/[çÇ]/g, "\u0001")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0001/g, "Ç");
+}
+
+/**
+ * Nome de PESSOA ou de BARBEARIA: maiúsculas, sem acento, sem pontuação.
+ *
+ * "Água sem gás" vira "AGUA SEM GAS". Letra, número e espaço passam; o resto
+ * some. Para nome de serviço ou produto use {@link sanitizarNomeDeItem}, que
+ * é igual mais os conectores `+ - & /`.
+ */
+export function sanitizarNome(texto: string): string {
+  return semAcento(texto)
     .toUpperCase()
-    .replace(/\u0001/g, "Ç")
     .replace(/[^A-ZÇ0-9 ]/g, "");
 }
 
 /**
- * Nome de SERVIÇO ou de PRODUTO: caixa alta, sem caractere estranho.
+ * Nome de SERVIÇO ou de PRODUTO. Igual a {@link sanitizarNome} — maiúsculas,
+ * sem acento — mais quatro conectores: `+`, `-`, `&` e `/`.
  *
- * Parecida com {@link sanitizarNome}, e diferente em duas coisas que não são
- * capricho:
- *
- * 1. **Guarda o acento.** "PIGMENTAÇÃO" e não "PIGMENTACAO". Nome de cliente
- *    é campo interno; nome de serviço aparece no cardápio que o cliente lê na
- *    tela pública de agendamento, e português sem acento ali parece defeito.
- *
- * 2. **Guarda `+`, `-`, `&` e `/`.** Não são "caractere especial" aqui, são
- *    parte do nome: o próprio exemplo do formulário é "CABELO + BARBA", e
- *    apagar o `+` viraria "CABELO BARBA". Fora esses quatro, cai fora tudo
- *    que não for letra, número ou espaço — `@`, `#`, `<`, aspas, emoji.
+ * Eles ficam porque são parte do nome, não sujeira: o exemplo do próprio
+ * formulário é "CABELO + BARBA", e apagar o `+` viraria "CABELO BARBA".
+ * Fora esses quatro cai tudo — `@`, `#`, `<`, aspas, emoji.
  *
  * Não colapsa espaço nem apara as pontas: fazer isso a cada tecla tira o
- * espaço da mão de quem ainda está digitando. Quem apara é o servidor, na
- * hora de gravar.
+ * espaço da mão de quem ainda está digitando. Quem apara é o servidor.
  */
 export function sanitizarNomeDeItem(texto: string): string {
-  // À-Ö e Ø-Þ cobrem as maiúsculas acentuadas do latim-1 (o Ç está no
-  // primeiro trecho). O buraco entre Ö e Ø é o `×`, que fica de fora — é
-  // sinal de multiplicação, não letra.
-  return texto.toUpperCase().replace(/[^A-ZÀ-ÖØ-Þ0-9 +\-&/]/g, "");
+  return semAcento(texto)
+    .toUpperCase()
+    .replace(/[^A-ZÇ0-9 +\-&/]/g, "");
+}
+
+/**
+ * Texto livre — observação do agendamento, caixa de pesquisa.
+ *
+ * Tira só o acento. Não força maiúscula nem apaga pontuação: aqui a pessoa
+ * escreve uma frase ("corta baixo dos lados, deixa a franja"), e vírgula e
+ * ponto fazem parte dela.
+ *
+ * Na pesquisa serve de duas coisas ao mesmo tempo: cumpre a regra e faz
+ * "MANICURE" achar o que foi digitado como "manicure" — os nomes gravados
+ * também não têm acento.
+ */
+export function sanitizarTextoLivre(texto: string): string {
+  return semAcento(texto);
+}
+
+/**
+ * As versões "pra gravar" das três de cima: sanitiza, colapsa espaço repetido
+ * e apara as pontas.
+ *
+ * Existem separadas porque **o colapso não pode acontecer a cada tecla** —
+ * apagar o segundo espaço enquanto a pessoa digita tira o espaço da mão dela.
+ * O formulário usa as de cima; a ação de servidor usa estas.
+ *
+ * E a ação de servidor SEMPRE usa: ela é um endereço HTTP público como outro
+ * qualquer, e quem chamar direto manda o que quiser. O campo é conveniência
+ * de quem digita; a barreira é aqui.
+ */
+function aparar(texto: string): string {
+  return texto.replace(/ {2,}/g, " ").trim();
+}
+
+export function nomeParaBanco(texto: string): string {
+  return aparar(sanitizarNome(texto));
+}
+
+export function nomeDeItemParaBanco(texto: string): string {
+  return aparar(sanitizarNomeDeItem(texto));
+}
+
+export function textoLivreParaBanco(texto: string): string {
+  return aparar(sanitizarTextoLivre(texto));
 }
 
 /** 30 → "30 min"; 90 → "1h30". Duração é lida de relance, então é curta. */

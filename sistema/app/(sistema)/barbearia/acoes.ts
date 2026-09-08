@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
-import { digitosDoTelefone } from "@/lib/formato";
+import { digitosDoTelefone, nomeParaBanco } from "@/lib/formato";
 
 /**
  * Escrita da tela Barbearia: dados da conta e equipe.
@@ -75,8 +75,10 @@ async function protegido(
 }
 
 function validarNome(nome: string, rotulo: string): string | null {
-  const limpo = nome.trim();
-  if (limpo.length === 0) return `Dê um nome ${rotulo}.`;
+  // Sanitizado, não só aparado: quem mandou "###" enviou três caracteres e
+  // não sobrou nenhum depois da regra do acento e da pontuação.
+  const limpo = nomeParaBanco(nome);
+  if (limpo.length === 0) return `Dê um nome ${rotulo} com letras ou números.`;
   if (limpo.length > 80) return "O nome está longo demais.";
   return null;
 }
@@ -113,7 +115,7 @@ export async function atualizarBarbearia(entrada: {
     const { error } = await supabase
       .from("barbearias")
       .update({
-        nome: entrada.nome.trim(),
+        nome: nomeParaBanco(entrada.nome),
         telefone: telefone.length > 0 ? telefone : null,
       })
       .eq("id", user.id);
@@ -145,7 +147,7 @@ export async function salvarBarbeiro(
 
     const supabase = await criarClienteServidor();
     const payload = {
-      nome: entrada.nome.trim(),
+      nome: nomeParaBanco(entrada.nome),
       telefone: entrada.telefone.trim(),
       ativo: true,
     };

@@ -14,7 +14,12 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { CLASSES_SERVICO, type Servico } from "@/lib/agenda/tipos";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
-import { duracaoPorExtenso, moeda, sanitizarNome } from "@/lib/formato";
+import {
+  duracaoPorExtenso,
+  moeda,
+  sanitizarNome,
+  sanitizarTextoLivre,
+} from "@/lib/formato";
 import { cn } from "@/lib/utils";
 
 /**
@@ -222,7 +227,7 @@ export function FormularioAgendamento({
       >
         <Textarea
           value={observacao}
-          onChange={(e) => aoMudarObservacao(e.target.value)}
+          onChange={(e) => aoMudarObservacao(sanitizarTextoLivre(e.target.value))}
           placeholder="Ex.: corta baixo dos lados"
           maxLength={500}
         />

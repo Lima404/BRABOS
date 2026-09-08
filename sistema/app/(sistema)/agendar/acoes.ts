@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import { obterAgendaPublica } from "@/lib/agendamento-online/repositorio";
 import type { AgendaPublica } from "@/lib/agendamento-online/tipos";
-import { sanitizarNome } from "@/lib/formato";
+import { sanitizarNome, textoLivreParaBanco } from "@/lib/formato";
 
 /**
  * Marcação feita pelo cliente, pelo link público. Roda SEM sessão.
@@ -64,7 +64,7 @@ export async function agendarPeloLink(entrada: {
       p_servico_id: entrada.servicoId,
       p_data: entrada.data,
       p_horario: entrada.horario,
-      p_observacao: entrada.observacao?.trim() || null,
+      p_observacao: textoLivreParaBanco(entrada.observacao ?? "") || null,
     });
 
     if (error) {
