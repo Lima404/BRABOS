@@ -20,6 +20,7 @@ import {
 import {
   centavosDeTexto,
   duracaoPorExtenso,
+  sanitizarNomeDeItem,
   textoDeCentavos,
 } from "@/lib/formato";
 import { cn } from "@/lib/utils";
@@ -97,8 +98,8 @@ export function FormularioServico({
       <Campo id="servico-nome" rotulo="Nome do serviço">
         <Input
           value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Cabelo + Barba"
+          onChange={(e) => setNome(sanitizarNomeDeItem(e.target.value))}
+          placeholder="CABELO + BARBA"
           maxLength={60}
           required
           autoFocus

@@ -541,6 +541,28 @@ mesmo estando certo.
 comparar blocos vale mais que a coluna estreita de leitura. O respiro lateral
 vem do `<main>` do layout, que é margem e não caixa.
 
+## Nome de serviço é em caixa alta, e o `+` não é caractere especial
+
+`sanitizarNomeDeItem()` roda a cada tecla no campo de nome do serviço: caixa
+alta, e fora tudo que não for letra, número, espaço ou um dos quatro
+conectores `+ - & /`.
+
+**Os quatro conectores ficam porque são parte do nome.** O exemplo do próprio
+formulário é "CABELO + BARBA" — uma regra literal de "sem caractere especial"
+transformaria isso em "CABELO BARBA". Fora eles cai tudo: `@`, `#`, `<`,
+aspas, emoji.
+
+**O acento fica**, e aqui a regra diverge de `sanitizarNome` (nome de pessoa,
+que tira). Nome de serviço aparece no cardápio que o cliente lê na tela
+pública de agendamento, e "PIGMENTACAO" sem cedilha ali parece defeito.
+
+**Espaço duplo só é colapsado no servidor.** Colapsar a cada tecla tira o
+espaço da mão de quem ainda está digitando.
+
+**O servidor refaz tudo** (`nomeDeItemParaBanco`), porque uma ação de servidor
+é um endereço HTTP público. E valida o vazio DEPOIS de sanitizar: quem digitou
+só "###" mandou três caracteres e não sobrou nenhum.
+
 ## Navegação: toda tela é dinâmica, então toda tela tem `loading.tsx`
 
 `/agenda`, `/estoque`, `/dashboard` e `/barbearia` são todas `ƒ` no build.

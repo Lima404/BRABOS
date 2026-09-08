@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
+import { sanitizarNomeDeItem } from "@/lib/formato";
 import {
   DURACAO_MAX,
   DURACAO_MIN,
@@ -339,9 +340,26 @@ export type DadosServico = {
   cor: CorServico;
 };
 
+/**
+ * Nome como ele vai pro banco: caixa alta, sem caractere estranho, espaços
+ * colapsados e pontas aparadas.
+ *
+ * O formulário já sanitiza a cada tecla, mas isso é conveniência de quem
+ * digita — uma ação de servidor é um endereço HTTP público, e quem chamar
+ * direto manda o que quiser. O colapso de espaço fica só aqui: fazer isso a
+ * cada tecla tirava o espaço da mão de quem ainda estava escrevendo.
+ */
+function nomeDeItemParaBanco(texto: string): string {
+  return sanitizarNomeDeItem(texto).replace(/ {2,}/g, " ").trim();
+}
+
 function validarServico(d: DadosServico): string | null {
-  if (d.nome.trim().length === 0) return "Dê um nome ao serviço.";
-  if (d.nome.trim().length > 60) return "O nome do serviço está longo demais.";
+  const nome = nomeDeItemParaBanco(d.nome);
+
+  // Vazio DEPOIS de sanitizar: quem digitou só "###" mandou 3 caracteres e
+  // não sobrou nenhum. Dizer "dê um nome" é mais honesto que aceitar vazio.
+  if (nome.length === 0) return "Dê um nome ao serviço com letras ou números.";
+  if (nome.length > 60) return "O nome do serviço está longo demais.";
 
   if (!Number.isInteger(d.precoCentavos) || d.precoCentavos < 0) {
     return "Informe um valor válido, como 45,00.";
@@ -374,7 +392,7 @@ export async function salvarServico(d: DadosServico): Promise<Resultado> {
     if (!user) return { ok: false, erro: "Sessão expirada. Entre de novo." };
 
     const campos = {
-      nome: d.nome.trim(),
+      nome: nomeDeItemParaBanco(d.nome),
       preco_centavos: d.precoCentavos,
       duracao_min: d.duracaoMin,
       cor: d.cor,

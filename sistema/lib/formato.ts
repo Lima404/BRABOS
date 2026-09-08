@@ -176,6 +176,8 @@ export function digitosDoTelefone(texto: string): string {
  * Espaço e letra/número passam; o resto some.
  */
 export function sanitizarNome(texto: string): string {
+  // Nome de PESSOA. Para nome de serviço ou produto use
+  // `sanitizarNomeDeItem`, que preserva acento e os conectores `+ - & /`.
   // Guarda ç/Ç antes de tirar diacríticos — NFD transformaria ç em c + cedilha.
   const comMarcador = texto.replace(/[çÇ]/g, "\u0001");
 
@@ -185,6 +187,32 @@ export function sanitizarNome(texto: string): string {
     .toUpperCase()
     .replace(/\u0001/g, "Ç")
     .replace(/[^A-ZÇ0-9 ]/g, "");
+}
+
+/**
+ * Nome de SERVIÇO ou de PRODUTO: caixa alta, sem caractere estranho.
+ *
+ * Parecida com {@link sanitizarNome}, e diferente em duas coisas que não são
+ * capricho:
+ *
+ * 1. **Guarda o acento.** "PIGMENTAÇÃO" e não "PIGMENTACAO". Nome de cliente
+ *    é campo interno; nome de serviço aparece no cardápio que o cliente lê na
+ *    tela pública de agendamento, e português sem acento ali parece defeito.
+ *
+ * 2. **Guarda `+`, `-`, `&` e `/`.** Não são "caractere especial" aqui, são
+ *    parte do nome: o próprio exemplo do formulário é "CABELO + BARBA", e
+ *    apagar o `+` viraria "CABELO BARBA". Fora esses quatro, cai fora tudo
+ *    que não for letra, número ou espaço — `@`, `#`, `<`, aspas, emoji.
+ *
+ * Não colapsa espaço nem apara as pontas: fazer isso a cada tecla tira o
+ * espaço da mão de quem ainda está digitando. Quem apara é o servidor, na
+ * hora de gravar.
+ */
+export function sanitizarNomeDeItem(texto: string): string {
+  // À-Ö e Ø-Þ cobrem as maiúsculas acentuadas do latim-1 (o Ç está no
+  // primeiro trecho). O buraco entre Ö e Ø é o `×`, que fica de fora — é
+  // sinal de multiplicação, não letra.
+  return texto.toUpperCase().replace(/[^A-ZÀ-ÖØ-Þ0-9 +\-&/]/g, "");
 }
 
 /** 30 → "30 min"; 90 → "1h30". Duração é lida de relance, então é curta. */
