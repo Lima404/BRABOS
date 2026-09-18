@@ -224,7 +224,14 @@ export function Dashboard({ mes }: { mes: string }) {
           descricao="Do mais saído ao que fica na prateleira."
           fatias={fatiasDeProduto}
           totalRotulo="itens"
-          vazio="Nenhum produto vendido neste recorte."
+          // Rosca vazia sem explicação é indistinguível de "não vendeu
+          // nada". Com filtro de serviço a loja ficou de fora de propósito,
+          // e é isso que precisa estar escrito no lugar do gráfico.
+          vazio={
+            filtro.servicoIds.length > 0
+              ? "Filtro por serviço — a loja fica de fora."
+              : "Nenhum produto vendido neste recorte."
+          }
         />
       </div>
 

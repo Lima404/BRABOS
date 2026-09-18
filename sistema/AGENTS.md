@@ -567,23 +567,39 @@ O MÊS da venda continua sendo o de `criado_em`, não o da conclusão: concluir
 hoje um atendimento de ontem faz o número de ONTEM crescer, e é o certo — o
 refrigerante saiu ontem.
 
-**Filtro de serviço e de barbeiro valem para os DOIS lados.** Quem decide se
-uma venda cai no recorte é `venda_no_recorte` (0027), e é a única cópia dessa
-regra: sem filtro, toda venda entra; com filtro, só a venda pendurada num
-agendamento que casa com TODOS os filtros ativos.
+### Os filtros não são todos iguais — e isso é decisão
 
-A consequência precisa ser dita na tela, e está: **a compra avulsa sai do
-recorte** quando há filtro de serviço ou barbeiro. Ela não tem serviço nem
-barbeiro para casar, e deixá-la passar faria "BARBA" e "CABELO" somarem o
-mesmo refrigerante cada um.
+| Filtro | Serviços | Loja |
+|---|---|---|
+| **Serviço** | filtra | **zera** |
+| **Só loja** | **zera** | filtra |
+| **Barbeiro** | filtra | filtra |
+| **Produto** | não mexe | filtra |
 
-**Isto já foi um bug, e a causa foi a repetição.** A condição do barbeiro
-estava escrita à mão em CINCO lugares (receita da loja com e sem filtro de
-produto, a rosca de produtos, e os dois mesmos casos dentro da série de
-meses). A do serviço não foi para nenhum: filtrar por serviço filtrava o
-cartão SERVIÇOS e deixava o cartão LOJA inteiro, e o TOTAL somava as duas
-metades de recortes diferentes. Por isso a regra virou função — o próximo
-filtro que descer para a loja muda um lugar, não cinco.
+**Serviço e "só loja" são um par espelhado.** Escolher um serviço é olhar só
+a cadeira: o cartão LOJA vai a zero, a rosca de produtos fica vazia e a série
+de meses perde a parcela da loja (0028). "Só loja" já fazia o inverso desde a
+0016 — faltava o outro lado.
+
+**Barbeiro vale para os dois lados**, e continua assim: barbeiro é uma
+PESSOA, e tanto o corte quanto o refrigerante passam pela mão dela. Serviço é
+o que a cadeira faz, e a prateleira não faz serviço nenhum.
+
+Quem decide se uma venda cai no recorte de barbeiro é `venda_no_recorte`
+(0028), única cópia dessa regra. Com filtro de barbeiro **a compra avulsa sai
+do recorte** — ela não tem barbeiro para casar. Está escrito no painel Loja
+do diálogo, junto com a regra do serviço.
+
+**"Só loja" + filtro de serviço se anulam** e devolvem tudo zero. O banco não
+adivinha qual dos dois a pessoa quis; quem avisa antes é o rodapé do diálogo.
+
+**Duas coisas aqui já foram bug, e as duas por repetição.** A condição do
+barbeiro estava escrita à mão em CINCO lugares (receita da loja com e sem
+filtro de produto, a rosca de produtos, e os dois mesmos casos dentro da série
+de meses), e a do serviço não foi para nenhum: filtrar por serviço deixava o
+cartão LOJA inteiro, e o TOTAL somava duas metades de recortes diferentes.
+Virou função por isso — o próximo filtro que mexer na loja muda um lugar, não
+cinco.
 
 **Uma chamada só para a tela inteira.** Cartões, roscas e a série de todos os
 meses saem do mesmo resumo. Três requisições montariam a tela em pedaços, e

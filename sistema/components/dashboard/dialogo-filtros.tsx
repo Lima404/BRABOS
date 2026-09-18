@@ -163,6 +163,17 @@ export function DialogoFiltrosDashboard({
       classNameCorpo="p-0 overflow-hidden flex flex-col"
       rodape={
         <>
+          {/* Os dois se anulam: um esconde os serviços, o outro esconde a
+              loja, e o recorte volta vazio. Avisar aqui, no rodapé, é o
+              único lugar que a pessoa enxerga esteja em que seção estiver —
+              e as duas escolhas moram em seções diferentes, então ninguém
+              vê as duas ao mesmo tempo. */}
+          {rascunho.soLoja && rascunho.servicoIds.length > 0 ? (
+            <p className="mr-auto text-sm text-destructive">
+              &quot;Só loja&quot; e filtro de serviço se anulam — o recorte
+              vai vir zerado.
+            </p>
+          ) : null}
           <Button type="button" variant="outline" onClick={limpar}>
             Limpar
           </Button>
@@ -535,13 +546,17 @@ function PainelLoja({
         <p className="text-sm text-muted-foreground">
           Só as vendas da vitrine (QR), sem os serviços da cadeira.
         </p>
-        {/* Some gente filtra por serviço e estranha a loja encolher. Dizer
-            aqui é mais barato que descobrir comparando dois totais. */}
+        {/* As duas regras que surpreendem, ditas antes de o número
+            surpreender. A primeira é o par espelhado do "só loja" logo
+            abaixo; a segunda vale desde que o filtro de barbeiro existe. */}
         <p className="mt-2 text-sm text-muted-foreground">
-          Com filtro de serviço ou barbeiro, a loja mostra só o que foi
-          lançado nos atendimentos que casam. A{" "}
-          <strong>compra avulsa</strong> do balcão fica de fora — ela não tem
-          serviço nem barbeiro.
+          <strong>Filtro por serviço deixa a loja de fora</strong> — escolher
+          um serviço é olhar só a cadeira.
+        </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Com filtro de barbeiro, a loja mostra só o que foi lançado nos
+          atendimentos dele. A <strong>compra avulsa</strong> do balcão fica
+          de fora: ela não tem barbeiro.
         </p>
       </div>
 
