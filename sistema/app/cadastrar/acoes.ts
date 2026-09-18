@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { SENHA_MINIMA } from "@/lib/auth/senha";
 import { sanitizarNome } from "@/lib/formato";
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 
@@ -11,9 +12,6 @@ export type EstadoCadastro = {
   /** Cadastro aceito: a tela troca para "confirme seu e-mail". */
   enviadoPara?: string;
 };
-
-/** Tamanho mínimo de senha. O padrão do Supabase é 6; 8 é um piso melhor. */
-const SENHA_MINIMA = 8;
 
 function mensagemDeErro(bruta: string): string {
   const m = bruta.toLowerCase();

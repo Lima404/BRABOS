@@ -19,6 +19,10 @@ const AVISOS: Record<string, string> = {
     "Esse link de confirmação expirou ou já foi usado. Se a conta já está ativa, é só entrar.",
   "sem-configuracao":
     "O sistema ainda não está conectado ao banco. Avise o responsável técnico.",
+  "recuperacao-invalida":
+    "Esse link de recuperação expirou ou já foi usado. Peça um novo em “Recuperar acesso”.",
+  "recuperacao-outro-aparelho":
+    "O link de recuperação abriu em outro aparelho. Peça um novo e abra no mesmo em que pediu.",
 };
 
 export default async function EntrarPage({

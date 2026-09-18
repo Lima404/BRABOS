@@ -466,6 +466,66 @@ Mensagem de usuário não acusa o que não sabe: falha de transporte vira
 "não consegui falar com o servidor de contas", nunca "verifique sua internet"
 — o problema pode ser o servidor, o DNS, ou o antivírus da máquina.
 
+## Recuperar senha: três telas e uma marca de procedência
+
+```
+/recuperar-senha   pede o e-mail        →  resetPasswordForEmail
+   ↓ (e-mail)
+/auth/confirmar    token vira sessão    →  grava o cookie de procedência
+   ↓
+/redefinir-senha   duas senhas iguais   →  updateUser + derruba outras sessões
+```
+
+**A resposta do pedido é a mesma existindo ou não a conta.** "Se existe uma
+conta nesse e-mail, o link saiu." Distinguir transformaria o formulário numa
+máquina de descobrir quem é cliente do BARBOS — e a lista de barbearias
+cadastradas é exatamente o que um concorrente compraria. Mesma regra do
+cadastro.
+
+**Ter sessão NÃO basta para trocar a senha.** Depois do `verifyOtp` a pessoa
+fica com uma sessão completa, igual à de quem entrou com senha. Se a tela
+exigisse só isso, ela abriria para qualquer um que sentasse no computador do
+balcão com a sessão do dia ainda viva — trocar a senha sem saber a antiga e
+trancar o dono do lado de fora. E aqui isso não é hipótese: a equipe inteira
+entra com o mesmo e-mail e senha da barbearia.
+
+Por isso `/auth/confirmar` grava um cookie `httpOnly` de 15 minutos dizendo
+"esta sessão veio do e-mail", e `/redefinir-senha` exige sessão **E** o
+cookie. Ele não é segredo nem segundo fator — quem o tem já tem a sessão. É
+uma declaração de PROCEDÊNCIA. Some assim que a senha troca, senão a janela
+ficaria aberta para trocar de novo sem link novo. Mora em
+`lib/auth/recuperacao.ts`.
+
+**`/auth` está em `ROTAS_ABERTAS` e NÃO em `ROTAS_DE_ENTRADA`, e isso é
+essencial.** Enquanto esteve na lista de entrada, quem já estava logado e
+clicava no link de recuperação era mandado para `/agenda` antes de o token ser
+consumido: o fluxo morria sem mensagem nenhuma. Na barbearia esse é o caso
+comum, não o raro.
+
+**`?proximo=` no `redirectTo` é o que salva o formato PKCE.** O link com
+`?code=` não carrega o tipo do token, então sem ele `/auth/confirmar` não
+saberia que aquela sessão veio de uma recuperação. O valor é conferido como
+caminho interno — sem isso, o link do e-mail viraria redirecionamento aberto,
+e mandar a vítima para um site qualquer logo depois de ela confiar num e-mail
+"do BARBOS" é phishing pronto.
+
+**Trocar a senha derruba as outras sessões** (`signOut({ scope: "others" })`).
+Quem chega ali ou esqueceu a senha ou desconfia que vazou; nos dois casos uma
+sessão aberta noutro aparelho continuaria valendo. `others` e não `global`: a
+aba atual fica de pé, senão a pessoa trocaria a senha e cairia no login no
+mesmo segundo. Se esse `signOut` falhar, **não** é erro na tela — a senha já
+mudou; vai para o log.
+
+`SENHA_MINIMA` mora em `lib/auth/senha.ts`, não dentro das ações: cadastro e
+redefinição precisam do mesmo número, e duas telas o mostram escrito. Número
+repetido em arquivos diferentes diverge no primeiro ajuste, e aí a tela promete
+um mínimo e o servidor cobra outro.
+
+Os modelos de e-mail com `{{ .TokenHash }}` estão em
+`supabase/modelos-email/` — ver o `LEIA.md` de lá. Sem eles o fluxo funciona,
+mas o link só abre no mesmo aparelho em que foi pedido, e quem esqueceu a
+senha é justamente quem costuma pedir no computador e ler no celular.
+
 ## Confirmação de e-mail: ligada ou desligada
 
 `app/cadastrar/acoes.ts` funciona nos dois modos e **não deve ser simplificado

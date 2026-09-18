@@ -7,12 +7,7 @@ import { SUPABASE_CHAVE, SUPABASE_URL } from "@/lib/supabase/config";
  * Rotas de entrada: quem JÁ está logado não tem o que fazer nelas e é
  * mandado pra agenda.
  */
-const ROTAS_DE_ENTRADA = [
-  "/entrar",
-  "/cadastrar",
-  "/recuperar-senha",
-  "/auth", // callback de confirmação de e-mail
-];
+const ROTAS_DE_ENTRADA = ["/entrar", "/cadastrar", "/recuperar-senha"];
 
 /**
  * Rotas abertas: não exigem sessão.
@@ -21,8 +16,16 @@ const ROTAS_DE_ENTRADA = [
  * code na parede da barbearia, ou recebe o link de agendamento no WhatsApp,
  * não tem conta; e a dona logada precisa poder abrir as duas telas sem ser
  * expulsa pra agenda. Confundir as duas listas quebra um dos dois lados.
+ *
+ * `/auth` também está aqui e NÃO em `ROTAS_DE_ENTRADA`, e isso é essencial:
+ * ele não é uma tela, é o lugar onde um token de e-mail vira sessão. Enquanto
+ * esteve na lista de entrada, quem JÁ estava logado e clicava no link de
+ * RECUPERAR SENHA era mandado pra /agenda antes de o token ser consumido — e
+ * o fluxo inteiro morria sem mensagem nenhuma. Na barbearia isso é o caso
+ * comum, não o raro: o computador do balcão fica com a sessão aberta o dia
+ * todo.
  */
-const ROTAS_ABERTAS = [...ROTAS_DE_ENTRADA, "/loja", "/agendar"];
+const ROTAS_ABERTAS = [...ROTAS_DE_ENTRADA, "/auth", "/loja", "/agendar"];
 
 function comecaCom(caminho: string, rotas: string[]): boolean {
   return rotas.some(
