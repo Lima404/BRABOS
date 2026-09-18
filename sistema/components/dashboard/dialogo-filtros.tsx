@@ -168,12 +168,12 @@ export function DialogoFiltrosDashboard({
               único lugar que a pessoa enxerga esteja em que seção estiver —
               e as duas escolhas moram em seções diferentes, então ninguém
               vê as duas ao mesmo tempo. */}
-          {rascunho.servicoIds.length > 0 &&
-          (rascunho.soLoja || rascunho.produtoIds.length > 0) ? (
+          {/* A ÚNICA contradição que sobrou. Serviço + produto não entra
+              aqui: marcar os dois é pedir os dois, e isso funciona. */}
+          {rascunho.soLoja && rascunho.servicoIds.length > 0 ? (
             <p className="mr-auto text-sm text-destructive">
-              Serviço e{" "}
-              {rascunho.produtoIds.length > 0 ? "produto" : "“só loja”"} se
-              anulam — o recorte vai vir zerado.
+              “Só loja” manda esconder os serviços, e você marcou um — o
+              recorte vai vir zerado.
             </p>
           ) : null}
           <Button type="button" variant="outline" onClick={limpar}>
@@ -548,14 +548,12 @@ function PainelLoja({
         <p className="text-sm text-muted-foreground">
           Só as vendas da vitrine (QR), sem os serviços da cadeira.
         </p>
-        {/* A regra inteira, dita antes de o número surpreender. Serviço e
-            produto são os dois lados de onde o dinheiro vem — escolher um é
-            dispensar o outro. Barbeiro é pessoa, não origem, e por isso é o
-            único que não zera nada. */}
+        {/* A regra inteira, dita antes de o número surpreender. */}
         <p className="mt-2 text-sm text-muted-foreground">
-          <strong>O que está marcado manda.</strong> Marcar produto deixa os
-          serviços de fora, assim como marcar serviço deixa a loja de fora.
-          Sem nada marcado, o recorte traz os dois.
+          <strong>O que está marcado manda.</strong> Um lado só fica de fora
+          quando o outro foi marcado sozinho: serviço sem produto esconde a
+          loja, produto sem serviço esconde a cadeira. Marcando{" "}
+          <strong>os dois</strong>, o recorte traz os dois.
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
           Barbeiro é a exceção: ele filtra os dois lados, porque o corte e o

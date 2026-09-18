@@ -85,10 +85,14 @@ export function Dashboard({ mes }: { mes: string }) {
 
   const fraseFiltro = resumoDoFiltro(filtro, mes, nomesDoFiltro);
 
-  // O lado da cadeira sai do recorte por dois caminhos, e o título da rosca
-  // muda junto: "Serviços do período" prometeria um período que não está
-  // sendo mostrado. Espelha `v_sem_servicos` da migração 0029.
-  const semServicos = filtro.soLoja || filtro.produtoIds.length > 0;
+  // Um lado só sai do recorte quando o OUTRO foi marcado sozinho: marcar
+  // serviço E produto é pedir os dois, não uma contradição. Espelha
+  // `v_sem_servicos` / `v_sem_loja` da migração 0030 — se mudar lá, muda aqui.
+  const semServicos =
+    filtro.soLoja ||
+    (filtro.produtoIds.length > 0 && filtro.servicoIds.length === 0);
+  const semLoja =
+    filtro.servicoIds.length > 0 && filtro.produtoIds.length === 0;
 
   const rotuloPeriodo = useMemo(() => {
     if (filtro.periodo === "mes" && (!filtro.mes || filtro.mes === mes)) {
@@ -220,7 +224,7 @@ export function Dashboard({ mes }: { mes: string }) {
           vazio={
             filtro.soLoja
               ? "Filtro só loja — serviços ficam de fora."
-              : filtro.produtoIds.length > 0
+              : semServicos
                 ? "Filtro por produto — a cadeira fica de fora."
                 : "Nenhum atendimento concluído neste recorte."
           }
@@ -235,7 +239,7 @@ export function Dashboard({ mes }: { mes: string }) {
           // nada". Com filtro de serviço a loja ficou de fora de propósito,
           // e é isso que precisa estar escrito no lugar do gráfico.
           vazio={
-            filtro.servicoIds.length > 0
+            semLoja
               ? "Filtro por serviço — a loja fica de fora."
               : "Nenhum produto vendido neste recorte."
           }

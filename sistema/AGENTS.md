@@ -569,18 +569,27 @@ refrigerante saiu ontem.
 
 ### Os filtros: o que está marcado manda
 
+**Um lado só desaparece quando o OUTRO foi marcado sozinho.**
+
 | Marcou | Serviços | Loja |
 |---|---|---|
-| **Serviço** | filtra | **zera** |
-| **Produto** | **zera** | filtra |
+| **Serviço**, produto limpo | filtra | **zera** |
+| **Produto**, serviço limpo | **zera** | filtra |
+| **Serviço E produto** | filtra | filtra |
 | **Só loja** | **zera** | filtra |
 | **Barbeiro** | filtra | filtra |
 | nada | tudo | tudo |
 
 **Serviço e produto são DE ONDE O DINHEIRO VEM** — a cadeira ou a prateleira.
-São lados opostos do mesmo total, e escolher um é dispensar o outro. Quem
-marca ENERGETICO está perguntando quanto o energético rendeu, não isso mais,
-de brinde, quanto renderam os cortes.
+Quem marca só ENERGETICO está perguntando quanto o energético rendeu, não isso
+mais, de brinde, quanto renderam os cortes.
+
+Mas marcar os DOIS não é contradição, é pedido duplo: "quanto rendeu
+CABELO + BARBA e quanto rendeu o ENERGETICO". A 0028 e a 0029, cada uma certa
+sozinha, somadas proibiram esse pedido e devolviam zero nos dois cartões — a
+**0030** conserta. O erro tinha sido ler "marquei serviço" como "só quero
+serviço"; o que a marca diz é "quero ESTE serviço", e quem dispensa a loja é a
+ausência de marca do outro lado.
 
 **Barbeiro é a exceção porque não é origem de dinheiro, é PESSOA.** O corte e
 o refrigerante passam os dois pela mão dela, então recortar por barbeiro é
@@ -599,11 +608,11 @@ Quem decide se uma venda cai no recorte de barbeiro é `venda_no_recorte`
 do recorte** — ela não tem barbeiro para casar. Está escrito no painel Loja
 do diálogo, junto com a regra do serviço.
 
-**Serviço + produto, e serviço + "só loja", se anulam** e devolvem tudo zero:
-um lado esconde o outro. O banco não adivinha qual dos dois a pessoa quis, e
-zero é a resposta honesta; quem avisa antes é o rodapé do diálogo. O aviso
-mora no rodapé porque as duas escolhas ficam em seções diferentes — ninguém
-vê as duas ao mesmo tempo.
+**Sobra UMA contradição de verdade: "só loja" + serviço marcado.** Aí não é
+pedido duplo, é ordem contrária — a caixa manda esconder os serviços e a marca
+manda mostrar aqueles serviços. O recorte volta zerado e o rodapé do diálogo
+avisa. O aviso mora no rodapé porque as duas escolhas ficam em seções
+diferentes: ninguém vê as duas ao mesmo tempo.
 
 **Duas coisas aqui já foram bug, e as duas por repetição.** A condição do
 barbeiro estava escrita à mão em CINCO lugares (receita da loja com e sem
