@@ -45,3 +45,6 @@ next-env.d.ts
 
 # CSS gerado a partir dos pacotes do FullCalendar (npm run css:fullcalendar)
 /app/fullcalendar.css
+
+# Cache da CLI do Supabase (npx supabase). Nao e configuracao do projeto.
+supabase/.temp/
