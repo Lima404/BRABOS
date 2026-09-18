@@ -3,11 +3,12 @@ import type { CorServico } from "@/lib/agenda/tipos";
 /**
  * Domínio do dashboard.
  *
- * O que entra na conta é decidido no banco, em `resumo_dashboard` (migração
- * 0013), e não aqui: serviço conta quando o agendamento está **concluído**,
- * venda conta quando está **confirmada**. Reproduzir essa regra no TypeScript
- * criaria uma segunda verdade, e é assim que o total da tela passa a
- * discordar do relatório.
+ * O que entra na conta é decidido no banco, em `resumo_dashboard`, e não
+ * aqui: serviço conta quando o agendamento está **concluído**; venda conta
+ * pela view `vendas_no_caixa` (0026), e só cai no recorte de serviço ou
+ * barbeiro se `venda_no_recorte` (0027) disser que sim. Reproduzir essas
+ * regras no TypeScript criaria uma segunda verdade, e é assim que o total da
+ * tela passa a discordar do relatório.
  */
 
 export type ServicoNoMes = {

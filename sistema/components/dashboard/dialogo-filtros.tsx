@@ -535,6 +535,14 @@ function PainelLoja({
         <p className="text-sm text-muted-foreground">
           Só as vendas da vitrine (QR), sem os serviços da cadeira.
         </p>
+        {/* Some gente filtra por serviço e estranha a loja encolher. Dizer
+            aqui é mais barato que descobrir comparando dois totais. */}
+        <p className="mt-2 text-sm text-muted-foreground">
+          Com filtro de serviço ou barbeiro, a loja mostra só o que foi
+          lançado nos atendimentos que casam. A{" "}
+          <strong>compra avulsa</strong> do balcão fica de fora — ela não tem
+          serviço nem barbeiro.
+        </p>
       </div>
 
       <Opcao
