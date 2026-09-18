@@ -4,7 +4,6 @@ import { cookies, headers } from "next/headers";
 
 import {
   COOKIE_PEDIU_RECUPERACAO,
-  ROTA_NOVA_SENHA,
   VALIDADE_PEDIDO_SEG,
   opcoesDoCookieDeRecuperacao,
 } from "@/lib/auth/recuperacao";
@@ -86,13 +85,20 @@ export async function pedirRecuperacao(
 
   const supabase = await criarClienteServidor();
 
-  // `proximo` viaja na URL porque o formato PKCE (`?code=`) não carrega o
-  // tipo do token: sem ele, `/auth/confirmar` não saberia que esta sessão
-  // veio de uma recuperação e mandaria a pessoa para a agenda.
+  // URL LIMPA, sem query string, e igual à do cadastro de propósito.
+  //
+  // O Supabase compara o `redirectTo` com a lista de Redirect URLs do painel
+  // usando a URL INTEIRA — query string incluída. Um `?proximo=...` aqui
+  // exigiria uma segunda entrada na lista, e quando ela faltasse o Supabase
+  // não recusaria: mandaria o link para a Site URL e a pessoa cairia na
+  // agenda, sem erro e sem trocar a senha. Uma entrada só, servindo aos dois
+  // fluxos, é uma configuração a menos para errar.
+  //
+  // Quem diz que esta sessão veio de uma recuperação é o cookie gravado
+  // logo abaixo — ver COOKIE_PEDIU_RECUPERACAO. O formato PKCE (`?code=`)
+  // não carrega o tipo do token, e é esse o formato do modelo padrão.
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${await origemDaRequisicao()}/auth/confirmar?proximo=${encodeURIComponent(
-      ROTA_NOVA_SENHA,
-    )}`,
+    redirectTo: `${await origemDaRequisicao()}/auth/confirmar`,
   });
 
   if (error) {
