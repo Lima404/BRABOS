@@ -325,6 +325,33 @@ Consequências práticas:
   flag do sistema não bastar, o caminho é `NODE_EXTRA_CA_CERTS` apontando para
   o certificado da CA — nunca desligar a checagem.
 
+### Dois erros de TLS parecidos, com causas opostas
+
+`--use-system-ca` resolve UM deles. Confundir os dois custa meia hora.
+
+| Sintoma | Causa | Conserto |
+|---|---|---|
+| `UNABLE_TO_VERIFY_LEAF_SIGNATURE` no REST/Auth (`*.supabase.co`) | antivírus reassinando | `--use-system-ca` (já no `.npmrc`) |
+| `self-signed certificate in certificate chain` no Postgres (`*.pooler.supabase.com:5432`) | CA privada da própria Supabase | `NODE_EXTRA_CA_CERTS` com a raiz da Supabase |
+
+O segundo **não é o antivírus** e `--use-system-ca` não resolve, porque a CA
+não está no Windows: o pooler apresenta um certificado emitido por
+`Supabase Intermediate 2021 CA`, assinado por `Supabase Root 2021 CA` — uma
+autoridade privada que a Supabase distribui à parte. Para confirmar antes de
+chutar:
+
+```sh
+openssl s_client -connect aws-0-sa-east-1.pooler.supabase.com:5432 \
+  -starttls postgres </dev/null 2>/dev/null | grep -E "^(subject|issuer)"
+```
+
+A raiz baixa de `https://supabase-downloads.s3.amazonaws.com/prod/ssl/prod-ca-2021.crt`
+(ou Settings → Database → SSL Configuration). Com ela em `NODE_EXTRA_CA_CERTS`
+a validação continua **ligada** — só passa a conhecer mais uma autoridade.
+
+A conexão DIRETA (`db.<ref>.supabase.co`) não substitui o pooler: no plano
+free ela resolve só para IPv6, e numa rede sem IPv6 o TCP nem sai.
+
 ## Formulário: o `Campo` faz a amarração
 
 `Campo` (`components/ui/campo.tsx`) passa `id`, `aria-describedby` e
