@@ -168,10 +168,12 @@ export function DialogoFiltrosDashboard({
               único lugar que a pessoa enxerga esteja em que seção estiver —
               e as duas escolhas moram em seções diferentes, então ninguém
               vê as duas ao mesmo tempo. */}
-          {rascunho.soLoja && rascunho.servicoIds.length > 0 ? (
+          {rascunho.servicoIds.length > 0 &&
+          (rascunho.soLoja || rascunho.produtoIds.length > 0) ? (
             <p className="mr-auto text-sm text-destructive">
-              &quot;Só loja&quot; e filtro de serviço se anulam — o recorte
-              vai vir zerado.
+              Serviço e{" "}
+              {rascunho.produtoIds.length > 0 ? "produto" : "“só loja”"} se
+              anulam — o recorte vai vir zerado.
             </p>
           ) : null}
           <Button type="button" variant="outline" onClick={limpar}>
@@ -546,17 +548,20 @@ function PainelLoja({
         <p className="text-sm text-muted-foreground">
           Só as vendas da vitrine (QR), sem os serviços da cadeira.
         </p>
-        {/* As duas regras que surpreendem, ditas antes de o número
-            surpreender. A primeira é o par espelhado do "só loja" logo
-            abaixo; a segunda vale desde que o filtro de barbeiro existe. */}
+        {/* A regra inteira, dita antes de o número surpreender. Serviço e
+            produto são os dois lados de onde o dinheiro vem — escolher um é
+            dispensar o outro. Barbeiro é pessoa, não origem, e por isso é o
+            único que não zera nada. */}
         <p className="mt-2 text-sm text-muted-foreground">
-          <strong>Filtro por serviço deixa a loja de fora</strong> — escolher
-          um serviço é olhar só a cadeira.
+          <strong>O que está marcado manda.</strong> Marcar produto deixa os
+          serviços de fora, assim como marcar serviço deixa a loja de fora.
+          Sem nada marcado, o recorte traz os dois.
         </p>
         <p className="mt-2 text-sm text-muted-foreground">
-          Com filtro de barbeiro, a loja mostra só o que foi lançado nos
-          atendimentos dele. A <strong>compra avulsa</strong> do balcão fica
-          de fora: ela não tem barbeiro.
+          Barbeiro é a exceção: ele filtra os dois lados, porque o corte e o
+          refrigerante passam os dois pela mão dele. Aí a{" "}
+          <strong>compra avulsa</strong> do balcão fica de fora — ela não tem
+          barbeiro.
         </p>
       </div>
 

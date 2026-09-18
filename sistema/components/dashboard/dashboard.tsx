@@ -85,6 +85,11 @@ export function Dashboard({ mes }: { mes: string }) {
 
   const fraseFiltro = resumoDoFiltro(filtro, mes, nomesDoFiltro);
 
+  // O lado da cadeira sai do recorte por dois caminhos, e o título da rosca
+  // muda junto: "Serviços do período" prometeria um período que não está
+  // sendo mostrado. Espelha `v_sem_servicos` da migração 0029.
+  const semServicos = filtro.soLoja || filtro.produtoIds.length > 0;
+
   const rotuloPeriodo = useMemo(() => {
     if (filtro.periodo === "mes" && (!filtro.mes || filtro.mes === mes)) {
       return mesPorExtenso(mes);
@@ -208,14 +213,16 @@ export function Dashboard({ mes }: { mes: string }) {
 
       <div className="grid gap-4 xl:grid-cols-2">
         <Rosca
-          titulo={filtro.soLoja ? "Serviços" : "Serviços do período"}
+          titulo={semServicos ? "Serviços" : "Serviços do período"}
           descricao="Qual serviço tem mais procura — e quanto cada um rendeu."
           fatias={fatiasDeServico}
           totalRotulo="atendimentos"
           vazio={
             filtro.soLoja
               ? "Filtro só loja — serviços ficam de fora."
-              : "Nenhum atendimento concluído neste recorte."
+              : filtro.produtoIds.length > 0
+                ? "Filtro por produto — a cadeira fica de fora."
+                : "Nenhum atendimento concluído neste recorte."
           }
         />
 

@@ -567,31 +567,43 @@ O MÊS da venda continua sendo o de `criado_em`, não o da conclusão: concluir
 hoje um atendimento de ontem faz o número de ONTEM crescer, e é o certo — o
 refrigerante saiu ontem.
 
-### Os filtros não são todos iguais — e isso é decisão
+### Os filtros: o que está marcado manda
 
-| Filtro | Serviços | Loja |
+| Marcou | Serviços | Loja |
 |---|---|---|
 | **Serviço** | filtra | **zera** |
+| **Produto** | **zera** | filtra |
 | **Só loja** | **zera** | filtra |
 | **Barbeiro** | filtra | filtra |
-| **Produto** | não mexe | filtra |
+| nada | tudo | tudo |
 
-**Serviço e "só loja" são um par espelhado.** Escolher um serviço é olhar só
-a cadeira: o cartão LOJA vai a zero, a rosca de produtos fica vazia e a série
-de meses perde a parcela da loja (0028). "Só loja" já fazia o inverso desde a
-0016 — faltava o outro lado.
+**Serviço e produto são DE ONDE O DINHEIRO VEM** — a cadeira ou a prateleira.
+São lados opostos do mesmo total, e escolher um é dispensar o outro. Quem
+marca ENERGETICO está perguntando quanto o energético rendeu, não isso mais,
+de brinde, quanto renderam os cortes.
 
-**Barbeiro vale para os dois lados**, e continua assim: barbeiro é uma
-PESSOA, e tanto o corte quanto o refrigerante passam pela mão dela. Serviço é
-o que a cadeira faz, e a prateleira não faz serviço nenhum.
+**Barbeiro é a exceção porque não é origem de dinheiro, é PESSOA.** O corte e
+o refrigerante passam os dois pela mão dela, então recortar por barbeiro é
+perguntar "quanto o Bruno movimentou" — as duas metades, filtradas. É o único
+filtro que não zera nada.
+
+Isso chegou em três passos, e vale saber a ordem para não reintroduzir um dos
+estados antigos: 0027 fez o filtro de serviço alcançar a loja; **0028** o
+transformou em "só a cadeira"; **0029** fez o produto zerar os serviços. O
+lado dos serviços sai do recorte por dois caminhos hoje, e os quatro lugares
+que precisam concordar leem `v_sem_servicos` — pelo mesmo motivo que a loja
+lê `venda_no_recorte`.
 
 Quem decide se uma venda cai no recorte de barbeiro é `venda_no_recorte`
 (0028), única cópia dessa regra. Com filtro de barbeiro **a compra avulsa sai
 do recorte** — ela não tem barbeiro para casar. Está escrito no painel Loja
 do diálogo, junto com a regra do serviço.
 
-**"Só loja" + filtro de serviço se anulam** e devolvem tudo zero. O banco não
-adivinha qual dos dois a pessoa quis; quem avisa antes é o rodapé do diálogo.
+**Serviço + produto, e serviço + "só loja", se anulam** e devolvem tudo zero:
+um lado esconde o outro. O banco não adivinha qual dos dois a pessoa quis, e
+zero é a resposta honesta; quem avisa antes é o rodapé do diálogo. O aviso
+mora no rodapé porque as duas escolhas ficam em seções diferentes — ninguém
+vê as duas ao mesmo tempo.
 
 **Duas coisas aqui já foram bug, e as duas por repetição.** A condição do
 barbeiro estava escrita à mão em CINCO lugares (receita da loja com e sem
