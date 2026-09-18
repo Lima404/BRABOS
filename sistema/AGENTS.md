@@ -521,10 +521,25 @@ redefinição precisam do mesmo número, e duas telas o mostram escrito. Número
 repetido em arquivos diferentes diverge no primeiro ajuste, e aí a tela promete
 um mínimo e o servidor cobra outro.
 
-Os modelos de e-mail com `{{ .TokenHash }}` estão em
-`supabase/modelos-email/` — ver o `LEIA.md` de lá. Sem eles o fluxo funciona,
-mas o link só abre no mesmo aparelho em que foi pedido, e quem esqueceu a
-senha é justamente quem costuma pedir no computador e ler no celular.
+**Editar o modelo de e-mail exige SMTP próprio.** O Supabase deixa os campos
+em modo de leitura sem isso ("Set up custom SMTP to edit templates"), então os
+arquivos em `supabase/modelos-email/` são o alvo, não o passo de hoje. Sem
+eles o fluxo funciona, mas o link só abre **no mesmo navegador** em que foi
+pedido — e quem esqueceu a senha é justamente quem pede no computador e lê o
+e-mail no celular. O remetente padrão também tem limite baixo por hora e cai
+em spam; para produção de verdade esse é o problema maior.
+
+**Por isso `/auth/confirmar` reconhece recuperação por TRÊS caminhos**, e não
+por um: `type=recovery` (só com o modelo editado), `?proximo=` no `redirectTo`,
+e o cookie `barbos-pediu-recuperacao` gravado ao pedir o link. O terceiro
+existe porque o formato PKCE não carrega o tipo do token e o segundo depende
+de o Supabase preservar a query string do `redirect_to`. Sem ele, um `code`
+pelado mandaria a pessoa para a agenda sem erro e sem trocar a senha —
+recurso que falha em silêncio é pior que recurso que falha com estardalhaço.
+
+Esse cookie é gravado **mesmo para e-mail sem conta**, de propósito: um cookie
+que só aparecesse para endereço cadastrado devolveria pela porta dos fundos a
+resposta que o formulário se recusa a dar.
 
 ## Confirmação de e-mail: ligada ou desligada
 

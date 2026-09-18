@@ -1,8 +1,13 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
-import { ROTA_NOVA_SENHA } from "@/lib/auth/recuperacao";
+import {
+  COOKIE_PEDIU_RECUPERACAO,
+  ROTA_NOVA_SENHA,
+  VALIDADE_PEDIDO_SEG,
+  opcoesDoCookieDeRecuperacao,
+} from "@/lib/auth/recuperacao";
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 
 export type EstadoRecuperacao = {
@@ -96,6 +101,17 @@ export async function pedirRecuperacao(
     );
     return { erro: mensagemDeErro(error.message) };
   }
+
+  // A marca do pedido. Ver COOKIE_PEDIU_RECUPERACAO: é o que faz o
+  // fluxo funcionar mesmo que o `?proximo=` não sobreviva à volta.
+  //
+  // Gravada mesmo quando o e-mail não existe — de propósito. Um cookie
+  // que só aparecesse para endereço cadastrado devolveria pela porta dos
+  // fundos a resposta que o texto acima se recusa a dar.
+  (await cookies()).set(COOKIE_PEDIU_RECUPERACAO, "1", {
+    ...opcoesDoCookieDeRecuperacao,
+    maxAge: VALIDADE_PEDIDO_SEG,
+  });
 
   return { enviadoPara: email };
 }

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
 import {
+  COOKIE_PEDIU_RECUPERACAO,
   COOKIE_RECUPERACAO,
   ROTA_NOVA_SENHA,
   opcoesDoCookieDeRecuperacao,
@@ -51,7 +52,18 @@ export async function GET(request: NextRequest) {
   const proximo =
     pedido && pedido.startsWith("/") && !pedido.startsWith("//") ? pedido : null;
 
-  const ehRecuperacao = tipo === "recovery" || proximo === ROTA_NOVA_SENHA;
+  // Terceiro caminho, e hoje o mais provável: o modelo padrão do Supabase
+  // (o único disponível sem SMTP próprio) manda `?code=` sem tipo nenhum.
+  // O cookie do pedido diz que ESTE navegador pediu uma recuperação — e
+  // só ele consegue trocar o código, porque o verificador PKCE vive aqui.
+  const pediuRecuperacao = Boolean(
+    request.cookies.get(COOKIE_PEDIU_RECUPERACAO),
+  );
+
+  const ehRecuperacao =
+    tipo === "recovery" ||
+    proximo === ROTA_NOVA_SENHA ||
+    (Boolean(codigo) && pediuRecuperacao);
 
   /** Sessao criada: manda pro lugar certo e, na recuperacao, deixa a marca. */
   const entrou = () => {
@@ -64,6 +76,16 @@ export async function GET(request: NextRequest) {
         "1",
         opcoesDoCookieDeRecuperacao,
       );
+    }
+
+    // O pedido virou sessão: a marca dele já não tem função, e deixá-la
+    // viva faria a PRÓXIMA confirmação de conta neste navegador ser lida
+    // como recuperação.
+    if (pediuRecuperacao) {
+      resposta.cookies.set(COOKIE_PEDIU_RECUPERACAO, "", {
+        ...opcoesDoCookieDeRecuperacao,
+        maxAge: 0,
+      });
     }
 
     return resposta;
