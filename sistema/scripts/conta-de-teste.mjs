@@ -3,10 +3,12 @@
  *
  *   npm run teste:conta
  *
- * Regra do projeto: **todo teste acontece na barbearia "Gabriel Teste"**.
- * Nunca criar conta na hora — cada conta criada por conveniência vira lixo
- * permanente no Supabase, porque apagar usuário exige a chave `service_role`,
- * que não entra neste projeto.
+ * Regra do projeto: **todo teste acontece na barbearia "BICOS"**, a do
+ * Gabriel. Nunca criar conta na hora — cada conta criada por conveniência
+ * vira lixo permanente no Supabase.
+ *
+ * O nome era "Gabriel Teste" até 18/09/2026, quando o projeto Supabase foi
+ * apagado e o banco teve de ser recriado do zero (ver AGENTS.md).
  *
  * As credenciais moram em `.env.local` (fora do git):
  *
@@ -22,7 +24,7 @@
  */
 import { readFileSync } from "node:fs";
 
-export const NOME_DA_BARBEARIA = "Gabriel Teste";
+export const NOME_DA_BARBEARIA = "BICOS";
 
 function lerEnvLocal() {
   try {

@@ -230,26 +230,62 @@ export function contarCriteriosAtivos(
   return n;
 }
 
+/** Nome de cada id escolhido, quando a tela já tiver as listas em mãos. */
+export type NomesDoFiltro = {
+  servicos?: Map<string, string>;
+  barbeiros?: Map<string, string>;
+  produtos?: Map<string, string>;
+};
+
+/**
+ * Escreve os escolhidos por NOME, e cai na contagem quando não tem os nomes.
+ *
+ * "1 serviço" não serve de confirmação: quem acabou de marcar CABELO + BARBA
+ * lê "1 serviço", não reconhece a própria escolha, e conclui que o filtro não
+ * pegou — já aconteceu. O nome é a única forma de a pessoa conferir sem ter
+ * que reabrir o diálogo.
+ *
+ * Dois nomes no máximo: a frase mora no subtítulo, ao lado do período, e uma
+ * lista de seis serviços empurraria os cartões para fora da tela no celular.
+ */
+function escolhidos(
+  ids: string[],
+  nomes: Map<string, string> | undefined,
+  singular: string,
+  plural: string,
+): string | null {
+  if (ids.length === 0) return null;
+
+  const achados = ids.map((id) => nomes?.get(id)).filter(Boolean) as string[];
+
+  // Sem os nomes (listas ainda carregando, ou id de item apagado): a contagem
+  // continua sendo melhor que frase nenhuma.
+  if (achados.length !== ids.length) {
+    return ids.length === 1 ? `1 ${singular}` : `${ids.length} ${plural}`;
+  }
+
+  if (achados.length <= 2) return achados.join(" e ");
+  return `${achados[0]}, ${achados[1]} +${achados.length - 2}`;
+}
+
 /** Frase curta pro subtítulo do dashboard. */
 export function resumoDoFiltro(
   f: FiltroDashboard,
   mesAtual: string,
+  nomes?: NomesDoFiltro,
 ): string | null {
   const partes: string[] = [];
 
   if (f.soLoja) partes.push("só loja");
-  if (f.servicoIds.length === 1) partes.push("1 serviço");
-  else if (f.servicoIds.length > 1) {
-    partes.push(`${f.servicoIds.length} serviços`);
-  }
-  if (f.barbeiroIds.length === 1) partes.push("1 barbeiro");
-  else if (f.barbeiroIds.length > 1) {
-    partes.push(`${f.barbeiroIds.length} barbeiros`);
-  }
-  if (f.produtoIds.length === 1) partes.push("1 produto");
-  else if (f.produtoIds.length > 1) {
-    partes.push(`${f.produtoIds.length} produtos`);
-  }
+
+  const srv = escolhidos(f.servicoIds, nomes?.servicos, "serviço", "serviços");
+  if (srv) partes.push(srv);
+
+  const brb = escolhidos(f.barbeiroIds, nomes?.barbeiros, "barbeiro", "barbeiros");
+  if (brb) partes.push(brb);
+
+  const prd = escolhidos(f.produtoIds, nomes?.produtos, "produto", "produtos");
+  if (prd) partes.push(prd);
 
   if (f.periodo === "dia" && f.dataInicio) {
     partes.push(`dia ${f.dataInicio.split("-").reverse().join("/")}`);

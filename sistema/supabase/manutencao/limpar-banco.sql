@@ -9,7 +9,7 @@
 -- ============================================================
 --
 -- Isto apaga TODOS os dados de TODAS as barbearias, incluindo a
--- "Gabriel Teste", e TODAS as contas de login. Não sobra nada:
+-- de trabalho (hoje "BICOS"), e TODAS as contas de login. Não sobra nada:
 -- agenda, cardápio, equipe, estoque, vendas, folgas e usuários.
 --
 -- O ESQUEMA FICA. Tabelas, funções, gatilhos, políticas de RLS e

@@ -62,7 +62,11 @@ declare
   -- Apelido da barbearia de trabalho. Ela NUNCA sai por este script:
   -- é onde tudo é testado (ver AGENTS.md), e recriar cardápio, equipe
   -- e estoque à mão custa uma tarde.
-  v_protegida constant text := 'gabriel-teste';
+  -- Era 'gabriel-teste' ate 18/09/2026. O projeto Supabase foi apagado,
+  -- o banco foi recriado e a barbearia de trabalho renasceu como BICOS.
+  -- Se o apelido mudar de novo, MUDE AQUI: uma trava apontando para um
+  -- apelido que nao existe nao protege nada, e nao avisa que nao protege.
+  v_protegida constant text := 'bicos';
 
   v_alvo   record;
   v_quant  int := 0;

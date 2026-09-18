@@ -9,6 +9,8 @@ import { ComparativoMeses } from "@/components/dashboard/comparativo-meses";
 import { DialogoFiltrosDashboard } from "@/components/dashboard/dialogo-filtros";
 import { Rosca, type Fatia } from "@/components/dashboard/rosca";
 import { Button } from "@/components/ui/button";
+import { buscarConfiguracao } from "@/lib/agenda/api";
+import { buscarBarbeiros } from "@/lib/barbearia/api";
 import { buscarResumoDashboard } from "@/lib/dashboard/api";
 import { useCoresDoGrafico } from "@/lib/dashboard/cores";
 import {
@@ -18,8 +20,10 @@ import {
   intervaloDoFiltro,
   resumoDoFiltro,
   type FiltroDashboard,
+  type NomesDoFiltro,
 } from "@/lib/dashboard/filtros";
 import { RESUMO_VAZIO } from "@/lib/dashboard/tipos";
+import { buscarProdutos } from "@/lib/estoque/api";
 import { chaves } from "@/lib/query";
 import { mesPorExtenso, moeda } from "@/lib/formato";
 
@@ -49,7 +53,37 @@ export function Dashboard({ mes }: { mes: string }) {
 
   const resumo = data ?? RESUMO_VAZIO;
   const criterios = contarCriteriosAtivos(filtro, mes);
-  const fraseFiltro = resumoDoFiltro(filtro, mes);
+
+  // As listas existem só para escrever o nome do que foi escolhido. Cada uma
+  // é buscada apenas quando há filtro daquele tipo: quem abre o dashboard sem
+  // filtrar nada não paga nenhuma requisição a mais por isto. Quando o
+  // diálogo já esteve aberto, as três vêm do cache e nem vão à rede.
+  const { data: ajustes } = useQuery({
+    queryKey: chaves.agenda.configuracao,
+    queryFn: buscarConfiguracao,
+    enabled: filtro.servicoIds.length > 0,
+  });
+  const { data: barbeiros } = useQuery({
+    queryKey: chaves.barbearia.barbeiros,
+    queryFn: buscarBarbeiros,
+    enabled: filtro.barbeiroIds.length > 0,
+  });
+  const { data: produtos } = useQuery({
+    queryKey: chaves.estoque.produtos,
+    queryFn: buscarProdutos,
+    enabled: filtro.produtoIds.length > 0,
+  });
+
+  const nomesDoFiltro = useMemo<NomesDoFiltro>(
+    () => ({
+      servicos: new Map((ajustes?.servicos ?? []).map((s) => [s.id, s.nome])),
+      barbeiros: new Map((barbeiros ?? []).map((b) => [b.id, b.nome])),
+      produtos: new Map((produtos ?? []).map((p) => [p.id, p.nome])),
+    }),
+    [ajustes, barbeiros, produtos],
+  );
+
+  const fraseFiltro = resumoDoFiltro(filtro, mes, nomesDoFiltro);
 
   const rotuloPeriodo = useMemo(() => {
     if (filtro.periodo === "mes" && (!filtro.mes || filtro.mes === mes)) {

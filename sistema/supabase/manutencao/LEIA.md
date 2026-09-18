@@ -29,7 +29,7 @@ exatamente como as `@mailinator.com` sobraram.
 Aceita várias de uma vez: os ids vão num array, e o bloco é tudo ou nada.
 
 **A trava é por apelido, não por nome.** O script recusa a lista inteira se
-ela incluir a barbearia de `slug` `gabriel-teste` — é onde tudo é testado (ver
+ela incluir a barbearia de `slug` `bicos` — é onde tudo é testado (ver
 `AGENTS.md`), e recriar cardápio, equipe e estoque à mão custa uma tarde. Nome
 não serve de trava: já houve DUAS barbearias chamadas "Gabriel Teste" ao mesmo
 tempo, e a órfã era justamente uma delas.

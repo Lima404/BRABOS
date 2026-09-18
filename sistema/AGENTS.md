@@ -100,7 +100,20 @@ espalhado pelas telas.
 Agenda de hoje → novo agendamento → cliente → serviços → estoque → relatório.
 A agenda primeiro porque é a única tela aberta todo dia.
 
-## Testar: sempre na barbearia "Gabriel Teste"
+## Testar: sempre na barbearia do dono (hoje "BICOS")
+
+**O nome mudou em 18/09/2026.** Até ali a barbearia de trabalho se chamava
+"Gabriel Teste" (slug `gabriel-teste`). O projeto Supabase foi apagado — o
+host parou de resolver, que é o que acontece com projeto apagado e não com
+projeto pausado — e o banco foi recriado do zero num projeto novo, pelo
+`supabase/manutencao/recriar-banco.sql`. A conta renasceu como **BICOS**
+(slug `bicos`).
+
+Três lugares dependem desse apelido e têm que andar juntos se ele mudar de
+novo: `scripts/conta-de-teste.mjs` (`NOME_DA_BARBEARIA`),
+`supabase/manutencao/apagar-barbearia.sql` (`v_protegida`) e este arquivo. Uma
+trava apontando para um apelido que não existe não protege nada — **e não
+avisa que não protege.**
 
 **Nunca criar conta pra testar.** Já sobraram várias `@mailinator.com` órfãs
 assim — e uma delas chegou a virar uma SEGUNDA barbearia chamada "Gabriel
@@ -125,7 +138,7 @@ As credenciais moram em `.env.local` (fora do git), em `BARBOS_EMAIL_TESTE` e
 npm run teste:conta
 ```
 
-Ele entra, confere que a barbearia se chama "Gabriel Teste" e **recusa seguir**
+Ele entra, confere que a barbearia se chama "BICOS" e **recusa seguir**
 se não for. Se as variáveis estiverem vazias, ele diz o que preencher — peça
 ao dono que preencha o arquivo, nunca a senha no chat.
 
@@ -136,7 +149,7 @@ npm run dev        desenvolvimento
 npm run build      build de produção (roda o TypeScript)
 npm run lint       eslint
 npm run typecheck  tsc --noEmit (precisa de um build antes, pelos tipos gerados)
-npm run teste:conta      confere a conta de teste ("Gabriel Teste")
+npm run teste:conta      confere a conta de teste ("BICOS")
 npm run supabase:verificar  quais migracoes ainda faltam
 ```
 
