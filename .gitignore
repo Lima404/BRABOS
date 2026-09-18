@@ -32,3 +32,5 @@ dados/*
 .env.*
 !.env.example
 !.env.*.example
+
+.vercel
