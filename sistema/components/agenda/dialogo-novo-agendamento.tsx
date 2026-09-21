@@ -411,7 +411,7 @@ function Conteudo({
       tamanho="cheio"
       titulo={emEdicao ? "Editar agendamento" : "Novo agendamento"}
       descricao="Quem vem, o que faz e a que horas — a faixa da direita mostra o dia."
-      classNameCorpo="p-0 overflow-hidden flex flex-col"
+      classNameCorpo="flex flex-col p-0 lg:overflow-hidden"
       rodape={
         <>
           <Button
@@ -437,8 +437,14 @@ function Conteudo({
         </>
       }
     >
-      <div className="grid min-h-[min(28rem,55dvh)] flex-1 lg:grid-cols-[minmax(0,1fr)_17.5rem] xl:grid-cols-[minmax(0,1fr)_19rem]">
-        <div className="min-h-0 overflow-y-auto p-4 sm:p-5">
+      {/* Uma rolagem so no celular: o formulario e a faixa do dia fluem
+          dentro do corpo do modal. Ate aqui cada um tinha a SUA rolagem, e
+          empilhados no telefone viravam duas janelinhas — a faixa ficava
+          com ~264px e o formulario com ~113px, entao o dedo que tentava
+          descer o formulario rolava a faixa. De `lg` pra cima sao duas
+          colunas lado a lado e aí cada uma rola sozinha, como antes. */}
+      <div className="grid flex-1 lg:min-h-[28rem] lg:grid-cols-[minmax(0,1fr)_17.5rem] xl:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="p-4 sm:p-5 lg:min-h-0 lg:overflow-y-auto">
           <FormularioAgendamento
             clienteNome={clienteNome}
             aoMudarClienteNome={setClienteNome}
@@ -576,7 +582,7 @@ function Conteudo({
           ) : null}
         </div>
 
-        <div className="flex min-h-0 max-h-[min(22rem,40dvh)] flex-col overflow-hidden border-t border-border lg:max-h-none lg:border-t-0">
+        <div className="flex flex-col border-t border-border lg:min-h-0 lg:overflow-hidden lg:border-t-0">
           <LinhaDoTempoDia
             data={data}
             horario={horario}

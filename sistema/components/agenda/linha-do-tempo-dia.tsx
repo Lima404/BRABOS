@@ -134,6 +134,11 @@ export function LinhaDoTempoDia({
     // Durante o arraste, não: o horário muda a cada pixel, e recentralizar a
     // cada mudança faria a faixa fugir debaixo do dedo que está arrastando.
     if (arrastandoRef.current) return;
+    // No celular este elemento nao rola (ver a classe la embaixo): a faixa
+    // inteira esta visivel e quem rola e o corpo do modal. Centralizar aqui
+    // seria no-op silencioso — sair antes deixa isso dito.
+    if (el.scrollHeight <= el.clientHeight) return;
+
     const alvo = selecao ? selecao.inicio : abreMin;
     const top = ((alvo - abreMin) / 60) * PX_POR_HORA - el.clientHeight / 3;
     el.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
@@ -235,7 +240,7 @@ export function LinhaDoTempoDia({
 
   return (
     <aside
-      className="flex h-full min-h-72 flex-col border-border bg-card/40 lg:min-h-0 lg:border-l"
+      className="flex flex-col border-border bg-card/40 lg:h-full lg:min-h-0 lg:border-l"
       aria-label={`Horários de ${cabecalhoDia(data)}`}
     >
       <header className="shrink-0 border-b border-border px-4 py-3">
@@ -245,7 +250,13 @@ export function LinhaDoTempoDia({
         </p>
       </header>
 
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+      {/* No celular NAO rola: a faixa inteira (10h x 56px = 560px) fica
+          visivel dentro da rolagem do modal. De `lg` pra cima ela e uma
+          coluna de altura fixa e volta a rolar por dentro. */}
+      <div
+        ref={scrollRef}
+        className="flex-1 px-3 py-2 lg:min-h-0 lg:overflow-y-auto"
+      >
         <div
           role="presentation"
           className="relative cursor-pointer select-none"
