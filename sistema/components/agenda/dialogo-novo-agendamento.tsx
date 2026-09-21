@@ -443,8 +443,8 @@ function Conteudo({
           com ~264px e o formulario com ~113px, entao o dedo que tentava
           descer o formulario rolava a faixa. De `lg` pra cima sao duas
           colunas lado a lado e aí cada uma rola sozinha, como antes. */}
-      <div className="grid flex-1 lg:min-h-[28rem] lg:grid-cols-[minmax(0,1fr)_17.5rem] xl:grid-cols-[minmax(0,1fr)_19rem]">
-        <div className="p-4 sm:p-5 lg:min-h-0 lg:overflow-y-auto">
+      <div className="grid flex-1 grid-cols-1 lg:min-h-[28rem] lg:grid-cols-[minmax(0,1fr)_17.5rem] xl:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="min-w-0 p-4 sm:p-5 lg:min-h-0 lg:overflow-y-auto">
           <FormularioAgendamento
             clienteNome={clienteNome}
             aoMudarClienteNome={setClienteNome}
@@ -582,7 +582,7 @@ function Conteudo({
           ) : null}
         </div>
 
-        <div className="flex flex-col border-t border-border lg:min-h-0 lg:overflow-hidden lg:border-t-0">
+        <div className="flex min-w-0 flex-col border-t border-border lg:min-h-0 lg:overflow-hidden lg:border-t-0">
           <LinhaDoTempoDia
             data={data}
             horario={horario}

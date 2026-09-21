@@ -151,7 +151,11 @@ export function FormularioAgendamento({
                 const c = CLASSES_SERVICO[s.cor];
                 return (
                   <SelectItem key={s.id} value={s.id}>
-                    <span className="flex items-center gap-2">
+                    {/* Esta linha tambem e o que aparece DENTRO do campo
+                        depois de escolhido. Quem encolhe e o nome; o preco
+                        e a duracao ficam inteiros, porque sao a informacao
+                        que faz escolher. */}
+                    <span className="flex min-w-0 items-center gap-2">
                       <span
                         aria-hidden="true"
                         className={cn(
@@ -159,8 +163,8 @@ export function FormularioAgendamento({
                           c.pontoBg,
                         )}
                       />
-                      <span className="truncate">{s.nome}</span>
-                      <span className="text-muted-foreground">
+                      <span className="min-w-0 truncate">{s.nome}</span>
+                      <span className="shrink-0 whitespace-nowrap text-muted-foreground">
                         · {moeda(s.precoCentavos)} ·{" "}
                         {duracaoPorExtenso(s.duracaoMin)}
                       </span>
@@ -178,7 +182,7 @@ export function FormularioAgendamento({
         <legend className="mb-1 text-sm leading-none font-medium">
           Data e horário
         </legend>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,0.85fr)_minmax(0,0.85fr)]">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Input
             id="agendamento-data"
             type="date"

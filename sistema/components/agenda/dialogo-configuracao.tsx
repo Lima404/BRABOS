@@ -559,7 +559,7 @@ function Conteudo({
                 />
               </div>
             ) : (
-              <div className="grid max-w-sm grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:max-w-sm sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="config-abre">Abre</Label>
                   <Input
@@ -644,7 +644,7 @@ function ParTurno({
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium">{rotulo}</p>
-      <div className="grid max-w-sm grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:max-w-sm sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`config-${id}-abre`}>Abre</Label>
           <Input
