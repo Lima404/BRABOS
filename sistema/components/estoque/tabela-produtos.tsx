@@ -1,6 +1,8 @@
 "use client";
 
-import { Package } from "lucide-react";
+import { Package, Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import type { Produto } from "@/lib/estoque/tipos";
@@ -10,19 +12,31 @@ import { cn } from "@/lib/utils";
 /**
  * Tabela de uma prateleira (Mercearia ou Produtos de Salão).
  *
- * Colunas: nome, unidades, preço. Sem caixas — o estoque é só em unidades.
+ * Colunas: nome, unidades, preço, ações. Sem caixas — o estoque é só em
+ * unidades.
+ *
+ * O botão de excluir não apaga nada: ele CHAMA `aoExcluir`, e quem mostra a
+ * confirmação e grava é o `Estoque`. As duas prateleiras são o mesmo
+ * componente, e cada uma com o seu próprio modal significaria dois estados de
+ * "apagando" para manter em pé ao mesmo tempo.
  */
 export function TabelaProdutos({
   id,
   titulo,
   descricao,
   produtos,
+  aoExcluir,
+  excluindoId,
 }: {
   /** Identificador estável pro `aria-labelledby` (sem acento/espaço). */
   id: string;
   titulo: string;
   descricao: string;
   produtos: Produto[];
+  /** Pede a confirmação. Não apaga. */
+  aoExcluir: (produto: Produto) => void;
+  /** Produto cuja exclusão está em curso — trava a linha dele. */
+  excluindoId: string | null;
 }) {
   return (
     <section
@@ -60,6 +74,7 @@ export function TabelaProdutos({
                 <th className="px-4 py-3 text-right font-medium">
                   Preço / unidade
                 </th>
+                <th className="px-4 py-3 text-right font-medium">Ações</th>
               </tr>
             </thead>
             <tbody>
@@ -77,6 +92,23 @@ export function TabelaProdutos({
                   </td>
                   <td className="px-4 py-3 text-right text-muted-foreground">
                     <span data-numero>{moeda(p.precoCentavos)}</span>
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {/* `ghost` e não `destructive`: um botão vermelho por
+                        linha transformaria a tabela inteira num alerta, e o
+                        que ela mostra é estoque normal. O vermelho aparece na
+                        confirmação, que é onde a decisão acontece. */}
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Excluir ${p.nome}`}
+                      disabled={excluindoId !== null}
+                      onClick={() => aoExcluir(p)}
+                      className="text-muted-foreground hover:text-faltou"
+                    >
+                      <Trash2 />
+                    </Button>
                   </td>
                 </tr>
               ))}

@@ -558,6 +558,32 @@ no painel do Supabase não exige mexer no app.
 cria conta com o e-mail de outra, e a recuperação de senha — que manda link pro
 e-mail cadastrado — passa a ser um caminho de invasão de conta.
 
+## Excluir produto: o que já vendeu não sai
+
+A tabela do Estoque tem coluna **Ações** com o botão de excluir. Dois toques:
+o botão abre uma confirmação que NOMEIA o produto, a prateleira, as unidades e
+o preço — "tem certeza?" sozinho não dá o que conferir.
+
+**`itens_venda.produto_id` é `on delete restrict` (0007), e o banco recusa com
+23503.** Não é limitação a contornar. O item da venda guarda nome e preço
+congelados, mas continua apontando para o produto, e é essa ligação que faz a
+rosca "Produtos vendidos" e o filtro por produto do dashboard funcionarem.
+Cascata reescreveria o faturamento do mês passado; deixar órfão quebraria os
+dois relatórios.
+
+A recusa vira instrução: **para tirar da loja o que já vendeu, zere as
+unidades** — a vitrine só mostra produto com preço e pelo menos uma unidade.
+Quando a exclusão é recusada, o modal **fica aberto** com o erro: fechar a
+janela levaria a instrução junto.
+
+A confirmação mora no `Estoque`, não na `TabelaProdutos`. As duas prateleiras
+são o mesmo componente, e um modal em cada significaria dois estados de
+"apagando" de pé ao mesmo tempo.
+
+O botão da linha é `ghost`, não `destructive`: um botão vermelho por linha
+transformaria a tabela inteira num alerta, e o que ela mostra é estoque
+normal. O vermelho aparece na confirmação, onde a decisão acontece.
+
 ## A comanda
 
 Concluir um atendimento não fecha nada direto: abre a **comanda**, com o

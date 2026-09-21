@@ -145,3 +145,51 @@ export async function salvarProduto(d: DadosProduto): Promise<Resultado> {
 export async function criarProduto(d: DadosProduto): Promise<Resultado> {
   return salvarProduto(d);
 }
+
+/**
+ * Apaga um produto do estoque.
+ *
+ * ============================================================
+ * PRODUTO JÁ VENDIDO NÃO SAI — E ISSO É PROPOSITAL
+ * ============================================================
+ *
+ * `itens_venda.produto_id` é `on delete restrict` (migração 0007). Quem já
+ * apareceu numa venda não pode ser apagado, e o banco recusa com 23503.
+ *
+ * Não é limitação a contornar: o item da venda guarda nome e preço
+ * congelados, mas continua apontando para o produto, e é essa ligação que
+ * faz a rosca "Produtos vendidos" do dashboard e o filtro por produto
+ * funcionarem. Apagar em cascata reescreveria o faturamento do mês passado;
+ * apagar deixando órfão quebraria os dois relatórios.
+ *
+ * Então a recusa vira instrução: para tirar da loja o que já vendeu, zere as
+ * unidades — a vitrine só mostra produto com preço e pelo menos uma unidade.
+ */
+export async function excluirProduto(id: string): Promise<Resultado> {
+  return protegido("excluir produto", async () => {
+    if (!id) return { ok: false, erro: "Produto não informado." };
+
+    const supabase = await criarClienteServidor();
+
+    // Sem filtro de dono: o RLS já recusa a linha de outra barbearia.
+    const { error } = await supabase.from("produtos").delete().eq("id", id);
+
+    if (error) {
+      // 23503 = foreign_key_violation. Aqui só existe uma origem possível,
+      // então dá pra ser específico em vez de despejar o erro do Postgres.
+      if (error.code === "23503") {
+        return {
+          ok: false,
+          erro: "Esse produto já foi vendido e o histórico do caixa depende dele. Para tirar da loja, zere as unidades.",
+        };
+      }
+      return traduzir("excluir produto", error);
+    }
+
+    revalidatePath("/estoque");
+    // A vitrine pública mostra o que tem preço e estoque: um item a menos
+    // muda a página que o cliente abre pelo QR code.
+    revalidatePath("/loja");
+    return { ok: true };
+  });
+}
