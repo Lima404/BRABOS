@@ -103,12 +103,26 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-/** O corpo rola; cabeçalho e rodapé ficam. */
+/**
+ * O corpo rola na VERTICAL; cabeçalho e rodapé ficam.
+ *
+ * Na horizontal ele corta (`overflow-x-clip`), e isso é rede de segurança,
+ * não conserto: um campo que se mede sozinho — o `input[type=date]` do iOS é
+ * o caso clássico, ver `globals.css` — empurraria o conteúdo para o lado e o
+ * modal inteiro passaria a deslizar, com metade de cada rótulo fora da vista.
+ * Cortar mantém a tela no lugar enquanto o campo é consertado na raiz.
+ *
+ * `clip` e não `hidden` de propósito: `hidden` cria caixa de rolagem e leva
+ * junto o `position: sticky` e os menus que crescem para fora.
+ */
 function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-body"
-      className={cn("min-h-0 flex-1 overflow-y-auto p-4", className)}
+      className={cn(
+        "min-h-0 flex-1 overflow-x-clip overflow-y-auto p-4",
+        className,
+      )}
       {...props}
     />
   );

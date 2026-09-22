@@ -241,6 +241,55 @@
     min-inline-size: 0;
   }
 
+  /* ============================================================
+     Campo de data e de hora no iPhone
+     ============================================================
+     O Safari nao mede estes campos pela largura que a gente manda: o
+     valor mora num pseudo-elemento proprio, `::-webkit-date-and-time-
+     value`, que nasce com a largura do TEXTO e centralizado. Como o
+     iOS escreve a data por extenso ("21 de set. de 2026"), o pseudo
+     fica maior que o campo, o campo fica maior que o formulario e o
+     corpo do modal ganha rolagem lateral — os campos aparecem cortados
+     pela esquerda.
+
+     `w-full` e `min-w-0` no <input> nao alcancam isso, porque quem
+     estoura esta uma camada abaixo, dentro do proprio controle. E da
+     pra ver a assinatura numa foto da tela: o campo de data fica mais
+     largo que o select e que a caixa de observacao, que tem exatamente
+     as mesmas classes.
+
+     `appearance: none` tira a medida nativa; o resto e o pseudo. */
+  input[type="date"],
+  input[type="time"],
+  input[type="week"],
+  input[type="month"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value,
+  input[type="week"]::-webkit-date-and-time-value,
+  input[type="month"]::-webkit-date-and-time-value {
+    min-width: 0;
+    width: 100%;
+    /* Centralizado, o valor ainda mede pelo texto e desalinha da
+       coluna dos outros campos. */
+    text-align: start;
+  }
+
+  /* O icone de calendario/relogio do desktop continua — `appearance:
+     none` costuma leva-lo junto. */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="week"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
   /* Horario, preco e quantidade. Sem isso a coluna de horario dança
      a cada digito que muda — e e a tela que o barbeiro mais olha. */
   time,
