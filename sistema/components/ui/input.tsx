@@ -29,4 +29,33 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   );
 }
 
-export { Input };
+/**
+ * Campo de data ou de hora.
+ *
+ * Existe por um motivo só: **quem manda na largura é este invólucro, não o
+ * controle nativo.**
+ *
+ * O `input[type=date]` do Safari se mede pelo próprio texto — e o iOS escreve
+ * a data por extenso ("21 de set. de 2026"). Já tentamos convencê-lo pelo
+ * CSS (ver `globals.css`: `appearance: none`, `min-width: 0` e a largura do
+ * `::-webkit-date-and-time-value`); enquanto ele não obedecer, o que ele
+ * insistir em desenhar a mais é cortado AQUI, no fim do próprio campo — onde
+ * não há texto, porque o valor fica alinhado à esquerda.
+ *
+ * Antes desse corte, o excesso empurrava o formulário inteiro e o modal
+ * ganhava rolagem lateral: os rótulos apareciam cortados pela esquerda
+ * ("viço", "ervação") no iPhone 14 e no 14 Pro Max.
+ *
+ * `overflow-x: clip` e não `hidden`: `hidden` criaria caixa de rolagem e o
+ * campo passaria a deslizar sob o dedo. A margem de 4px preserva o anel de
+ * foco, que é desenhado para fora da borda.
+ */
+function InputDeTempo({ className, ...props }: React.ComponentProps<"input">) {
+  return (
+    <div className="w-full min-w-0 overflow-x-clip rounded-lg [overflow-clip-margin:4px]">
+      <Input {...props} className={className} />
+    </div>
+  );
+}
+
+export { Input, InputDeTempo };

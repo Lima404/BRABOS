@@ -3,7 +3,7 @@
 import type { DadosAgendamento } from "@/app/(sistema)/agenda/acoes";
 import { Alerta } from "@/components/ui/alerta";
 import { Campo } from "@/components/ui/campo";
-import { Input } from "@/components/ui/input";
+import { Input, InputDeTempo } from "@/components/ui/input";
 import {
   Select,
   SelectConteudo,
@@ -183,7 +183,7 @@ export function FormularioAgendamento({
           Data e horário
         </legend>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Input
+          <InputDeTempo
             id="agendamento-data"
             type="date"
             value={data}
@@ -191,7 +191,7 @@ export function FormularioAgendamento({
             aria-label="Data"
             required
           />
-          <Input
+          <InputDeTempo
             id="agendamento-horario"
             type="time"
             value={horario}
@@ -200,7 +200,7 @@ export function FormularioAgendamento({
             step={900}
             required
           />
-          <Input
+          <InputDeTempo
             id="agendamento-fim"
             type="time"
             value={fim}

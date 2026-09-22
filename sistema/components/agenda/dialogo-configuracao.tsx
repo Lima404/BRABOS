@@ -32,7 +32,7 @@ import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { Opcao } from "@/components/ui/campo";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
-import { Input } from "@/components/ui/input";
+import { Input, InputDeTempo } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
 import { Switch } from "@/components/ui/switch";
@@ -562,7 +562,7 @@ function Conteudo({
               <div className="grid grid-cols-1 gap-4 sm:max-w-sm sm:grid-cols-2">
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="config-abre">Abre</Label>
-                  <Input
+                  <InputDeTempo
                     id="config-abre"
                     type="time"
                     value={abre}
@@ -572,7 +572,7 @@ function Conteudo({
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label htmlFor="config-fecha">Fecha</Label>
-                  <Input
+                  <InputDeTempo
                     id="config-fecha"
                     type="time"
                     value={fecha}
@@ -647,7 +647,7 @@ function ParTurno({
       <div className="grid grid-cols-1 gap-4 sm:max-w-sm sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`config-${id}-abre`}>Abre</Label>
-          <Input
+          <InputDeTempo
             id={`config-${id}-abre`}
             type="time"
             value={valor.abre}
@@ -657,7 +657,7 @@ function ParTurno({
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={`config-${id}-fecha`}>Fecha</Label>
-          <Input
+          <InputDeTempo
             id={`config-${id}-fecha`}
             type="time"
             value={valor.fecha}

@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Campo, Opcao } from "@/components/ui/campo";
-import { Input } from "@/components/ui/input";
+import { Input, InputDeTempo } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { RadioGrupo, RadioItem } from "@/components/ui/radio";
 import { buscarConfiguracao } from "@/lib/agenda/api";
@@ -365,7 +365,7 @@ function PainelPeriodo({
 
       {valor.periodo === "dia" ? (
         <Campo rotulo="Data">
-          <Input
+          <InputDeTempo
             type="date"
             value={valor.dataInicio}
             onChange={(e) =>
@@ -377,7 +377,7 @@ function PainelPeriodo({
 
       {valor.periodo === "semana" ? (
         <Campo rotulo="Semana" ajuda="Escolha qualquer dia da semana desejada.">
-          <Input
+          <InputDeTempo
             type="week"
             value={valor.semana}
             onChange={(e) => aoMudar({ ...valor, semana: e.target.value })}
@@ -387,7 +387,7 @@ function PainelPeriodo({
 
       {valor.periodo === "mes" ? (
         <Campo rotulo="Mês">
-          <Input
+          <InputDeTempo
             type="month"
             value={valor.mes}
             onChange={(e) => aoMudar({ ...valor, mes: e.target.value })}
@@ -411,7 +411,7 @@ function PainelPeriodo({
       {valor.periodo === "intervalo" ? (
         <div className="grid gap-3 sm:grid-cols-2">
           <Campo rotulo="Data início">
-            <Input
+            <InputDeTempo
               type="date"
               value={valor.dataInicio}
               onChange={(e) =>
@@ -420,7 +420,7 @@ function PainelPeriodo({
             />
           </Campo>
           <Campo rotulo="Data fim">
-            <Input
+            <InputDeTempo
               type="date"
               value={valor.dataFim}
               onChange={(e) => aoMudar({ ...valor, dataFim: e.target.value })}
