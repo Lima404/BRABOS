@@ -8,6 +8,7 @@ import {
   listarServicos,
   obterConfiguracaoAgenda,
 } from "@/lib/agenda/repositorio";
+import { listarBarbeiros } from "@/lib/barbearia/repositorio";
 import { obterBarbearia } from "@/lib/conta";
 import { chaves, obterQueryClient } from "@/lib/query";
 import { hojeNaBarbearia } from "@/lib/formato";
@@ -38,6 +39,16 @@ export default async function AgendaPage() {
         servicos: await listarServicos(),
         folgas: await listarFolgas(),
       }),
+    }),
+    // A equipe era a UNICA consulta desta tela que nascia de uma chamada do
+    // navegador — todas as outras já vinham daqui. E quando essa chamada
+    // falhava, a tela não dizia "não consegui carregar": dizia "cadastre um
+    // barbeiro", mandando a dona para uma página onde os barbeiros estão
+    // lá, cadastrados. Lendo o repositório direto, a lista chega junto com
+    // o resto do primeiro desenho, pelo mesmo caminho da tela Barbearia.
+    queryClient.prefetchQuery({
+      queryKey: chaves.barbearia.barbeiros,
+      queryFn: listarBarbeiros,
     }),
   ]);
 

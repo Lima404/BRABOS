@@ -34,6 +34,7 @@ export function BarraSuperior({
   aoNovoAgendamento,
   totalNoMes,
   barbeiros,
+  equipeFalhou,
   barbeiroId,
   aoMudarBarbeiro,
 }: {
@@ -46,6 +47,8 @@ export function BarraSuperior({
   aoNovoAgendamento: () => void;
   totalNoMes: number;
   barbeiros: Barbeiro[];
+  /** A leitura da equipe falhou — diferente de "não tem equipe". */
+  equipeFalhou?: boolean;
   /** `null` = ainda sem escolha (lista vazia ou carregando). */
   barbeiroId: string | null;
   aoMudarBarbeiro: (id: string) => void;
@@ -117,7 +120,13 @@ export function BarraSuperior({
           >
             <SelectGatilho aria-label="Barbeiro da agenda">
               <SelectValor
-                placeholder={semEquipe ? "Cadastre um barbeiro" : "Barbeiro"}
+                placeholder={
+                  equipeFalhou
+                    ? "Equipe não carregou"
+                    : semEquipe
+                      ? "Cadastre um barbeiro"
+                      : "Barbeiro"
+                }
               />
             </SelectGatilho>
             <SelectConteudo>

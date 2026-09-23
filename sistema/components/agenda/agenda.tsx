@@ -146,7 +146,7 @@ export function Agenda({
     queryFn: buscarConfiguracao,
   });
 
-  const { data: barbeirosData } = useQuery({
+  const { data: barbeirosData, isError: equipeFalhou } = useQuery({
     queryKey: chaves.barbearia.barbeiros,
     queryFn: buscarBarbeiros,
   });
@@ -271,6 +271,7 @@ export function Agenda({
         barbeiros={barbeiros}
         barbeiroId={barbeiroId}
         aoMudarBarbeiro={escolherBarbeiro}
+        equipeFalhou={equipeFalhou}
       />
 
       {isPending ? (
@@ -369,6 +370,7 @@ export function Agenda({
         emEdicao={novo.emEdicao}
         servicos={servicosVisiveis}
         barbeiros={barbeiros}
+        equipeFalhou={equipeFalhou}
         barbeiroIdInicial={barbeiroId}
         agendamentos={agendamentos}
         configuracao={configuracao}

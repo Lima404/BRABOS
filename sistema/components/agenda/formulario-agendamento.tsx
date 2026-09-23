@@ -51,6 +51,7 @@ export function FormularioAgendamento({
   barbeiroId,
   aoMudarBarbeiroId,
   barbeiros,
+  equipeFalhou,
   servicoId,
   aoMudarServicoId,
   data,
@@ -68,6 +69,8 @@ export function FormularioAgendamento({
   barbeiroId: string;
   aoMudarBarbeiroId: (v: string) => void;
   barbeiros: Barbeiro[];
+  /** A leitura da equipe falhou — diferente de "não tem equipe". */
+  equipeFalhou?: boolean;
   servicoId: string;
   aoMudarServicoId: (v: string) => void;
   data: string;
@@ -117,8 +120,15 @@ export function FormularioAgendamento({
 
       <Campo id="agendamento-barbeiro" rotulo="Barbeiro">
         {barbeiros.length === 0 ? (
+          /* Duas frases, porque são dois problemas com conserto diferente:
+             não ter equipe se resolve cadastrando; não conseguir LER a
+             equipe se resolve recarregando. Enquanto era uma frase só, quem
+             tinha barbeiro cadastrado era mandado para a tela Barbearia —
+             onde eles estavam lá, os dois, olhando de volta. */
           <p className="rounded-lg border border-border bg-secondary/40 px-3 py-3 text-sm text-muted-foreground">
-            Cadastre um barbeiro em Barbearia antes de marcar horário.
+            {equipeFalhou
+              ? "Não consegui carregar a equipe. Recarregue a página e tente de novo."
+              : "Cadastre um barbeiro em Barbearia antes de marcar horário."}
           </p>
         ) : (
           <Select value={barbeiroId} onValueChange={aoMudarBarbeiroId}>

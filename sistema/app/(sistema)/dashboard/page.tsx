@@ -7,6 +7,7 @@ import {
   filtroPadrao,
   intervaloDoFiltro,
 } from "@/lib/dashboard/filtros";
+import { listarBarbeiros } from "@/lib/barbearia/repositorio";
 import { obterResumoDashboard } from "@/lib/dashboard/repositorio";
 import { chaves, obterQueryClient } from "@/lib/query";
 import { hojeNaBarbearia } from "@/lib/formato";
@@ -24,10 +25,19 @@ export default async function DashboardPage() {
   const intervalo = intervaloDoFiltro(filtroPadrao(mes), mes);
   const queryClient = obterQueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: chaves.dashboard.resumo(chaveDoIntervalo(intervalo)),
-    queryFn: () => obterResumoDashboard(intervalo),
-  });
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: chaves.dashboard.resumo(chaveDoIntervalo(intervalo)),
+      queryFn: () => obterResumoDashboard(intervalo),
+    }),
+    // Mesma equipe, mesmo motivo da agenda: o filtro por barbeiro dependia
+    // de uma chamada do navegador, e quando ela falhava o filtro aparecia
+    // vazio — indistinguível de uma barbearia de uma cadeira só.
+    queryClient.prefetchQuery({
+      queryKey: chaves.barbearia.barbeiros,
+      queryFn: listarBarbeiros,
+    }),
+  ]);
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>

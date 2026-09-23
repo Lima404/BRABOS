@@ -67,6 +67,7 @@ export function DialogoNovoAgendamento({
   emEdicao,
   servicos,
   barbeiros,
+  equipeFalhou,
   barbeiroIdInicial,
   agendamentos,
   configuracao,
@@ -81,6 +82,8 @@ export function DialogoNovoAgendamento({
   emEdicao?: Agendamento;
   servicos: Servico[];
   barbeiros: Barbeiro[];
+  /** A leitura da equipe falhou — diferente de "não tem equipe". */
+  equipeFalhou?: boolean;
   /** Barbeiro selecionado na barra da agenda — pré-preenche o form. */
   barbeiroIdInicial: string | null;
   /** Do mês carregado — a linha do tempo filtra pelo dia escolhido. */
@@ -98,6 +101,7 @@ export function DialogoNovoAgendamento({
       emEdicao={emEdicao}
       servicos={servicos}
       barbeiros={barbeiros}
+      equipeFalhou={equipeFalhou}
       barbeiroIdInicial={barbeiroIdInicial}
       agendamentos={agendamentos}
       configuracao={configuracao}
@@ -113,6 +117,7 @@ function Conteudo({
   emEdicao,
   servicos,
   barbeiros,
+  equipeFalhou,
   barbeiroIdInicial,
   agendamentos,
   configuracao,
@@ -124,6 +129,8 @@ function Conteudo({
   emEdicao?: Agendamento;
   servicos: Servico[];
   barbeiros: Barbeiro[];
+  /** A leitura da equipe falhou — diferente de "não tem equipe". */
+  equipeFalhou?: boolean;
   barbeiroIdInicial: string | null;
   agendamentos: Agendamento[];
   configuracao: ConfiguracaoAgenda;
@@ -451,6 +458,7 @@ function Conteudo({
             barbeiroId={barbeiroId}
             aoMudarBarbeiroId={setBarbeiroId}
             barbeiros={barbeiros}
+            equipeFalhou={equipeFalhou}
             servicoId={servicoId}
             aoMudarServicoId={setServicoId}
             data={data}
