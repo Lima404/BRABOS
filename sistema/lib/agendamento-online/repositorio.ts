@@ -1,7 +1,12 @@
 import "server-only";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
-import { CONFIGURACAO_PADRAO, ehCorServico } from "@/lib/agenda/tipos";
+import {
+  CONFIGURACAO_PADRAO,
+  PASSO_PADRAO,
+  ehCorServico,
+  ehPassoDeHorario,
+} from "@/lib/agenda/tipos";
 import type { AgendaPublica } from "@/lib/agendamento-online/tipos";
 
 /**
@@ -79,6 +84,10 @@ export async function obterAgendaPublica(
         fecha:
           typeof cfg.fecha === "string" ? cfg.fecha : CONFIGURACAO_PADRAO.fecha,
         porTurno: cfg.porTurno === true,
+        // Banco sem a migração 0031 não manda o campo. O padrão de 15 é o
+        // comportamento de antes — a tela pública não pode parar de abrir
+        // porque a barbearia ainda não escolheu intervalo.
+        passoMin: ehPassoDeHorario(cfg.passoMin) ? cfg.passoMin : PASSO_PADRAO,
         manha: turnoPublico(cfg.manha, CONFIGURACAO_PADRAO.manha),
         tarde: turnoPublico(cfg.tarde, CONFIGURACAO_PADRAO.tarde),
       },

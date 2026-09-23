@@ -31,6 +31,8 @@ import { conflitoCom, mensagemDeConflito } from "@/lib/agenda/conflitos";
 import {
   cabeNoExpediente,
   mensagemForaDoExpediente,
+  noPassoDaAgenda,
+  passoDaAgenda,
   proximoHorarioLivre,
 } from "@/lib/agenda/horarios";
 import { buscarComanda } from "@/lib/agenda/api";
@@ -42,6 +44,7 @@ import type {
   Servico,
 } from "@/lib/agenda/tipos";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
+import { descricaoDoPasso } from "@/lib/agenda/tipos";
 import {
   agoraNaBarbearia,
   diaComSemana,
@@ -359,6 +362,18 @@ function Conteudo({
       return;
     }
 
+    // Antes do expediente e antes do conflito: horário fora da grade é o
+    // erro mais fácil de cometer digitando, e o mais fácil de corrigir —
+    // dizer isso primeiro poupa a pessoa de ler três recusas em fila.
+    if (!noPassoDaAgenda(dados.horario, configuracao)) {
+      const frase = `Esta agenda marca ${descricaoDoPasso(
+        passoDaAgenda(configuracao),
+      )}. Escolha um horário da grade, ou mude o intervalo em Configurar agenda.`;
+      setErro(frase);
+      avisar({ tom: "erro", titulo: "Horário fora da grade", descricao: frase });
+      return;
+    }
+
     const duracao = servico?.duracaoMin ?? 30;
     if (!cabeNoExpediente(dados.horario, duracao, configuracao)) {
       const frase = mensagemForaDoExpediente(configuracao);
@@ -468,6 +483,7 @@ function Conteudo({
             observacao={observacao}
             aoMudarObservacao={setObservacao}
             servicos={servicos}
+            passoMin={passoDaAgenda(configuracao)}
             erro={erro}
             aoSalvar={tentarSalvar}
           />

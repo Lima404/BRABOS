@@ -12,7 +12,12 @@ import {
   SelectValor,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { CLASSES_SERVICO, type Servico } from "@/lib/agenda/tipos";
+import {
+  CLASSES_SERVICO,
+  descricaoDoPasso,
+  type PassoDeHorario,
+  type Servico,
+} from "@/lib/agenda/tipos";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
 import {
   duracaoPorExtenso,
@@ -61,6 +66,7 @@ export function FormularioAgendamento({
   observacao,
   aoMudarObservacao,
   servicos,
+  passoMin,
   erro,
   aoSalvar,
 }: {
@@ -80,6 +86,8 @@ export function FormularioAgendamento({
   observacao: string;
   aoMudarObservacao: (v: string) => void;
   servicos: Servico[];
+  /** A grade da barbearia: de quanto em quanto tempo um horário começa. */
+  passoMin: PassoDeHorario;
   erro: string | null;
   aoSalvar: (dados: DadosAgendamento) => void;
 }) {
@@ -207,7 +215,10 @@ export function FormularioAgendamento({
             value={horario}
             onChange={(e) => aoMudarHorario(e.target.value)}
             aria-label="Horário de início"
-            step={900}
+            // O `step` é em SEGUNDOS, e ancora na meia-noite — a mesma grade
+            // do banco e da faixa do dia. Com 30 min, as setas do campo
+            // andam 09:00 → 09:30, e o relógio do celular oferece só esses.
+            step={passoMin * 60}
             required
           />
           <InputDeTempo
@@ -224,13 +235,18 @@ export function FormularioAgendamento({
             tabIndex={-1}
           />
         </div>
-        {escolhido ? (
-          <p className="text-sm text-muted-foreground">
-            Fim calculado pela duração do serviço (
-            <span data-numero>{duracaoPorExtenso(escolhido.duracaoMin)}</span>
-            ).
-          </p>
-        ) : null}
+        <p className="text-sm text-muted-foreground">
+          {escolhido ? (
+            <>
+              Fim calculado pela duração do serviço (
+              <span data-numero>
+                {duracaoPorExtenso(escolhido.duracaoMin)}
+              </span>
+              ).{" "}
+            </>
+          ) : null}
+          Esta agenda marca {descricaoDoPasso(passoMin)}.
+        </p>
       </fieldset>
 
       <Campo

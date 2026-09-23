@@ -16,6 +16,7 @@ import { LinhaDoTempoDia } from "@/components/agenda/linha-do-tempo-dia";
 import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { conflitoCom } from "@/lib/agenda/conflitos";
+import { passoDaAgenda } from "@/lib/agenda/horarios";
 import type { DadosAgendamento } from "@/app/(sistema)/agenda/acoes";
 import {
   ocupadoComoAgendamento,
@@ -216,6 +217,7 @@ export function AgendarPublico({
           observacao={observacao}
           aoMudarObservacao={setObservacao}
           servicos={agenda.servicos}
+          passoMin={passoDaAgenda(agenda.configuracao)}
           erro={erro}
           aoSalvar={enviar}
         />

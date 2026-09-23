@@ -37,13 +37,17 @@ import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
 import { Switch } from "@/components/ui/switch";
 import { chaves } from "@/lib/query";
+import { horariosDaGrade } from "@/lib/agenda/horarios";
 import {
   CLASSES_SERVICO,
   DIAS_SEMANA,
+  PASSOS_DE_HORARIO,
   TURNOS_PADRAO,
   datasDeFolga,
+  rotuloDoPasso,
   type ConfiguracaoAgenda,
   type Folga,
+  type PassoDeHorario,
   type Servico,
   type TurnoHorario,
 } from "@/lib/agenda/tipos";
@@ -120,6 +124,7 @@ function Conteudo({
   const [porTurno, setPorTurno] = useState(configuracao.porTurno);
   const [manha, setManha] = useState<TurnoHorario>(configuracao.manha);
   const [tarde, setTarde] = useState<TurnoHorario>(configuracao.tarde);
+  const [passo, setPasso] = useState<PassoDeHorario>(configuracao.passoMin);
   const [erro, setErro] = useState<string | null>(null);
   const [emEdicao, setEmEdicao] = useState<EmEdicao>(undefined);
 
@@ -410,6 +415,23 @@ function Conteudo({
   const ativos = servicos.filter((s) => s.ativo);
   const desativados = servicos.filter((s) => !s.ativo);
 
+  // A grade do RASCUNHO, não a do banco: quem está escolhendo 30 min quer ver
+  // o efeito antes de salvar. `0` de duração porque aqui a pergunta é "que
+  // horas o dia oferece", não "onde cabe este serviço".
+  const grade = horariosDaGrade(
+    { diasAtendimento: dias, abre, fecha, porTurno, manha, tarde, passoMin: passo },
+    0,
+  );
+  const previa = grade.slice(0, 4).join(", ");
+
+  // Abertura em hora quebrada perde o primeiro encaixe — 08:45 com passo de
+  // 30 começa 09:00. É pouco, mas é um horário de atendimento que some da
+  // agenda, e descobrir isso sozinho, depois, é pior do que ler aqui.
+  const abreEscolhido = porTurno ? manha.abre : abre;
+  const primeiroDaGrade = grade[0];
+  const aberturaForaDaGrade =
+    Boolean(primeiroDaGrade) && primeiroDaGrade !== abreEscolhido;
+
   return (
     <Modal
       aberto={aberto}
@@ -439,6 +461,7 @@ function Conteudo({
                 porTurno,
                 manha,
                 tarde,
+                passoMin: passo,
               })
             }
           >
@@ -582,6 +605,71 @@ function Conteudo({
                 </div>
               </div>
             )}
+          </fieldset>
+
+          {/* Mora junto do horário de propósito: abrir, fechar e de quanto em
+              quanto tempo se marca são a mesma pergunta ("como meu dia é
+              dividido"), e separar em outra seção faria procurar. */}
+          <fieldset className="flex flex-col gap-3">
+            <legend className="mb-3 text-sm leading-none font-semibold">
+              Intervalo entre horários
+            </legend>
+
+            <div className="flex flex-wrap gap-2">
+              {PASSOS_DE_HORARIO.map((p) => {
+                const escolhido = p === passo;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPasso(p)}
+                    aria-pressed={escolhido}
+                    className={cn(
+                      "min-h-11 min-w-20 rounded-lg border px-4 text-sm font-medium transition-colors",
+                      "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                      escolhido
+                        ? "border-primary bg-primary font-semibold text-primary-foreground"
+                        : "border-border text-muted-foreground hover:bg-secondary/60",
+                    )}
+                  >
+                    {rotuloDoPasso(p)}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Mostrar a grade em vez de descrevê-la: "de 30 em 30" deixa no
+                ar se o dia começa 09:00 ou 08:45. A lista responde sozinha. */}
+            {previa ? (
+              <p className="text-sm text-muted-foreground">
+                Os horários do dia ficam{" "}
+                <span data-numero className="font-medium text-foreground">
+                  {previa}
+                </span>
+                {grade.length > 4 ? "…" : ""} — e o cliente que abre o link de
+                agendamento vê exatamente esses.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                De quanto em quanto tempo um horário pode começar.
+              </p>
+            )}
+
+            {aberturaForaDaGrade ? (
+              <Alerta tom="aviso" titulo="O dia começa um pouco depois">
+                Você abre às <strong>{abreEscolhido}</strong>, e os horários
+                seguem o relógio. Com {rotuloDoPasso(passo)}, o primeiro
+                horário do dia passa a ser <strong>{primeiroDaGrade}</strong>.
+                Para aproveitar a abertura, escolha um intervalo que feche com
+                ela — ou ajuste o horário de abrir.
+              </Alerta>
+            ) : null}
+
+            <p className="text-sm text-muted-foreground">
+              Vale para horário NOVO. Quem já está marcado fora dessa grade
+              continua na agenda — trocar o intervalo decide o futuro, não
+              reescreve o que já foi combinado.
+            </p>
           </fieldset>
         </div>
 

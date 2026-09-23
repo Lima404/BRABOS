@@ -12,11 +12,15 @@ import {
   DURACAO_MAX,
   DURACAO_MIN,
   ESTADOS,
+  PASSO_PADRAO,
+  descricaoDoPasso,
   ehCorServico,
+  ehPassoDeHorario,
   type EstadoAgendamento,
   type ConfiguracaoAgenda,
   type CorServico,
   type MudancaDeConsumo,
+  type PassoDeHorario,
 } from "@/lib/agenda/tipos";
 
 /**
@@ -39,6 +43,48 @@ export type Resultado =
   | { ok: false; erro: string; motivo?: "conflito" };
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** "09:30" → 570. Só depois de `HORA.test`. */
+function minutosDaHora(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+/**
+ * A grade da barbearia (migração 0031), lida do banco.
+ *
+ * Coluna ausente — migração não rodada — cai no padrão de 15, que é o
+ * comportamento de sempre. Uma agenda não pode parar de aceitar horário
+ * porque falta uma migração.
+ */
+async function passoDaBarbearia(
+  supabase: Awaited<ReturnType<typeof criarClienteServidor>>,
+): Promise<PassoDeHorario> {
+  const { data, error } = await supabase
+    .from("configuracao_agenda")
+    .select("passo_min")
+    .maybeSingle();
+
+  if (error) {
+    console.error("[BARBOS] passo_min indisponivel:", error.message);
+    return PASSO_PADRAO;
+  }
+
+  const bruto = (data as { passo_min?: unknown } | null)?.passo_min;
+  return ehPassoDeHorario(bruto) ? bruto : PASSO_PADRAO;
+}
+
+/**
+ * O horário cai na grade?
+ *
+ * Refeita aqui e não só na tela, pela mesma razão de toda validação deste
+ * arquivo: uma ação de servidor é um endereço HTTP público. E a grade não é
+ * enfeite — ela é o que faz a agenda do dia ser legível de relance.
+ */
+function foraDaGrade(horario: string, passo: PassoDeHorario): string | null {
+  if (minutosDaHora(horario) % passo === 0) return null;
+  return `Esta agenda marca ${descricaoDoPasso(passo)}. Escolha um horário da grade.`;
+}
 
 /** Traduz o erro do Postgres. Registra o original — ver AGENTS.md. */
 function traduzir(
@@ -188,6 +234,16 @@ export async function salvarConfiguracao(
       }
     }
 
+    // A tela oferece três opções e o banco tem CHECK; esta é a terceira
+    // barreira, e a única que fala português.
+    if (!ehPassoDeHorario(entrada.passoMin)) {
+      return {
+        ok: false,
+        erro: "Escolha um intervalo entre horários: 15 min, 30 min ou 1 hora.",
+      };
+    }
+    const passoMin = entrada.passoMin;
+
     const supabase = await criarClienteServidor();
 
     const {
@@ -207,6 +263,7 @@ export async function salvarConfiguracao(
         manha_fecha: entrada.porTurno ? manha.fecha : null,
         tarde_abre: entrada.porTurno ? tarde.abre : null,
         tarde_fecha: entrada.porTurno ? tarde.fecha : null,
+        passo_min: passoMin,
       },
       { onConflict: "barbearia_id" },
     );
@@ -539,6 +596,15 @@ export async function criarAgendamento(
       };
     }
 
+    // A grade da barbearia (migração 0031). Refeita aqui e não só na tela:
+    // ação de servidor é endereço HTTP público, e o `step` do campo de hora
+    // é conveniência de quem digita, não barreira.
+    const desencaixado = foraDaGrade(
+      d.horario,
+      await passoDaBarbearia(supabase),
+    );
+    if (desencaixado) return { ok: false, erro: desencaixado };
+
     const { data: servico, error: erroServico } = await supabase
       .from("servicos")
       .select("id, preco_centavos, duracao_min, ativo")
@@ -626,6 +692,15 @@ export async function atualizarAgendamento(
         erro: "Esse dia está marcado como folga. Desmarque em Configurar agenda ou escolha outra data.",
       };
     }
+
+    // A grade da barbearia (migração 0031). Refeita aqui e não só na tela:
+    // ação de servidor é endereço HTTP público, e o `step` do campo de hora
+    // é conveniência de quem digita, não barreira.
+    const desencaixado = foraDaGrade(
+      d.horario,
+      await passoDaBarbearia(supabase),
+    );
+    if (desencaixado) return { ok: false, erro: desencaixado };
 
     const { data: servico, error: erroServico } = await supabase
       .from("servicos")

@@ -1,15 +1,44 @@
 import { conflitoCom } from "@/lib/agenda/conflitos";
-import type { ConfiguracaoAgenda, TurnoHorario } from "@/lib/agenda/tipos";
+import {
+  PASSO_PADRAO,
+  ehPassoDeHorario,
+  type ConfiguracaoAgenda,
+  type PassoDeHorario,
+  type TurnoHorario,
+} from "@/lib/agenda/tipos";
 import type { Agendamento } from "@/lib/agenda/tipos";
 
 /**
- * De quanto em quanto tempo um horário pode começar.
+ * De quanto em quanto tempo um horário pode começar — a GRADE da agenda.
  *
- * Os mesmos 15 minutos do `step` do campo de hora e do arraste da faixa. Se
- * mudar num lugar, muda nos três — senão a busca sugere um horário que o
- * campo depois arredonda.
+ * Era uma constante de 15 minutos espalhada por três arquivos. Virou escolha
+ * da barbearia (migração 0031), e passa a sair sempre daqui: o `step` do
+ * campo de hora, o encaixe do arraste na faixa, a busca do próximo horário
+ * livre e a recusa do servidor leem esta função. Duas grades diferentes na
+ * mesma agenda é o bug em que a busca sugere um horário que o campo depois
+ * arredonda — e que o servidor então recusa.
+ *
+ * Configuração antiga, sem a coluna, cai no padrão de 15: o comportamento de
+ * antes continua sendo o de antes.
  */
-export const PASSO_DO_HORARIO_MIN = 15;
+export function passoDaAgenda(config: ConfiguracaoAgenda): PassoDeHorario {
+  return ehPassoDeHorario(config.passoMin) ? config.passoMin : PASSO_PADRAO;
+}
+
+/**
+ * O horário cai na grade?
+ *
+ * Medido desde a MEIA-NOITE, não desde a abertura: "de 30 em 30" para uma
+ * pessoa quer dizer 09:00 e 09:30, não 08:45 e 09:15 numa loja que abre
+ * às 08:45. Quem abre em horário quebrado perde o primeiro encaixe, e a
+ * tela de configuração avisa isso ao salvar.
+ */
+export function noPassoDaAgenda(
+  horario: string,
+  config: ConfiguracaoAgenda,
+): boolean {
+  return emMinutos(horario) % passoDaAgenda(config) === 0;
+}
 
 /** "09:30" → 570. */
 function emMinutos(hhmm: string): number {
@@ -80,21 +109,24 @@ export function encaixarInicioNoExpediente(
   minutosBrutos: number,
   duracaoMin: number,
   config: ConfiguracaoAgenda,
-  passo = PASSO_DO_HORARIO_MIN,
+  passo = passoDaAgenda(config),
 ): string | null {
   const alvo = Math.round(minutosBrutos / passo) * passo;
   let melhor: number | null = null;
   let distancia = Infinity;
 
   for (const faixa of intervalosDoDia(config)) {
-    const abre = emMinutos(faixa.abre);
-    const ultimo = emMinutos(faixa.fecha) - duracaoMin;
-    if (ultimo < abre) continue;
+    // Os dois extremos já nascem NA GRADE, e é isso que garante que o
+    // resultado também nasça. Antes o clamp era feito contra `abre` cru:
+    // numa loja que abre 08:45 com passo de 30, arrastar o bloco para o
+    // começo do dia devolvia 08:45 — fora da grade que a própria tela
+    // acabara de prometer, e recusado pelo servidor no Salvar.
+    const primeiro = Math.ceil(emMinutos(faixa.abre) / passo) * passo;
+    const ultimo =
+      Math.floor((emMinutos(faixa.fecha) - duracaoMin) / passo) * passo;
+    if (ultimo < primeiro) continue;
 
-    const snap = Math.round(
-      Math.min(Math.max(alvo, abre), ultimo) / passo,
-    ) * passo;
-    const candidato = Math.min(Math.max(snap, abre), ultimo);
+    const candidato = Math.min(Math.max(alvo, primeiro), ultimo);
     const d = Math.abs(candidato - alvo);
     if (d < distancia) {
       distancia = d;
@@ -103,6 +135,32 @@ export function encaixarInicioNoExpediente(
   }
 
   return melhor === null ? null : emHhmm(melhor);
+}
+
+/**
+ * Todos os começos possíveis no dia, na ordem — a grade inteira.
+ *
+ * `duracaoMin` corta o fim: com 1h de serviço numa loja que fecha às 19h, o
+ * último começo é 18:00 e não 18:30. Serve para a tela mostrar a grade em
+ * vez de descrevê-la: "09:00, 09:30, 10:00…" responde sozinho a pergunta
+ * que "de 30 em 30" deixa no ar.
+ */
+export function horariosDaGrade(
+  config: ConfiguracaoAgenda,
+  duracaoMin: number,
+): string[] {
+  const passo = passoDaAgenda(config);
+  const lista: string[] = [];
+
+  for (const faixa of intervalosDoDia(config)) {
+    const primeiro = Math.ceil(emMinutos(faixa.abre) / passo) * passo;
+    const fecha = emMinutos(faixa.fecha);
+    for (let m = primeiro; m + duracaoMin <= fecha; m += passo) {
+      lista.push(emHhmm(m));
+    }
+  }
+
+  return lista;
 }
 
 export function mensagemForaDoExpediente(
@@ -123,8 +181,8 @@ export function mensagemForaDoExpediente(
  * 15h da tarde, com a manhã cheia, quem marca tinha que corrigir o campo toda
  * vez — e, se esquecesse, levava um "horário ocupado" que ele mesmo causou.
  *
- * A varredura anda de {@link PASSO_DO_HORARIO_MIN} em
- * {@link PASSO_DO_HORARIO_MIN}, e um horário só serve se:
+ * A varredura anda de {@link passoDaAgenda} em {@link passoDaAgenda}, e um
+ * horário só serve se:
  *   - começa em `abre` ou depois (e, sendo hoje, não no passado);
  *   - TERMINA até `fecha` — sugerir 18:45 para um corte de 1h numa loja que
  *     fecha às 19h é empurrar o problema para o barbeiro;
@@ -162,22 +220,19 @@ export function proximoHorarioLivre({
     const abre = emMinutos(faixa.abre);
     const fecha = emMinutos(faixa.fecha);
 
-    // Arredonda para CIMA: às 14:07 o próximo começo possível é 14:15, não
-    // 14:00, que já passou.
+    const passo = passoDaAgenda(configuracao);
+    // O primeiro da GRADE dentro do turno, não a abertura crua — senão a
+    // sugestão nasceria fora da grade numa loja que abre em hora quebrada.
+    const primeiro = Math.ceil(abre / passo) * passo;
+
+    // Arredonda para CIMA: às 14:07, com passo de 15, o próximo começo
+    // possível é 14:15 — 14:00 já passou.
     const piso =
       agora === null
-        ? abre
-        : Math.max(
-            abre,
-            Math.ceil(emMinutos(agora) / PASSO_DO_HORARIO_MIN) *
-              PASSO_DO_HORARIO_MIN,
-          );
+        ? primeiro
+        : Math.max(primeiro, Math.ceil(emMinutos(agora) / passo) * passo);
 
-    for (
-      let inicio = piso;
-      inicio + duracaoMin <= fecha;
-      inicio += PASSO_DO_HORARIO_MIN
-    ) {
+    for (let inicio = piso; inicio + duracaoMin <= fecha; inicio += passo) {
       const livre = !conflitoCom(
         { data, horario: emHhmm(inicio), duracaoMin, barbeiroId },
         agendamentos,

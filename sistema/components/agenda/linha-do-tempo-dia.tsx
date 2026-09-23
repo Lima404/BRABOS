@@ -7,7 +7,7 @@ import {
   encaixarInicioNoExpediente,
   intervalosDoDia,
   lacunasDoDia,
-  PASSO_DO_HORARIO_MIN,
+  passoDaAgenda,
 } from "@/lib/agenda/horarios";
 import {
   CLASSES_SERVICO,
@@ -19,15 +19,6 @@ import { cn } from "@/lib/utils";
 
 /** Altura de uma hora na linha do tempo — define a escala dos blocos. */
 const PX_POR_HORA = 56;
-
-/**
- * Encaixe do horário, em minutos.
- *
- * O mesmo para o toque na faixa e para o arraste: se o arraste fosse mais
- * fino, o bloco pararia em 16:07 e o clique em 16:00, e o dedo passaria a
- * dar um resultado diferente do outro dedo.
- */
-const PASSO_MIN = PASSO_DO_HORARIO_MIN;
 
 function minutosDe(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
@@ -89,6 +80,15 @@ export function LinhaDoTempoDia({
   // re-renderiza, e ler o estado ali pegaria o valor do quadro anterior.
   const arrastandoRef = useRef(false);
   const partidaRef = useRef<{ y: number; minuto: number } | null>(null);
+
+  /**
+   * Encaixe do horário, em minutos — a grade escolhida pela barbearia.
+   *
+   * O mesmo para o toque na faixa, para o arraste e para as setas: se o
+   * arraste fosse mais fino, o bloco pararia em 16:07 e o clique em 16:00, e
+   * o dedo passaria a dar um resultado diferente do outro dedo.
+   */
+  const passoMin = passoDaAgenda(configuracao);
 
   const faixas = useMemo(
     () => intervalosDoDia(configuracao),
@@ -167,7 +167,7 @@ export function LinhaDoTempoDia({
       minutosBrutos,
       Math.max(duracaoMin, 15),
       configuracao,
-      PASSO_MIN,
+      passoMin,
     );
     if (!novo) return;
     if (novo !== horario) aoEscolherHorario(novo);
@@ -221,7 +221,7 @@ export function LinhaDoTempoDia({
    */
   function aoTeclar(evento: React.KeyboardEvent<HTMLDivElement>) {
     if (!selecao) return;
-    const passo = evento.shiftKey ? 60 : PASSO_MIN;
+    const passo = evento.shiftKey ? 60 : passoMin;
 
     if (evento.key === "ArrowUp") {
       evento.preventDefault();

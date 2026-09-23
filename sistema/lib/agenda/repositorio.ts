@@ -3,6 +3,8 @@ import "server-only";
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import {
   CONFIGURACAO_PADRAO,
+  PASSO_PADRAO,
+  ehPassoDeHorario,
   type Agendamento,
   type ConfiguracaoAgenda,
   type CorServico,
@@ -88,6 +90,8 @@ type LinhaConfiguracao = {
   manha_fecha: string | null;
   tarde_abre: string | null;
   tarde_fecha: string | null;
+  /** Null em conta anterior à migração 0031 — cai no padrão de 15. */
+  passo_min: number | null;
 };
 
 function turnoDaLinha(
@@ -111,7 +115,7 @@ export async function obterConfiguracaoAgenda(): Promise<ConfiguracaoAgenda> {
   const { data, error } = await supabase
     .from("configuracao_agenda")
     .select(
-      "dias_atendimento, abre, fecha, por_turno, manha_abre, manha_fecha, tarde_abre, tarde_fecha",
+      "dias_atendimento, abre, fecha, por_turno, manha_abre, manha_fecha, tarde_abre, tarde_fecha, passo_min",
     )
     .maybeSingle();
 
@@ -141,6 +145,7 @@ export async function obterConfiguracaoAgenda(): Promise<ConfiguracaoAgenda> {
     porTurno: Boolean(l.por_turno),
     manha,
     tarde,
+    passoMin: ehPassoDeHorario(l.passo_min) ? l.passo_min : PASSO_PADRAO,
   };
 }
 

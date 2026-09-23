@@ -134,7 +134,43 @@ export type ConfiguracaoAgenda = {
   porTurno: boolean;
   manha: TurnoHorario;
   tarde: TurnoHorario;
+  /**
+   * De quanto em quanto tempo um horário pode COMEÇAR — 15, 30 ou 60.
+   *
+   * A grade segue o relógio, não a abertura: com 30 valem 09:00 e 09:30, e
+   * mais nada. Quem abre às 08:45 tem o primeiro horário às 09:00.
+   */
+  passoMin: PassoDeHorario;
 };
+
+/**
+ * Os intervalos que a barbearia pode escolher.
+ *
+ * Lista fechada de propósito, e igual ao CHECK da migração 0031: uma grade
+ * de 7 em 7 minutos nenhuma tela sabe desenhar, e o dono não ganharia nada
+ * com ela. Três opções cobrem a barbearia inteira — 15 para quem tem
+ * serviço rápido, 60 para quem só faz corte completo.
+ */
+export const PASSOS_DE_HORARIO = [15, 30, 60] as const;
+
+export type PassoDeHorario = (typeof PASSOS_DE_HORARIO)[number];
+
+export const PASSO_PADRAO: PassoDeHorario = 15;
+
+export function ehPassoDeHorario(v: unknown): v is PassoDeHorario {
+  return PASSOS_DE_HORARIO.includes(v as PassoDeHorario);
+}
+
+/** "de 30 em 30 minutos" — o mesmo texto no aviso, no rótulo e no erro. */
+export function descricaoDoPasso(passo: PassoDeHorario): string {
+  if (passo === 60) return "de hora em hora";
+  return `de ${passo} em ${passo} minutos`;
+}
+
+/** "30 min" / "1 hora" — rótulo curto, para o botão. */
+export function rotuloDoPasso(passo: PassoDeHorario): string {
+  return passo === 60 ? "1 hora" : `${passo} min`;
+}
 
 /** Um turno: abertura e fechamento. */
 export type TurnoHorario = {
@@ -155,6 +191,7 @@ export const CONFIGURACAO_PADRAO: ConfiguracaoAgenda = {
   porTurno: false,
   manha: { ...TURNOS_PADRAO.manha },
   tarde: { ...TURNOS_PADRAO.tarde },
+  passoMin: PASSO_PADRAO,
 };
 
 /**
