@@ -32,7 +32,7 @@ import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { Opcao } from "@/components/ui/campo";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
-import { Input, InputDeTempo } from "@/components/ui/input";
+import { InputDeTempo } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Modal } from "@/components/ui/modal";
 import { Switch } from "@/components/ui/switch";

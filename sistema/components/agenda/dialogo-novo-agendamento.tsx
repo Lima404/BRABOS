@@ -483,7 +483,7 @@ function Conteudo({
             observacao={observacao}
             aoMudarObservacao={setObservacao}
             servicos={servicos}
-            passoMin={passoDaAgenda(configuracao)}
+            configuracao={configuracao}
             erro={erro}
             aoSalvar={tentarSalvar}
           />

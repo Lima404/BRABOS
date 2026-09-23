@@ -13,9 +13,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  horariosDaGrade,
+  noPassoDaAgenda,
+  passoDaAgenda,
+} from "@/lib/agenda/horarios";
+import {
   CLASSES_SERVICO,
   descricaoDoPasso,
-  type PassoDeHorario,
+  type ConfiguracaoAgenda,
   type Servico,
 } from "@/lib/agenda/tipos";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
@@ -66,7 +71,7 @@ export function FormularioAgendamento({
   observacao,
   aoMudarObservacao,
   servicos,
-  passoMin,
+  configuracao,
   erro,
   aoSalvar,
 }: {
@@ -86,8 +91,8 @@ export function FormularioAgendamento({
   observacao: string;
   aoMudarObservacao: (v: string) => void;
   servicos: Servico[];
-  /** A grade da barbearia: de quanto em quanto tempo um horário começa. */
-  passoMin: PassoDeHorario;
+  /** Expediente e grade: é o que decide quais horários existem no dia. */
+  configuracao: ConfiguracaoAgenda;
   erro: string | null;
   aoSalvar: (dados: DadosAgendamento) => void;
 }) {
@@ -96,6 +101,42 @@ export function FormularioAgendamento({
     horario && escolhido
       ? hhmmDe(minutosDe(horario) + escolhido.duracaoMin)
       : "";
+
+  const passoMin = passoDaAgenda(configuracao);
+
+  /**
+   * Os horários que este dia oferece — não um campo de hora livre.
+   *
+   * O `step` do `<input type="time">` não segura o seletor nativo: o
+   * calendário do navegador continuava listando minuto a minuto (03, 04,
+   * 05…), e a pessoa escolhia 13:05 num sistema que marca de 15 em 15.
+   * Depois levava a recusa. Oferecer só o que vale é mais curto de usar do
+   * que digitar e ser corrigido.
+   *
+   * A duração corta o fim da lista: com 1h de serviço numa loja que fecha
+   * às 19h, o último começo é 18:00.
+   */
+  const horarios = horariosDaGrade(configuracao, escolhido?.duracaoMin ?? 30);
+
+  /**
+   * Um horário já marcado pode estar FORA da grade de hoje — a barbearia
+   * trocou de 15 para 30 e o cliente das 09:45 continua lá. Ele entra na
+   * lista mesmo assim, marcado: sumir com o valor do campo ao abrir a
+   * edição trocaria o horário de alguém sem ninguém pedir.
+   */
+  const forasteiro = Boolean(horario) && !horarios.includes(horario);
+  const opcoes = forasteiro ? [horario, ...horarios] : horarios;
+
+  // Duas razões diferentes para um horário estar fora da lista, e a etiqueta
+  // não pode chutar: ou ele não bate com a grade (a barbearia trocou de 15
+  // para 30 depois de marcar), ou ele bate mas o serviço escolhido agora não
+  // termina antes de fechar. Dizer "fora da grade" no segundo caso mandaria
+  // a pessoa mexer na configuração à toa.
+  const etiquetaDoForasteiro = !horario
+    ? ""
+    : noPassoDaAgenda(horario, configuracao)
+      ? "· não cabe no dia"
+      : "· fora da grade";
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -209,44 +250,61 @@ export function FormularioAgendamento({
             aria-label="Data"
             required
           />
-          <InputDeTempo
-            id="agendamento-horario"
-            type="time"
-            value={horario}
-            onChange={(e) => aoMudarHorario(e.target.value)}
-            aria-label="Horário de início"
-            // O `step` é em SEGUNDOS, e ancora na meia-noite — a mesma grade
-            // do banco e da faixa do dia. Com 30 min, as setas do campo
-            // andam 09:00 → 09:30, e o relógio do celular oferece só esses.
-            step={passoMin * 60}
-            required
-          />
-          <InputDeTempo
+          <Select value={horario || undefined} onValueChange={aoMudarHorario}>
+            <SelectGatilho
+              id="agendamento-horario"
+              aria-label="Horário de início"
+            >
+              <SelectValor placeholder="Horário" />
+            </SelectGatilho>
+            <SelectConteudo>
+              {opcoes.map((h) => (
+                <SelectItem key={h} value={h}>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span data-numero>{h}</span>
+                    {forasteiro && h === horario ? (
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {etiquetaDoForasteiro}
+                      </span>
+                    ) : null}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectConteudo>
+          </Select>
+
+          {/* Não é campo: é resultado. Antes era um `input` desabilitado, o
+              que promete edição e nega no mesmo gesto. */}
+          <p
             id="agendamento-fim"
-            type="time"
-            value={fim}
-            aria-label={
-              escolhido
-                ? `Fim (${duracaoPorExtenso(escolhido.duracaoMin)})`
-                : "Horário de fim"
-            }
-            disabled
-            readOnly
-            tabIndex={-1}
-          />
+            className="flex h-12 items-center rounded-lg border border-dashed border-border bg-secondary/30 px-3 text-base text-muted-foreground"
+          >
+            <span className="shrink-0 text-sm">até&nbsp;</span>
+            <span data-numero className="truncate">
+              {fim || "--:--"}
+            </span>
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          {escolhido ? (
-            <>
-              Fim calculado pela duração do serviço (
-              <span data-numero>
-                {duracaoPorExtenso(escolhido.duracaoMin)}
-              </span>
-              ).{" "}
-            </>
-          ) : null}
-          Esta agenda marca {descricaoDoPasso(passoMin)}.
-        </p>
+        {horarios.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nenhum horário do dia comporta esse serviço inteiro
+            {escolhido ? ` (${duracaoPorExtenso(escolhido.duracaoMin)})` : ""}.
+            Escolha um serviço mais curto, ou estenda o expediente.
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {escolhido ? (
+              <>
+                Fim calculado pela duração do serviço (
+                <span data-numero>
+                  {duracaoPorExtenso(escolhido.duracaoMin)}
+                </span>
+                ).{" "}
+              </>
+            ) : null}
+            Esta agenda marca {descricaoDoPasso(passoMin)}.
+          </p>
+        )}
       </fieldset>
 
       <Campo
