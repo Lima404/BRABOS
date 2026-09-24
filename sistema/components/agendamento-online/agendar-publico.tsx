@@ -247,7 +247,14 @@ export function AgendarPublico({
         ) : null}
       </div>
 
-      <div className="flex max-h-[28rem] min-h-72 flex-col overflow-hidden rounded-lg border border-border lg:max-h-[34rem]">
+      {/* No celular a faixa do dia aparece INTEIRA e quem rola é a página.
+          Tinha teto de 28rem aqui e rolagem própria só de `lg` pra cima: o
+          dia era cortado às 15h e não havia como descer — nem por dentro,
+          que não rolava, nem por fora, porque o corte era deste `div`.
+          Uma rolagem só, a da página, é também o que o polegar espera numa
+          tela pública. De `lg` pra cima continua painel de altura fixa, com
+          a faixa rolando por dentro. */}
+      <div className="flex flex-col rounded-lg border border-border lg:max-h-[34rem] lg:overflow-hidden">
         <LinhaDoTempoDia
           data={data}
           horario={horario}
