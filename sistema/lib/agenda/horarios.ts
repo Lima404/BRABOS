@@ -175,6 +175,49 @@ export function mensagemForaDoExpediente(
 }
 
 /**
+ * A grade do dia SEM o que já está ocupado — o que a tela pode oferecer.
+ *
+ * Separada de {@link horariosDaGrade} de propósito: as duas respondem a
+ * perguntas diferentes, e a tela precisa das duas para explicar o que fez.
+ * "Não cabe no dia" manda mexer no expediente; "ocupado" manda escolher
+ * outro horário. Uma lista só, sem a de cima para comparar, não saberia
+ * dizer qual dos dois aconteceu.
+ *
+ * A conta é por INTERVALO, não por começo: um corte de 1h às 14:30 esbarra
+ * em quem está das 14:00 às 15:00, mesmo sem começar na mesma hora. É a
+ * mesma `conflitoCom` que o formulário usa ao salvar — e a barreira de
+ * verdade continua sendo a trava do banco (migração 0006), porque entre
+ * desenhar esta lista e tocar em Agendar alguém pode ter pegado o horário.
+ */
+export function horariosLivresDaGrade({
+  configuracao,
+  duracaoMin,
+  data,
+  barbeiroId,
+  agendamentos,
+  ignorarId,
+}: {
+  configuracao: ConfiguracaoAgenda;
+  duracaoMin: number;
+  /** AAAA-MM-DD */
+  data: string;
+  barbeiroId: string;
+  /** Do barbeiro escolhido; cancelado não ocupa (ver `conflitoCom`). */
+  agendamentos: Agendamento[];
+  /** Na edição, o próprio agendamento não bloqueia o horário dele. */
+  ignorarId?: string;
+}): string[] {
+  return horariosDaGrade(configuracao, duracaoMin).filter(
+    (horario) =>
+      !conflitoCom(
+        { data, horario, duracaoMin, barbeiroId },
+        agendamentos,
+        ignorarId,
+      ),
+  );
+}
+
+/**
  * O primeiro horário do dia em que esse serviço cabe, com esse barbeiro.
  *
  * Existe porque abrir o modal sempre nas 9h é errado quase o dia inteiro: às

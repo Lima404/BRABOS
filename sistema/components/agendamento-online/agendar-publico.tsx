@@ -217,6 +217,7 @@ export function AgendarPublico({
           aoMudarObservacao={setObservacao}
           servicos={agenda.servicos}
           configuracao={agenda.configuracao}
+          ocupacao={ocupados}
           erro={erro}
           aoSalvar={enviar}
         />

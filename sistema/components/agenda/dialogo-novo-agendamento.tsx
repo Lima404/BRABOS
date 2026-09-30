@@ -426,6 +426,22 @@ function Conteudo({
     [agendamentos, barbeiroId],
   );
 
+  /**
+   * O que ocupa a agenda deste barbeiro — uma lista só para a faixa do dia e
+   * para o seletor de horário.
+   *
+   * Editando, o próprio agendamento sai: senão o horário dele sumiria da
+   * lista no instante em que a pessoa abrisse a edição, e mudar só a
+   * observação viraria uma caça ao horário perdido.
+   */
+  const ocupacao = useMemo(
+    () =>
+      emEdicao
+        ? doBarbeiro.filter((x) => x.id !== emEdicao.id)
+        : doBarbeiro,
+    [doBarbeiro, emEdicao],
+  );
+
   return (
     <Modal
       aberto={aberto}
@@ -484,6 +500,7 @@ function Conteudo({
             aoMudarObservacao={setObservacao}
             servicos={servicos}
             configuracao={configuracao}
+            ocupacao={ocupacao}
             erro={erro}
             aoSalvar={tentarSalvar}
           />
@@ -611,11 +628,7 @@ function Conteudo({
             data={data}
             horario={horario}
             duracaoMin={servico?.duracaoMin ?? 30}
-            agendamentos={
-              emEdicao
-                ? doBarbeiro.filter((x) => x.id !== emEdicao.id)
-                : doBarbeiro
-            }
+            agendamentos={ocupacao}
             configuracao={configuracao}
             servico={servico}
             aoEscolherHorario={setHorario}

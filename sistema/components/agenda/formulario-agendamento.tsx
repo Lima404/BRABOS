@@ -14,12 +14,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   horariosDaGrade,
+  horariosLivresDaGrade,
   noPassoDaAgenda,
   passoDaAgenda,
 } from "@/lib/agenda/horarios";
 import {
   CLASSES_SERVICO,
   descricaoDoPasso,
+  type Agendamento,
   type ConfiguracaoAgenda,
   type Servico,
 } from "@/lib/agenda/tipos";
@@ -72,6 +74,7 @@ export function FormularioAgendamento({
   aoMudarObservacao,
   servicos,
   configuracao,
+  ocupacao,
   erro,
   aoSalvar,
 }: {
@@ -93,6 +96,13 @@ export function FormularioAgendamento({
   servicos: Servico[];
   /** Expediente e grade: é o que decide quais horários existem no dia. */
   configuracao: ConfiguracaoAgenda;
+  /**
+   * O que o barbeiro escolhido já tem marcado. Quem chama já filtra por
+   * barbeiro e já tira o próprio agendamento quando está editando — e é a
+   * mesma lista que desenha os blocos na faixa do dia, para a lista e a
+   * faixa nunca discordarem sobre o que está livre.
+   */
+  ocupacao: Agendamento[];
   erro: string | null;
   aoSalvar: (dados: DadosAgendamento) => void;
 }) {
@@ -116,7 +126,19 @@ export function FormularioAgendamento({
    * A duração corta o fim da lista: com 1h de serviço numa loja que fecha
    * às 19h, o último começo é 18:00.
    */
-  const horarios = horariosDaGrade(configuracao, escolhido?.duracaoMin ?? 30);
+  const duracao = escolhido?.duracaoMin ?? 30;
+
+  /** O que o DIA oferece — sem olhar quem já está marcado. */
+  const daGrade = horariosDaGrade(configuracao, duracao);
+
+  /** O que sobra depois de tirar o que já está ocupado. É o que a lista mostra. */
+  const horarios = horariosLivresDaGrade({
+    configuracao,
+    duracaoMin: duracao,
+    data,
+    barbeiroId,
+    agendamentos: ocupacao,
+  });
 
   /**
    * Um horário já marcado pode estar FORA da grade de hoje — a barbearia
@@ -134,9 +156,11 @@ export function FormularioAgendamento({
   // a pessoa mexer na configuração à toa.
   const etiquetaDoForasteiro = !horario
     ? ""
-    : noPassoDaAgenda(horario, configuracao)
-      ? "· não cabe no dia"
-      : "· fora da grade";
+    : !noPassoDaAgenda(horario, configuracao)
+      ? "· fora da grade"
+      : daGrade.includes(horario)
+        ? "· ocupado"
+        : "· não cabe no dia";
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -285,11 +309,19 @@ export function FormularioAgendamento({
             </span>
           </p>
         </div>
-        {horarios.length === 0 ? (
+        {daGrade.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nenhum horário do dia comporta esse serviço inteiro
             {escolhido ? ` (${duracaoPorExtenso(escolhido.duracaoMin)})` : ""}.
             Escolha um serviço mais curto, ou estenda o expediente.
+          </p>
+        ) : horarios.length === 0 ? (
+          /* Dia cheio é outra coisa de dia curto, e o conserto é outro:
+             aqui não adianta mexer no expediente — é trocar de dia ou de
+             barbeiro. */
+          <p className="text-sm text-muted-foreground">
+            Esse barbeiro está com o dia todo ocupado. Escolha outra data, ou
+            outro barbeiro.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
