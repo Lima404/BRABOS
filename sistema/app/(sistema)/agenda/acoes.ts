@@ -1058,6 +1058,38 @@ export async function renomearConvite(
 }
 
 /**
+ * Apaga o convite de vez.
+ *
+ * Diferente de desligar, e a diferença importa para quem está do outro lado:
+ * desligado, o link responde "a barbearia desativou esse link"; apagado, ele
+ * responde "esse link não existe" — e quem recebeu o papel semana passada
+ * acha que digitou errado e fica tentando.
+ *
+ * Por isso a tela explica isso antes de apagar, em vez de só perguntar "tem
+ * certeza?", que não dá o que conferir.
+ *
+ * Os AGENDAMENTOS marcados por este link ficam. Não existe chave de
+ * `agendamentos` para cá: o convite contava usos, não era dono de nada. O
+ * que se perde é a contagem.
+ */
+export async function excluirConvite(id: string): Promise<Resultado> {
+  return protegido("excluir convite", async () => {
+    if (!id) return { ok: false, erro: "Convite não informado." };
+
+    const supabase = await criarClienteServidor();
+    const { error } = await supabase
+      .from("convites_agendamento")
+      .delete()
+      .eq("id", id);
+
+    if (error) return traduzir("excluir convite", error);
+
+    revalidatePath("/agenda");
+    return { ok: true };
+  });
+}
+
+/**
  * Liga e desliga um convite.
  *
  * Marca `revogado` em vez de apagar a linha, por dois motivos. Quem recebeu

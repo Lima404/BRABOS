@@ -3,11 +3,19 @@
 import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ExternalLink, Link2, Loader2, Power, PowerOff } from "lucide-react";
+import {
+  ExternalLink,
+  Link2,
+  Loader2,
+  Power,
+  PowerOff,
+  Trash2,
+} from "lucide-react";
 
 import {
   alternarConvite,
   criarConvite,
+  excluirConvite,
   listarConvitesDaAgenda,
   renomearConvite,
 } from "@/app/(sistema)/agenda/acoes";
@@ -126,6 +134,23 @@ export function DialogoLinkAgendamento({
     },
     onError: (causa) => {
       console.error("[BARBOS] renomear convite:", causa);
+      setErro("Não consegui falar com o servidor. Tente de novo.");
+    },
+  });
+
+  const apagar = useMutation({
+    mutationFn: excluirConvite,
+    onSuccess: (r) => {
+      if (!r.ok) {
+        setErro(r.erro);
+        return;
+      }
+      setErro(null);
+      clienteQuery.invalidateQueries({ queryKey: chaves.agenda.convites });
+      avisar({ tom: "sucesso", titulo: "Link apagado" });
+    },
+    onError: (causa) => {
+      console.error("[BARBOS] excluir convite:", causa);
       setErro("Não consegui falar com o servidor. Tente de novo.");
     },
   });
@@ -365,6 +390,8 @@ export function DialogoLinkAgendamento({
                     alternar.mutate({ id: c.id, revogado: !c.revogado })
                   }
                   aoRenomear={(nome) => renomear.mutate({ id: c.id, nome })}
+                  aoExcluir={() => apagar.mutate(c.id)}
+                  apagando={apagar.isPending}
                 />
               ))}
             </ul>
@@ -403,6 +430,8 @@ function LinhaConvite({
   ocupado,
   aoAlternar,
   aoRenomear,
+  aoExcluir,
+  apagando,
 }: {
   convite: Convite;
   agora: Date;
@@ -411,6 +440,8 @@ function LinhaConvite({
   aoAlternar: () => void;
   /** Recebe o nome já limpo. String vazia = tirar o nome. */
   aoRenomear: (nome: string) => void;
+  aoExcluir: () => void;
+  apagando: boolean;
 }) {
   const estado = estadoDoConvite(convite, agora);
   const tom = TOM_DO_ESTADO[estado];
@@ -424,6 +455,12 @@ function LinhaConvite({
    */
   const podeDesligar = estado === "valido";
   const podeReligar = religarResolve(convite, agora);
+
+  // Apagar é sem volta, então são dois toques — o primeiro troca o corpo do
+  // card pelo aviso. Inline e não num modal: modal por cima de modal é
+  // proibido no projeto, e aqui ele nem faria falta, porque a pergunta cabe
+  // no lugar onde a resposta vai ser dada.
+  const [confirmando, setConfirmando] = useState(false);
 
   return (
     <li
@@ -464,24 +501,81 @@ function LinhaConvite({
             aria-label={
               podeReligar ? "Religar este link" : "Desligar este link"
             }
-            disabled={ocupado}
+            disabled={ocupado || confirmando}
             onClick={aoAlternar}
           >
             {podeReligar ? <Power /> : <PowerOff />}
           </Button>
         ) : null}
+
+        {/* `ghost` e não `destructive`: um botão vermelho por card
+            transformaria a lista inteira num alerta, e o que ela mostra são
+            links normais. O vermelho aparece na confirmação, onde a decisão
+            acontece. Mesma regra da coluna Ações do Estoque. */}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="shrink-0 text-muted-foreground hover:text-faltou"
+          aria-label="Apagar este link"
+          disabled={apagando || confirmando}
+          onClick={() => setConfirmando(true)}
+        >
+          <Trash2 />
+        </Button>
       </div>
 
-      <p className="truncate text-sm text-muted-foreground">
-        {textoDaValidade(convite, agora)} ·{" "}
-        <span data-numero>{textoDosUsos(convite)}</span>
-      </p>
+      {confirmando ? (
+        <div className="flex flex-col gap-3">
+          {/* A pergunta diz o que MUDA para quem está do outro lado, e não
+              só "tem certeza?" — que não dá nada para conferir. Desligar
+              continua sendo a saída melhor para link que já foi mandado, e
+              é isso que a frase oferece. */}
+          <Alerta tom="erro" titulo="Apagar este link?">
+            Quem já recebeu passa a ver <strong>&quot;link não
+            existe&quot;</strong> e vai achar que digitou errado.
+            {podeDesligar
+              ? " Desligar, em vez disso, explica que foi você quem desativou."
+              : ""}{" "}
+            Os agendamentos já marcados por ele continuam na agenda.
+          </Alerta>
 
-      <LinkCopiavel
-        caminho={`/agendar/${convite.codigo}`}
-        rotulo="Copiar link"
-        compacto
-      />
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="destructive"
+              className="sm:flex-1"
+              disabled={apagando}
+              onClick={aoExcluir}
+            >
+              {apagando ? <Loader2 className="animate-spin" /> : <Trash2 />}
+              Apagar mesmo assim
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="sm:flex-1"
+              disabled={apagando}
+              onClick={() => setConfirmando(false)}
+            >
+              Manter
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="truncate text-sm text-muted-foreground">
+            {textoDaValidade(convite, agora)} ·{" "}
+            <span data-numero>{textoDosUsos(convite)}</span>
+          </p>
+
+          <LinkCopiavel
+            caminho={`/agendar/${convite.codigo}`}
+            rotulo="Copiar link"
+            compacto
+          />
+        </>
+      )}
     </li>
   );
 }
