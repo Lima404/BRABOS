@@ -26,8 +26,24 @@ export type HorarioOcupado = {
 /** Barbeiro como o público o vê: nome e nada mais. */
 export type BarbeiroPublico = Pick<Barbeiro, "id" | "nome">;
 
+/**
+ * O convite por onde a pessoa entrou, quando foi por um.
+ *
+ * `null` quando ela entrou pelo link do apelido — que não expira, não tem
+ * limite e não precisa de contador.
+ */
+export type ConviteDaAgenda = {
+  codigo: string;
+  /** ISO, ou null quando não expira. */
+  expiraEm: string | null;
+  usos: number;
+  /** null = ilimitado. */
+  usosMax: number | null;
+};
+
 export type AgendaPublica = {
   barbearia: { id: string; nome: string; slug: string };
+  convite: ConviteDaAgenda | null;
   configuracao: ConfiguracaoAgenda;
   servicos: Servico[];
   barbeiros: BarbeiroPublico[];

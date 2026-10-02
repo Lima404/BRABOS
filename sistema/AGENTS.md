@@ -907,6 +907,58 @@ Excluir invalida `chaves.dashboard.todas` **e** `chaves.estoque.todas`: o
 balanço não pode continuar somando um atendimento que não existe mais, e a tela
 de Estoque não pode continuar escondendo a unidade que acabou de voltar.
 
+## Link de agendamento: o fixo e os convites
+
+São dois, e a diferença é o ponto.
+
+**O link do apelido** (`/agendar/bicos`) não é gerado nem expira. Ele existe
+desde que a barbearia tem apelido, e é o que vai no QR code colado na parede.
+**Continua aberto para sempre**, aconteça o que acontecer com os convites —
+papel impresso não se atualiza, e quebrar o que está na parede para fazer
+valer um convite de cinco vagas seria trocar um problema por outro maior.
+
+**Os convites** (`convites_agendamento`, migração 0033) são links com prazo
+e/ou limite, no formato do convite de servidor do Discord. Código de oito
+caracteres sorteado pelo banco, sem vogal e sem `0 1 l` — ele vai ser ditado
+em voz alta no balcão.
+
+**A resolução começa SEMPRE pelo apelido.** Só quando a chave não é apelido de
+ninguém é que ela é tratada como código. É isso que garante a promessa acima
+mesmo se um sorteio um dia coincidir com um apelido novo — e é por isso que
+`gerar_codigo_convite` é `security definer`: sob o RLS ele só veria os códigos
+da própria conta, acharia o sorteio livre, e o `unique` recusaria a linha com
+um erro que não explica nada.
+
+**"Uso" é agendamento MARCADO, não visita.** O WhatsApp abre o link sozinho
+para montar a prévia; contar visitas gastaria o convite sem ninguém ter
+clicado. Abrir e desistir não gasta nada, e recusa por horário ocupado também
+não — o contador sobe depois do `insert`, e só se ele passar.
+
+**Uso não volta quando o agendamento é cancelado.** O convite mede quantas
+vezes foi usado, não quantas pessoas apareceram.
+
+**Dois cliques no mesmo segundo num convite de uma vaga.** Quem resolve é o
+`for update` na linha do convite dentro de
+`criar_agendamento_publico_por_chave`: o segundo espera o primeiro e lê o
+contador já atualizado. Sem a trava, os dois leriam `usos = 0`.
+
+**Convite inválido NÃO é 404.** Expirado, esgotado e desligado têm frase
+própria na tela pública: o endereço está certo e a barbearia existe, e quem
+cai num 404 fica tentando o mesmo link achando que digitou errado. A tela
+**não** oferece o link fixo como saída — um convite de cinco vagas que termina
+entregando a porta aberta não é um convite de cinco vagas.
+
+**Desligar é interruptor, não exclusão.** A linha fica, `revogado` vira true,
+e dá para religar. Por isso não pede confirmação: não há o que se perder. E
+"a barbearia desativou esse link" é uma resposta melhor que "link não
+encontrado" para quem recebeu o papel semana passada.
+
+**As funções novas CHAMAM as antigas, não as copiam.**
+`agenda_publica_por_chave` e `criar_agendamento_publico_por_chave` resolvem a
+chave e delegam para `agenda_publica` / `criar_agendamento_publico`. Duplicar
+ali dentro criaria uma segunda cópia das regras de expediente, de grade, de
+folga e de sobreposição — esperando divergir no primeiro ajuste.
+
 ## Folga é a exceção da semana, não a semana
 
 "Dias de atendimento" responde **toda semana** — desmarcar a segunda fecha

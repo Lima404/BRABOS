@@ -38,6 +38,8 @@ export const chaves = {
     mes: (mes: string) => ["agenda", "mes", mes] as const,
     /** Configuracao + cardapio de servicos: mudam juntos, cacheiam juntos. */
     configuracao: ["agenda", "configuracao"] as const,
+    /** Links de convite — abrem a pedido, no modal do link. */
+    convites: ["agenda", "convites"] as const,
     /**
      * Itens consumidos num atendimento. Cache proprio por agendamento: a
      * comanda abre uma de cada vez e nao acompanha o mes.

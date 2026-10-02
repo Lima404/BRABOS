@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarX } from "lucide-react";
+import { CalendarX, LinkIcon } from "lucide-react";
 
 import { AgendarPublico } from "@/components/agendamento-online/agendar-publico";
 import { Alerta } from "@/components/ui/alerta";
@@ -49,6 +49,33 @@ export default async function AgendarPage({ params }: Props) {
   ]);
 
   if (!leitura.ok && leitura.motivo === "nao-encontrada") notFound();
+
+  // Convite que não vale mais NÃO é 404, e não é pane: o endereço está certo,
+  // a barbearia existe, e o que acabou foi o prazo ou as vagas. Quem recebeu
+  // o link precisa saber disso para pedir outro — mandado para um 404, ficaria
+  // tentando o mesmo endereço achando que digitou errado.
+  //
+  // Não oferecemos aqui o link fixo da barbearia como saída, por mais tentador
+  // que seja: um convite de cinco vagas que termina entregando a porta aberta
+  // não é um convite de cinco vagas.
+  if (!leitura.ok && leitura.motivo === "convite-invalido") {
+    const titulo =
+      leitura.estado === "expirado"
+        ? "Esse link expirou"
+        : leitura.estado === "esgotado"
+          ? "Esse link já foi todo usado"
+          : "Esse link foi desativado";
+
+    return (
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-4 py-6">
+        <EstadoVazio icone={LinkIcon} titulo={titulo} descricao={leitura.erro} />
+        <Alerta tom="info" titulo="Como marcar mesmo assim">
+          Fale com a barbearia pelo WhatsApp e peça o link novo — ou marque
+          direto com ela.
+        </Alerta>
+      </div>
+    );
+  }
 
   if (!leitura.ok) {
     return (

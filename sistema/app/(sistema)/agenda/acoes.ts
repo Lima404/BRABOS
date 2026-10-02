@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
+import { listarConvites } from "@/lib/convites/repositorio";
+import {
+  HORAS_VALIDAS,
+  LIMITES_VALIDOS,
+  type Convite,
+} from "@/lib/convites/tipos";
 import {
   nomeDeItemParaBanco,
   nomeParaBanco,
@@ -907,6 +913,132 @@ export async function ajustarComanda(
     // O estoque muda junto: item lançado ou removido soma e subtrai unidade.
     revalidatePath("/estoque");
 
+    return { ok: true };
+  });
+}
+
+
+// ============================================================
+// Convites de agendamento (migração 0033)
+// ============================================================
+
+export type ResultadoConvite =
+  | { ok: true; convite: Convite }
+  | { ok: false; erro: string };
+
+/**
+ * Lista os convites da barbearia.
+ *
+ * Ação de servidor e não rota `/api/`: a tela de link vive dentro do modal
+ * da agenda, abre a pedido, e a ação chega pelo caminho da própria página —
+ * um caminho a menos para dar errado.
+ */
+export async function listarConvitesDaAgenda(): Promise<Convite[]> {
+  return listarConvites();
+}
+
+/**
+ * Gera um convite.
+ *
+ * O CÓDIGO é sorteado pelo banco (`gerar_codigo_convite`, 0033), nunca aqui:
+ * só lá dentro dá para conferir que ele não repete nem bate com apelido de
+ * barbearia nenhuma — o RLS esconderia dos olhos daqui exatamente as linhas
+ * que precisariam ser comparadas.
+ */
+export async function criarConvite(entrada: {
+  /** Horas de validade. `null` = não expira. */
+  horas: number | null;
+  /** `null` = ilimitado. */
+  usosMax: number | null;
+}): Promise<ResultadoConvite> {
+  try {
+    if (!HORAS_VALIDAS.includes(entrada.horas)) {
+      return { ok: false, erro: "Escolha uma validade da lista." };
+    }
+    if (!LIMITES_VALIDOS.includes(entrada.usosMax)) {
+      return { ok: false, erro: "Escolha um limite de usos da lista." };
+    }
+
+    const supabase = await criarClienteServidor();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { ok: false, erro: "Sessão expirada. Entre de novo." };
+
+    const expiraEm =
+      entrada.horas === null
+        ? null
+        : new Date(Date.now() + entrada.horas * 3_600_000).toISOString();
+
+    const { data, error } = await supabase
+      .from("convites_agendamento")
+      .insert({
+        barbearia_id: user.id,
+        expira_em: expiraEm,
+        usos_max: entrada.usosMax,
+      })
+      .select("id, codigo, expira_em, usos, usos_max, revogado, criado_em")
+      .single();
+
+    if (error) {
+      console.error("[BARBOS] criar convite:", error.code ?? "", error.message);
+
+      if (error.code === "PGRST205" || error.message?.includes("convites_agendamento")) {
+        return {
+          ok: false,
+          erro: "Os convites ainda não estão ligados no banco. Rode a migração 0033.",
+        };
+      }
+      return { ok: false, erro: "Não consegui gerar o link agora. Tente de novo." };
+    }
+
+    revalidatePath("/agenda");
+
+    return {
+      ok: true,
+      convite: {
+        id: data.id,
+        codigo: data.codigo,
+        expiraEm: data.expira_em,
+        usos: data.usos,
+        usosMax: data.usos_max,
+        revogado: data.revogado,
+        criadoEm: data.criado_em,
+      },
+    };
+  } catch (erro) {
+    console.error("[BARBOS] criar convite lançou exceção:", erro);
+    return { ok: false, erro: "Não consegui falar com o servidor." };
+  }
+}
+
+/**
+ * Liga e desliga um convite.
+ *
+ * Marca `revogado` em vez de apagar a linha, por dois motivos. Quem recebeu
+ * o papel semana passada merece ler "a barbearia desativou esse link" e não
+ * "link não encontrado" — a segunda frase faz a pessoa achar que digitou
+ * errado e ficar tentando. E, guardada a linha, desligar deixa de ser
+ * irreversível: por isso é um interruptor e não um "excluir", e por isso
+ * não pede confirmação. Nada se perde no caminho.
+ */
+export async function alternarConvite(
+  id: string,
+  revogado: boolean,
+): Promise<Resultado> {
+  return protegido("alternar convite", async () => {
+    if (!id) return { ok: false, erro: "Convite não informado." };
+
+    const supabase = await criarClienteServidor();
+    const { error } = await supabase
+      .from("convites_agendamento")
+      .update({ revogado })
+      .eq("id", id);
+
+    if (error) return traduzir("alternar convite", error);
+
+    revalidatePath("/agenda");
     return { ok: true };
   });
 }

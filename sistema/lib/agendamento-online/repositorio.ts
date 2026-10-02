@@ -20,7 +20,19 @@ import type { AgendaPublica } from "@/lib/agendamento-online/tipos";
 export type LeituraAgendaPublica =
   | { ok: true; agenda: AgendaPublica }
   | { ok: false; motivo: "nao-encontrada" }
-  | { ok: false; motivo: "indisponivel"; detalhe: string };
+  | { ok: false; motivo: "indisponivel"; detalhe: string }
+  /**
+   * O link existe, a barbearia existe, e mesmo assim não dá para marcar: o
+   * convite venceu, esgotou as vagas ou foi desligado. É um caso SEU, com
+   * frase própria — cair no 404 faria a pessoa achar que digitou errado e
+   * ficar tentando o mesmo endereço.
+   */
+  | {
+      ok: false;
+      motivo: "convite-invalido";
+      estado: "expirado" | "esgotado" | "revogado";
+      erro: string;
+    };
 
 /**
  * Leitura da tela pública de agendamento.
@@ -30,13 +42,14 @@ export type LeituraAgendaPublica =
  * Nada aqui toca `agendamentos`, `servicos` ou `barbeiros` direto.
  */
 export async function obterAgendaPublica(
-  slug: string,
+  /** Apelido da barbearia OU código de convite — ver migração 0033. */
+  chave: string,
   data: string,
 ): Promise<LeituraAgendaPublica> {
   const supabase = await criarClienteServidor();
 
-  const { data: bruto, error } = await supabase.rpc("agenda_publica", {
-    p_slug: slug,
+  const { data: bruto, error } = await supabase.rpc("agenda_publica_por_chave", {
+    p_chave: chave,
     p_data: data,
   });
 
@@ -56,25 +69,49 @@ export async function obterAgendaPublica(
       ok: false,
       motivo: "indisponivel",
       detalhe: semFuncao
-        ? "A função `agenda_publica` não existe no banco. Rode a migração 0018_agendamento_online.sql."
+        ? "A função `agenda_publica_por_chave` não existe no banco. Rode a migração 0033_convites_de_agendamento.sql."
         : error.message,
     };
   }
 
   const r = (bruto ?? {}) as Record<string, unknown>;
 
-  // A própria RPC responde `ok: false` quando o apelido não bate.
-  if (r.ok !== true) return { ok: false, motivo: "nao-encontrada" };
+  // A própria RPC responde `ok: false` quando a chave não bate — e, desde a
+  // 0033, diz POR QUE quando a chave é um convite que não serve mais.
+  if (r.ok !== true) {
+    const estado = r.motivo;
+    if (estado === "expirado" || estado === "esgotado" || estado === "revogado") {
+      return {
+        ok: false,
+        motivo: "convite-invalido",
+        estado,
+        erro: typeof r.erro === "string" ? r.erro : "Esse link não vale mais.",
+      };
+    }
+    return { ok: false, motivo: "nao-encontrada" };
+  }
 
   const barbearia = r.barbearia as AgendaPublica["barbearia"] | undefined;
   if (!barbearia?.id) return { ok: false, motivo: "nao-encontrada" };
 
   const cfg = (r.configuracao ?? {}) as Record<string, unknown>;
 
+  const cv = r.convite as Record<string, unknown> | null | undefined;
+
   return {
     ok: true,
     agenda: {
       barbearia,
+      convite: cv
+        ? {
+            codigo: texto(cv.codigo),
+            expiraEm:
+              typeof cv.expiraEm === "string" ? cv.expiraEm : null,
+            usos: inteiro(cv.usos),
+            usosMax:
+              typeof cv.usosMax === "number" ? cv.usosMax : null,
+          }
+        : null,
       configuracao: {
         diasAtendimento: Array.isArray(cfg.diasAtendimento)
           ? (cfg.diasAtendimento as number[])

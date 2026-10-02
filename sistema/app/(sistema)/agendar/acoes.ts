@@ -57,15 +57,23 @@ export async function agendarPeloLink(entrada: {
 
     const supabase = await criarClienteServidor();
 
-    const { data, error } = await supabase.rpc("criar_agendamento_publico", {
-      p_slug: slug,
+    // `_por_chave` (0033): aceita o apelido E o código de convite, e é ela
+    // que confere prazo, limite e contador — tudo com a linha do convite
+    // travada, para dois cliques no mesmo segundo não furarem um link de
+    // uma vaga. Apelido continua caindo na função de sempre, sem convite
+    // nenhum no caminho.
+    const { data, error } = await supabase.rpc(
+      "criar_agendamento_publico_por_chave",
+      {
+      p_chave: slug,
       p_cliente_nome: nome,
       p_barbeiro_id: entrada.barbeiroId,
       p_servico_id: entrada.servicoId,
       p_data: entrada.data,
       p_horario: entrada.horario,
       p_observacao: textoLivreParaBanco(entrada.observacao ?? "") || null,
-    });
+      },
+    );
 
     if (error) {
       console.error(
@@ -80,7 +88,7 @@ export async function agendarPeloLink(entrada: {
       ) {
         return {
           ok: false,
-          erro: "O agendamento online ainda não está ligado no banco. Rode a migração 0018.",
+          erro: "O agendamento online ainda não está ligado no banco. Rode a migração 0033.",
         };
       }
 
