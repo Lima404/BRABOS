@@ -188,6 +188,11 @@ export function mensagemForaDoExpediente(
  * mesma `conflitoCom` que o formulário usa ao salvar — e a barreira de
  * verdade continua sendo a trava do banco (migração 0006), porque entre
  * desenhar esta lista e tocar em Agendar alguém pode ter pegado o horário.
+ *
+ * `agora` corta o que já passou: às 15:14, 15:00 sai da lista porque o
+ * horário começou. Vale só para HOJE — quem chama decide isso passando
+ * `null` nos outros dias, porque o relógio não tem nada a ver com a
+ * terça-feira que vem.
  */
 export function horariosLivresDaGrade({
   configuracao,
@@ -196,6 +201,7 @@ export function horariosLivresDaGrade({
   barbeiroId,
   agendamentos,
   ignorarId,
+  agora = null,
 }: {
   configuracao: ConfiguracaoAgenda;
   duracaoMin: number;
@@ -206,15 +212,28 @@ export function horariosLivresDaGrade({
   agendamentos: Agendamento[];
   /** Na edição, o próprio agendamento não bloqueia o horário dele. */
   ignorarId?: string;
+  /**
+   * HH:MM — piso do dia. `null` quando a data escolhida NÃO é hoje: ali o
+   * dia inteiro está em aberto e a hora do relógio não significa nada.
+   */
+  agora?: string | null;
 }): string[] {
-  return horariosDaGrade(configuracao, duracaoMin).filter(
-    (horario) =>
-      !conflitoCom(
-        { data, horario, duracaoMin, barbeiroId },
-        agendamentos,
-        ignorarId,
-      ),
-  );
+  const piso = agora === null ? null : emMinutos(agora);
+
+  return horariosDaGrade(configuracao, duracaoMin).filter((horario) => {
+    if (piso !== null && emMinutos(horario) < piso) return false;
+
+    return !conflitoCom(
+      { data, horario, duracaoMin, barbeiroId },
+      agendamentos,
+      ignorarId,
+    );
+  });
+}
+
+/** O horário já passou? `false` quando a data não é hoje (`agora` nulo). */
+export function jaPassou(horario: string, agora: string | null): boolean {
+  return agora !== null && emMinutos(horario) < emMinutos(agora);
 }
 
 /**

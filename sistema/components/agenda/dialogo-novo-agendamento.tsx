@@ -374,6 +374,20 @@ function Conteudo({
       return;
     }
 
+    // Só ao MARCAR, nunca ao editar. Editar um atendimento que já aconteceu
+    // hoje é rotina — lançar o consumo, corrigir a observação, concluir —, e
+    // uma recusa aqui transformaria isso em "não dá". Quem está marcando
+    // horário novo é que não pode escolher o que já passou.
+    if (!emEdicao && ehHoje(dados.data)) {
+      const agora = agoraNaBarbearia();
+      if (dados.horario < agora) {
+        const frase = `Esse horário já passou — agora são ${agora}. Escolha um mais tarde, ou outra data.`;
+        setErro(frase);
+        avisar({ tom: "erro", titulo: "Horário no passado", descricao: frase });
+        return;
+      }
+    }
+
     const duracao = servico?.duracaoMin ?? 30;
     if (!cabeNoExpediente(dados.horario, duracao, configuracao)) {
       const frase = mensagemForaDoExpediente(configuracao);

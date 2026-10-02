@@ -22,7 +22,12 @@ import {
   type AgendaPublica,
 } from "@/lib/agendamento-online/tipos";
 import { chaves } from "@/lib/query";
-import { diaComSemana, hojeNaBarbearia } from "@/lib/formato";
+import {
+  agoraNaBarbearia,
+  diaComSemana,
+  ehHoje,
+  hojeNaBarbearia,
+} from "@/lib/formato";
 
 /**
  * A tela que o cliente abre pelo link — sem conta, sem senha.
@@ -125,6 +130,16 @@ export function AgendarPublico({
 
     if (choque) {
       setErro("Esse horário já está ocupado. Escolha outro na faixa ao lado.");
+      return;
+    }
+
+    // O cliente pode ter deixado a página aberta a tarde inteira. O servidor
+    // recusa de novo (migração 0032) — aqui é só para ele não levar a recusa
+    // depois de preencher o nome.
+    if (ehHoje(dados.data) && dados.horario < agoraNaBarbearia()) {
+      setErro(
+        `Esse horário já passou — agora são ${agoraNaBarbearia()}. Escolha um mais tarde, ou outro dia.`,
+      );
       return;
     }
 

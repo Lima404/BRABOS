@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+
 import type { DadosAgendamento } from "@/app/(sistema)/agenda/acoes";
 import { Alerta } from "@/components/ui/alerta";
 import { Campo } from "@/components/ui/campo";
@@ -15,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   horariosDaGrade,
   horariosLivresDaGrade,
+  jaPassou,
   noPassoDaAgenda,
   passoDaAgenda,
 } from "@/lib/agenda/horarios";
@@ -27,7 +30,9 @@ import {
 } from "@/lib/agenda/tipos";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
 import {
+  agoraNaBarbearia,
   duracaoPorExtenso,
+  ehHoje,
   moeda,
   sanitizarNome,
   sanitizarTextoLivre,
@@ -39,6 +44,27 @@ import { cn } from "@/lib/utils";
  * ele por `form={ID_FORMULARIO_AGENDAMENTO}`. Se mudar aqui, muda lá.
  */
 export const ID_FORMULARIO_AGENDAMENTO = "formulario-agendamento";
+
+/**
+ * O relógio da barbearia, seguro para hidratação.
+ *
+ * `useSyncExternalStore` e não `useState` + efeito: no SERVIDOR devolve
+ * `null`, porque ali não existe hora que o navegador vá repetir um instante
+ * depois — ler o relógio direto no render é o erro de hidratação que já
+ * derrubou o seletor de barbeiro desta mesma tela. No navegador devolve
+ * HH:MM e reavisa a cada meio minuto, para que 15:30 saia da lista sozinho
+ * quando dá 15:30 com a tela aberta.
+ */
+function useRelogioDaBarbearia(): string | null {
+  return useSyncExternalStore(
+    (aoMudar) => {
+      const id = setInterval(aoMudar, 30_000);
+      return () => clearInterval(id);
+    },
+    () => agoraNaBarbearia(),
+    () => null,
+  );
+}
 
 function minutosDe(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
@@ -128,16 +154,27 @@ export function FormularioAgendamento({
    */
   const duracao = escolhido?.duracaoMin ?? 30;
 
-  /** O que o DIA oferece — sem olhar quem já está marcado. */
+  /**
+   * Piso do dia. A ordem do `&&` importa: no servidor `relogio` é `null` e
+   * `ehHoje` nem chega a ser chamado — nada de data lida no render de lá.
+   */
+  const relogio = useRelogioDaBarbearia();
+  const agora = relogio !== null && ehHoje(data) ? relogio : null;
+
+  /** O que o DIA oferece — sem olhar o relógio nem quem já está marcado. */
   const daGrade = horariosDaGrade(configuracao, duracao);
 
-  /** O que sobra depois de tirar o que já está ocupado. É o que a lista mostra. */
+  /** O que ainda está por vir hoje. Igual a `daGrade` nos outros dias. */
+  const aindaPorVir = daGrade.filter((h) => !jaPassou(h, agora));
+
+  /** O que sobra depois de tirar o passado e o ocupado — é o que a lista mostra. */
   const horarios = horariosLivresDaGrade({
     configuracao,
     duracaoMin: duracao,
     data,
     barbeiroId,
     agendamentos: ocupacao,
+    agora,
   });
 
   /**
@@ -158,9 +195,11 @@ export function FormularioAgendamento({
     ? ""
     : !noPassoDaAgenda(horario, configuracao)
       ? "· fora da grade"
-      : daGrade.includes(horario)
-        ? "· ocupado"
-        : "· não cabe no dia";
+      : jaPassou(horario, agora)
+        ? "· já passou"
+        : daGrade.includes(horario)
+          ? "· ocupado"
+          : "· não cabe no dia";
 
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -315,13 +354,17 @@ export function FormularioAgendamento({
             {escolhido ? ` (${duracaoPorExtenso(escolhido.duracaoMin)})` : ""}.
             Escolha um serviço mais curto, ou estenda o expediente.
           </p>
+        ) : aindaPorVir.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            O expediente de hoje já acabou. Escolha outra data.
+          </p>
         ) : horarios.length === 0 ? (
           /* Dia cheio é outra coisa de dia curto, e o conserto é outro:
              aqui não adianta mexer no expediente — é trocar de dia ou de
              barbeiro. */
           <p className="text-sm text-muted-foreground">
-            Esse barbeiro está com o dia todo ocupado. Escolha outra data, ou
-            outro barbeiro.
+            Esse barbeiro está com o resto do dia ocupado. Escolha outra data,
+            ou outro barbeiro.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">
