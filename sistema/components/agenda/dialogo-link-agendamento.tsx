@@ -129,6 +129,11 @@ export function DialogoLinkAgendamento({
       aberto={aberto}
       aoMudarAberto={aoMudarAberto}
       tamanho="cheio"
+      // `cheio` dá 896px; aqui são duas colunas com endereço completo em
+      // cada uma, e 896 deixava o link cortado nas duas. Alargar é local
+      // de propósito: mudar o tamanho `cheio` mexeria em todo modal de
+      // lista do sistema.
+      className="sm:max-w-5xl"
       titulo="Link de agendamento online"
       descricao="Mande no WhatsApp, ponha na bio ou imprima como QR code."
       rodape={
@@ -309,7 +314,7 @@ export function DialogoLinkAgendamento({
               acabe sozinho.
             </p>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul className="flex flex-col gap-2">
               {lista.map((c) => (
                 <LinhaConvite
                   key={c.id}
@@ -380,23 +385,28 @@ function LinhaConvite({
   return (
     <li
       className={cn(
-        "flex flex-col gap-3 rounded-lg border border-border p-3",
+        "flex flex-col gap-2 rounded-lg border border-border p-3",
         destacado && "border-primary ring-1 ring-primary/40",
         estado !== "valido" && "opacity-75",
       )}
     >
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Uma linha, sempre com a MESMA altura: o `min-h-11` é a altura do
+          botão de ícone, então o card não encolhe quando não há botão — era
+          isso que fazia o convite vencido ficar mais baixo que os vizinhos.
+          E nada envolve: o texto trunca em vez de cair para a linha de
+          baixo, que era o que empurrava o botão para fora. */}
+      <div className="flex min-h-11 items-center gap-2">
         {/* Estado nunca é dito só pela cor nem só pelo cinza. */}
         <span
           className={cn(
-            "rounded-full border px-2 py-0.5 text-xs font-semibold",
+            "shrink-0 rounded-full border px-2 py-0.5 text-xs font-semibold",
             tom.classe,
           )}
         >
           {tom.texto}
         </span>
 
-        <span className="text-sm text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
           {textoDaValidade(convite, agora)} ·{" "}
           <span data-numero>{textoDosUsos(convite)}</span>
         </span>
@@ -405,20 +415,24 @@ function LinhaConvite({
           <Button
             type="button"
             variant="ghost"
-            size="sm"
-            className="ml-auto"
+            size="icon"
+            className="shrink-0"
+            aria-label={
+              podeReligar ? "Religar este link" : "Desligar este link"
+            }
             disabled={ocupado}
             onClick={aoAlternar}
           >
             {podeReligar ? <Power /> : <PowerOff />}
-            {podeReligar ? "Religar" : "Desligar"}
           </Button>
         ) : null}
       </div>
 
-      {/* Rótulo curto: numa coluna de ~420px, "Copiar link" comeria o espaço
-          que o endereço precisa para ser lido antes de ser copiado. */}
-      <LinkCopiavel caminho={`/agendar/${convite.codigo}`} rotulo="Copiar" />
+      <LinkCopiavel
+        caminho={`/agendar/${convite.codigo}`}
+        rotulo="Copiar link"
+        compacto
+      />
     </li>
   );
 }

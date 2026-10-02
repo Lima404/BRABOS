@@ -21,10 +21,19 @@ import { Button } from "@/components/ui/button";
 export function LinkCopiavel({
   caminho,
   rotulo = "Copiar link",
+  compacto = false,
 }: {
   /** Começa com "/" — o domínio entra sozinho. */
   caminho: string;
   rotulo?: string;
+  /**
+   * Botão só com o ícone, numa linha só.
+   *
+   * Para lista: numa coluna estreita, o rótulo escrito empurra o endereço
+   * para a linha de baixo e cada item passa a ter uma altura diferente. O
+   * `aria-label` mantém o botão anunciado por extenso.
+   */
+  compacto?: boolean;
 }) {
   const [origem, setOrigem] = useState("");
   const [copiado, setCopiado] = useState(false);
@@ -46,7 +55,13 @@ export function LinkCopiavel({
   }
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div
+      className={
+        compacto
+          ? "flex items-center gap-2"
+          : "flex flex-col gap-2 sm:flex-row sm:items-center"
+      }
+    >
       <code className="min-w-0 flex-1 truncate rounded-lg bg-secondary px-3 py-2.5 font-mono text-sm">
         {enderecoCompleto || caminho}
       </code>
@@ -54,11 +69,13 @@ export function LinkCopiavel({
       <Button
         type="button"
         variant="outline"
+        size={compacto ? "icon" : "default"}
         onClick={copiar}
+        aria-label={compacto ? (copiado ? "Copiado" : rotulo) : undefined}
         className="shrink-0"
       >
         {copiado ? <Check /> : <Copy />}
-        {copiado ? "Copiado" : rotulo}
+        {compacto ? null : copiado ? "Copiado" : rotulo}
       </Button>
 
       {/* aria-live: quem usa leitor de tela ouve a confirmação, que de outro
