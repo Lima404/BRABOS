@@ -28,6 +28,7 @@ import {
   LIMITES,
   VALIDADES,
   estadoDoConvite,
+  religarResolve,
   textoDaValidade,
   textoDosUsos,
   type Convite,
@@ -127,7 +128,7 @@ export function DialogoLinkAgendamento({
     <Modal
       aberto={aberto}
       aoMudarAberto={aoMudarAberto}
-      tamanho="grande"
+      tamanho="cheio"
       titulo="Link de agendamento online"
       descricao="Mande no WhatsApp, ponha na bio ou imprima como QR code."
       rodape={
@@ -152,7 +153,14 @@ export function DialogoLinkAgendamento({
         </>
       }
     >
-      <div className="flex flex-col gap-7">
+      {/* Duas colunas de `lg` pra cima: à esquerda o que se CONFIGURA, à
+          direita o que já EXISTE. Empilhado, a lista de links ficava tão
+          abaixo dos seletores que gerar um e conferir o resultado virava
+          rolagem de ida e volta. No celular volta a ser uma coluna só, na
+          mesma ordem — configurar vem antes de ter o que listar. */}
+      <div className="grid gap-7 lg:grid-cols-2 lg:gap-8">
+        {/* ================= esquerda: configurar ================= */}
+        <div className="flex min-w-0 flex-col gap-6">
         {/* ---------------- link fixo ---------------- */}
         <section className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
@@ -192,10 +200,10 @@ export function DialogoLinkAgendamento({
           </Alerta>
         ) : null}
 
-        {/* ---------------- convites ---------------- */}
+        {/* ---------------- gerar convite ---------------- */}
         <section className="flex flex-col gap-4 border-t border-border pt-6">
           <div className="flex flex-col gap-1">
-            <h3 className="text-sm font-semibold">Links com prazo e limite</h3>
+            <h3 className="text-sm font-semibold">Novo link com prazo</h3>
             <p className="text-sm text-muted-foreground">
               Para uma promoção, um dia específico, um número de vagas. Cada um
               morre sozinho quando a hora ou as vagas acabam — e o link fixo
@@ -268,6 +276,25 @@ export function DialogoLinkAgendamento({
           </Button>
 
           {erro ? <Alerta>{erro}</Alerta> : null}
+        </section>
+
+          <Alerta tom="info" titulo="O que o link ainda não faz">
+            Não pede telefone e não manda confirmação. Enquanto for assim,
+            combine pelo WhatsApp o que for remarcação ou desistência.
+          </Alerta>
+        </div>
+
+        {/* ================= direita: o que já existe ================= */}
+        <div className="flex min-w-0 flex-col gap-4 border-t border-border pt-6 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-8">
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-sm font-semibold">Links gerados</h3>
+            {lista.length > 0 ? (
+              <span className="text-sm text-muted-foreground">
+                <span data-numero>{lista.length}</span>{" "}
+                {lista.length === 1 ? "link" : "links"}
+              </span>
+            ) : null}
+          </div>
 
           {isPending ? (
             <div
@@ -277,8 +304,9 @@ export function DialogoLinkAgendamento({
             />
           ) : lista.length === 0 ? (
             <p className="rounded-lg border border-border bg-secondary/40 px-3 py-3 text-sm text-muted-foreground">
-              Nenhum link com prazo ainda. O link fixo acima continua
-              funcionando.
+              Nenhum link com prazo ainda. O link fixo ao lado continua
+              funcionando — estes aqui são para quando você quiser um que
+              acabe sozinho.
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
@@ -296,12 +324,7 @@ export function DialogoLinkAgendamento({
               ))}
             </ul>
           )}
-        </section>
-
-        <Alerta tom="info" titulo="O que o link ainda não faz">
-          Não pede telefone e não manda confirmação. Enquanto for assim,
-          combine pelo WhatsApp o que for remarcação ou desistência.
-        </Alerta>
+        </div>
       </div>
     </Modal>
   );
@@ -344,6 +367,16 @@ function LinhaConvite({
   const estado = estadoDoConvite(convite, agora);
   const tom = TOM_DO_ESTADO[estado];
 
+  /**
+   * O interruptor só aparece quando tem efeito.
+   *
+   * Vencido ou esgotado não volta — oferecer "Religar" ali seria prometer o
+   * que o banco vai recusar. E "Desligar" um link que já morreu sozinho não
+   * desliga nada.
+   */
+  const podeDesligar = estado === "valido";
+  const podeReligar = religarResolve(convite, agora);
+
   return (
     <li
       className={cn(
@@ -368,20 +401,24 @@ function LinhaConvite({
           <span data-numero>{textoDosUsos(convite)}</span>
         </span>
 
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="ml-auto"
-          disabled={ocupado}
-          onClick={aoAlternar}
-        >
-          {convite.revogado ? <Power /> : <PowerOff />}
-          {convite.revogado ? "Religar" : "Desligar"}
-        </Button>
+        {podeDesligar || podeReligar ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            disabled={ocupado}
+            onClick={aoAlternar}
+          >
+            {podeReligar ? <Power /> : <PowerOff />}
+            {podeReligar ? "Religar" : "Desligar"}
+          </Button>
+        ) : null}
       </div>
 
-      <LinkCopiavel caminho={`/agendar/${convite.codigo}`} />
+      {/* Rótulo curto: numa coluna de ~420px, "Copiar link" comeria o espaço
+          que o endereço precisa para ser lido antes de ser copiado. */}
+      <LinkCopiavel caminho={`/agendar/${convite.codigo}`} rotulo="Copiar" />
     </li>
   );
 }

@@ -64,10 +64,25 @@ export type EstadoConvite = "valido" | "expirado" | "esgotado" | "revogado";
  * e na tela isso só acontece depois que ela monta.
  */
 export function estadoDoConvite(c: Convite, agora: Date): EstadoConvite {
-  if (c.revogado) return "revogado";
+  // A ordem importa, e não é a óbvia: o que VENCEU vem antes do que foi
+  // DESLIGADO. Um convite que expirou e também foi desligado continua morto
+  // depois de religado, e anunciá-lo como "Desligado" ofereceria um botão
+  // que não devolve nada. Dizer "Expirado" é dizer o que a dona não
+  // consegue desfazer.
   if (c.expiraEm && new Date(c.expiraEm) <= agora) return "expirado";
   if (c.usosMax !== null && c.usos >= c.usosMax) return "esgotado";
+  if (c.revogado) return "revogado";
   return "valido";
+}
+
+/**
+ * Religar devolve o link à vida?
+ *
+ * Só quando desligar foi o ÚNICO problema. Religar um convite vencido não
+ * faz nada, e um botão que promete e não cumpre é pior que botão nenhum.
+ */
+export function religarResolve(c: Convite, agora: Date): boolean {
+  return c.revogado && estadoDoConvite({ ...c, revogado: false }, agora) === "valido";
 }
 
 /** "Expira em 3 dias", "Expirou", "Não expira". */
