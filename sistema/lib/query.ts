@@ -30,6 +30,41 @@ export function obterQueryClient(): QueryClient {
   return clienteNoNavegador;
 }
 
+/**
+ * O cache da CONTA logada — e não o da aba.
+ *
+ * ============================================================
+ * ISTO CONSERTOU UM VAZAMENTO ENTRE CONTAS. NÃO SIMPLIFICAR.
+ * ============================================================
+ *
+ * O cliente acima vive "pra vida da aba", e a aba SOBREVIVE a sair e
+ * entrar: o `sair` termina em `redirect()` dentro de uma ação de servidor,
+ * que o Next resolve pelo roteador — sem recarregar o documento. O
+ * JavaScript continua de pé, o cliente de cache junto, e a conta seguinte
+ * encontrava a lista da conta anterior já pronta e "fresca" (staleTime de
+ * 60s), então nem refazia a busca.
+ *
+ * O servidor sempre esteve certo — o RLS nunca entregou linha de outra
+ * barbearia. Quem mentia era a tela, mostrando o que tinha guardado.
+ *
+ * Aqui o cache passa a pertencer à conta: id diferente, cliente novo. Vale
+ * para TODAS as telas do sistema, não só para os convites — agenda, estoque
+ * e dashboard corriam o mesmo risco.
+ *
+ * Guardamos só o mais recente de propósito. Voltar para a conta anterior
+ * recomeça com cache vazio, que é mais lento e nunca errado.
+ */
+let cacheDaConta: { id: string | null; cliente: QueryClient } | undefined;
+
+export function obterQueryClientDaConta(id: string | null): QueryClient {
+  if (isServer) return criarQueryClient();
+
+  if (!cacheDaConta || cacheDaConta.id !== id) {
+    cacheDaConta = { id, cliente: criarQueryClient() };
+  }
+  return cacheDaConta.cliente;
+}
+
 /** Chaves de cache. Centralizadas pra nunca divergir entre telas. */
 export const chaves = {
   agenda: {

@@ -1,5 +1,6 @@
 import { Cabecalho } from "@/components/cabecalho";
 import { Sidebar } from "@/components/navegacao/sidebar";
+import { CacheDaConta } from "@/components/sessao/cache-da-conta";
 import { obterSessao } from "@/lib/conta";
 
 /**
@@ -28,7 +29,12 @@ export default async function LayoutSistema({ children }: LayoutProps<"/">) {
         {/* Sem max-width: a agenda ocupa a tela inteira. Páginas de leitura
             põem o próprio limite de largura internamente. */}
         <main className="w-full flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pb-10">
-          {children}
+          {/* O cache das telas pertence à CONTA, não à aba — ver o comentário
+              em `cache-da-conta.tsx`. Sem isto, sair e entrar com outra conta
+              no mesmo navegador mostrava os dados da anterior. */}
+          <CacheDaConta contaId={barbearia?.id ?? null}>
+            {children}
+          </CacheDaConta>
         </main>
       </div>
     </div>
