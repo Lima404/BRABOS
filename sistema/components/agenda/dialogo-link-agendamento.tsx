@@ -9,10 +9,12 @@ import {
   alternarConvite,
   criarConvite,
   listarConvitesDaAgenda,
+  renomearConvite,
 } from "@/app/(sistema)/agenda/acoes";
 import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { Campo } from "@/components/ui/campo";
+import { Input } from "@/components/ui/input";
 import { LinkCopiavel } from "@/components/ui/link-copiavel";
 import { Modal } from "@/components/ui/modal";
 import {
@@ -25,6 +27,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import { chaves } from "@/lib/query";
 import {
+  APELIDO_MAXIMO,
   LIMITES,
   VALIDADES,
   estadoDoConvite,
@@ -34,6 +37,7 @@ import {
   type Convite,
   type EstadoConvite,
 } from "@/lib/convites/tipos";
+import { sanitizarNome } from "@/lib/formato";
 import { cn } from "@/lib/utils";
 
 /**
@@ -66,6 +70,7 @@ export function DialogoLinkAgendamento({
   const clienteQuery = useQueryClient();
   const { avisar } = useToast();
 
+  const [apelido, setApelido] = useState("");
   const [horas, setHoras] = useState<number | null>(24 * 7);
   const [usosMax, setUsosMax] = useState<number | null>(null);
   const [erro, setErro] = useState<string | null>(null);
@@ -84,7 +89,7 @@ export function DialogoLinkAgendamento({
   });
 
   const gerar = useMutation({
-    mutationFn: () => criarConvite({ horas, usosMax }),
+    mutationFn: () => criarConvite({ horas, usosMax, apelido }),
     onSuccess: (r) => {
       if (!r.ok) {
         setErro(r.erro);
@@ -92,6 +97,9 @@ export function DialogoLinkAgendamento({
       }
       setErro(null);
       setRecem(r.convite.codigo);
+      // O nome volta a ficar em branco: o próximo link é outro, e um campo
+      // que guarda o nome do anterior gera dois "PROMO OUTUBRO" na lista.
+      setApelido("");
       clienteQuery.invalidateQueries({ queryKey: chaves.agenda.convites });
       avisar({
         tom: "sucesso",
@@ -101,6 +109,23 @@ export function DialogoLinkAgendamento({
     },
     onError: (causa) => {
       console.error("[BARBOS] gerar convite:", causa);
+      setErro("Não consegui falar com o servidor. Tente de novo.");
+    },
+  });
+
+  const renomear = useMutation({
+    mutationFn: ({ id, nome }: { id: string; nome: string }) =>
+      renomearConvite(id, nome),
+    onSuccess: (r) => {
+      if (!r.ok) {
+        setErro(r.erro);
+        return;
+      }
+      setErro(null);
+      clienteQuery.invalidateQueries({ queryKey: chaves.agenda.convites });
+    },
+    onError: (causa) => {
+      console.error("[BARBOS] renomear convite:", causa);
       setErro("Não consegui falar com o servidor. Tente de novo.");
     },
   });
@@ -216,6 +241,20 @@ export function DialogoLinkAgendamento({
             </p>
           </div>
 
+          <Campo
+            id="convite-nome"
+            rotulo="Nome do link"
+            opcional
+            ajuda="Para você reconhecer na lista depois — o cliente não vê."
+          >
+            <Input
+              value={apelido}
+              onChange={(e) => setApelido(sanitizarNome(e.target.value))}
+              placeholder="Ex.: PROMO DE OUTUBRO"
+              maxLength={APELIDO_MAXIMO}
+            />
+          </Campo>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <Campo id="convite-validade" rotulo="Expira após">
               <Select
@@ -325,6 +364,7 @@ export function DialogoLinkAgendamento({
                   aoAlternar={() =>
                     alternar.mutate({ id: c.id, revogado: !c.revogado })
                   }
+                  aoRenomear={(nome) => renomear.mutate({ id: c.id, nome })}
                 />
               ))}
             </ul>
@@ -362,12 +402,15 @@ function LinhaConvite({
   destacado,
   ocupado,
   aoAlternar,
+  aoRenomear,
 }: {
   convite: Convite;
   agora: Date;
   destacado: boolean;
   ocupado: boolean;
   aoAlternar: () => void;
+  /** Recebe o nome já limpo. String vazia = tirar o nome. */
+  aoRenomear: (nome: string) => void;
 }) {
   const estado = estadoDoConvite(convite, agora);
   const tom = TOM_DO_ESTADO[estado];
@@ -406,10 +449,11 @@ function LinhaConvite({
           {tom.texto}
         </span>
 
-        <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-          {textoDaValidade(convite, agora)} ·{" "}
-          <span data-numero>{textoDosUsos(convite)}</span>
-        </span>
+        <NomeDoConvite
+          convite={convite}
+          desabilitado={ocupado}
+          aoRenomear={aoRenomear}
+        />
 
         {podeDesligar || podeReligar ? (
           <Button
@@ -428,12 +472,81 @@ function LinhaConvite({
         ) : null}
       </div>
 
+      <p className="truncate text-sm text-muted-foreground">
+        {textoDaValidade(convite, agora)} ·{" "}
+        <span data-numero>{textoDosUsos(convite)}</span>
+      </p>
+
       <LinkCopiavel
         caminho={`/agendar/${convite.codigo}`}
         rotulo="Copiar link"
         compacto
       />
     </li>
+  );
+}
+
+/**
+ * O nome do link, editável no lugar.
+ *
+ * Campo de texto que parece texto até receber o foco — sem lápis e sem
+ * "Salvar". Um botão de editar e outro de confirmar seriam dois toques e
+ * dois ícones a mais na linha, para uma mudança que não quebra nada: errar o
+ * nome não desliga link nem perde agendamento.
+ *
+ * **Só grava quando o valor MUDOU.** Passar o dedo pelo campo e sair não
+ * dispara escrita nenhuma — senão abrir o modal e fechar mandaria um
+ * `update` por link da lista.
+ *
+ * Enter confirma (tirando o foco), Esc desfaz. O rascunho é estado local
+ * porque o campo precisa aceitar letra por letra; `convite.apelido` só volta
+ * a mandar quando a pessoa desiste com Esc.
+ */
+function NomeDoConvite({
+  convite,
+  desabilitado,
+  aoRenomear,
+}: {
+  convite: Convite;
+  desabilitado: boolean;
+  aoRenomear: (nome: string) => void;
+}) {
+  const salvo = convite.apelido ?? "";
+  const [rascunho, setRascunho] = useState(salvo);
+
+  function confirmar() {
+    const limpo = rascunho.trim();
+    if (limpo === salvo) return;
+    aoRenomear(limpo);
+  }
+
+  return (
+    <input
+      value={rascunho}
+      onChange={(e) => setRascunho(sanitizarNome(e.target.value))}
+      onBlur={confirmar}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          e.currentTarget.blur();
+        } else if (e.key === "Escape") {
+          setRascunho(salvo);
+          e.currentTarget.blur();
+        }
+      }}
+      disabled={desabilitado}
+      placeholder="Sem nome"
+      maxLength={APELIDO_MAXIMO}
+      aria-label="Nome deste link"
+      // 44px de altura mesmo parecendo texto: continua sendo campo, e campo
+      // em tela tocada tem alvo de toque como qualquer outro.
+      className={cn(
+        "h-11 min-w-0 flex-1 rounded-lg border border-transparent bg-transparent px-2 text-base font-semibold transition-colors outline-none",
+        "placeholder:font-normal placeholder:text-muted-foreground",
+        "hover:border-border focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+        "disabled:pointer-events-none disabled:opacity-60",
+      )}
+    />
   );
 }
 

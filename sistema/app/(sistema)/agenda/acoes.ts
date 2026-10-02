@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import { listarConvites } from "@/lib/convites/repositorio";
 import {
+  APELIDO_MAXIMO,
   HORAS_VALIDAS,
   LIMITES_VALIDOS,
   type Convite,
@@ -950,6 +951,8 @@ export async function criarConvite(entrada: {
   horas: number | null;
   /** `null` = ilimitado. */
   usosMax: number | null;
+  /** Opcional: quem gera às pressas no balcão não para para batizar. */
+  apelido?: string;
 }): Promise<ResultadoConvite> {
   try {
     if (!HORAS_VALIDAS.includes(entrada.horas)) {
@@ -975,10 +978,13 @@ export async function criarConvite(entrada: {
       .from("convites_agendamento")
       .insert({
         barbearia_id: user.id,
+        apelido: apelidoParaBanco(entrada.apelido),
         expira_em: expiraEm,
         usos_max: entrada.usosMax,
       })
-      .select("id, codigo, expira_em, usos, usos_max, revogado, criado_em")
+      .select(
+        "id, apelido, codigo, expira_em, usos, usos_max, revogado, criado_em",
+      )
       .single();
 
     if (error) {
@@ -999,6 +1005,7 @@ export async function criarConvite(entrada: {
       ok: true,
       convite: {
         id: data.id,
+        apelido: data.apelido,
         codigo: data.codigo,
         expiraEm: data.expira_em,
         usos: data.usos,
@@ -1011,6 +1018,43 @@ export async function criarConvite(entrada: {
     console.error("[BARBOS] criar convite lançou exceção:", erro);
     return { ok: false, erro: "Não consegui falar com o servidor." };
   }
+}
+
+/**
+ * O nome do convite, pronto para o banco.
+ *
+ * `null` e nunca string vazia: o CHECK da 0034 recusa o vazio, e com as duas
+ * formas válidas a tela precisaria testar as duas em todo lugar que mostra o
+ * nome — e esqueceria numa delas.
+ *
+ * Passa pelo mesmo `nomeParaBanco` do resto do sistema: maiúscula, sem
+ * acento, espaço duplo colapsado. Um nome que se escreve diferente do nome
+ * do serviço ao lado não parece do mesmo sistema.
+ */
+function apelidoParaBanco(bruto: string | undefined): string | null {
+  const limpo = nomeParaBanco(bruto ?? "").slice(0, APELIDO_MAXIMO).trim();
+  return limpo.length > 0 ? limpo : null;
+}
+
+/** Renomeia — ou tira o nome, quando o campo volta a ficar vazio. */
+export async function renomearConvite(
+  id: string,
+  apelido: string,
+): Promise<Resultado> {
+  return protegido("renomear convite", async () => {
+    if (!id) return { ok: false, erro: "Convite não informado." };
+
+    const supabase = await criarClienteServidor();
+    const { error } = await supabase
+      .from("convites_agendamento")
+      .update({ apelido: apelidoParaBanco(apelido) })
+      .eq("id", id);
+
+    if (error) return traduzir("renomear convite", error);
+
+    revalidatePath("/agenda");
+    return { ok: true };
+  });
 }
 
 /**

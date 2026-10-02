@@ -10,6 +10,14 @@
 /** Um convite como a barbearia o vê. */
 export type Convite = {
   id: string;
+  /**
+   * O nome que a dona deu ("PROMO OUTUBRO"). `null` quando não batizou.
+   *
+   * Sem ele a lista é um punhado de códigos sorteados, todos parecidos, e
+   * lembrar qual foi mandado para quem vira adivinhação — justamente na hora
+   * de desligar UM deles.
+   */
+  apelido: string | null;
   /** Oito caracteres sem vogal e sem 0/1/l — ver migração 0033. */
   codigo: string;
   /** ISO. `null` quando não expira. */
@@ -52,6 +60,9 @@ export const HORAS_VALIDAS: readonly (number | null)[] = VALIDADES.map(
 export const LIMITES_VALIDOS: readonly (number | null)[] = LIMITES.map(
   (l) => l.usos,
 );
+
+/** O nome cabe numa linha da lista sem empurrar o resto. */
+export const APELIDO_MAXIMO = 40;
 
 export type EstadoConvite = "valido" | "expirado" | "esgotado" | "revogado";
 

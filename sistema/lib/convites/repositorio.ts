@@ -5,6 +5,7 @@ import type { Convite } from "@/lib/convites/tipos";
 
 type LinhaConvite = {
   id: string;
+  apelido: string | null;
   codigo: string;
   expira_em: string | null;
   usos: number;
@@ -29,7 +30,7 @@ export async function listarConvites(): Promise<Convite[]> {
 
   const { data, error } = await supabase
     .from("convites_agendamento")
-    .select("id, codigo, expira_em, usos, usos_max, revogado, criado_em")
+    .select("id, apelido, codigo, expira_em, usos, usos_max, revogado, criado_em")
     .order("criado_em", { ascending: false });
 
   if (error) {
@@ -42,6 +43,7 @@ export async function listarConvites(): Promise<Convite[]> {
 
   return ((data ?? []) as LinhaConvite[]).map((l) => ({
     id: l.id,
+    apelido: l.apelido,
     codigo: l.codigo,
     expiraEm: l.expira_em,
     usos: l.usos,
