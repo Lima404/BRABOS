@@ -195,7 +195,9 @@ export function DialogoLinkAgendamento({
           >
             Fechar
           </Button>
-          <Button asChild size="lg">
+          {/* Era o âmbar daqui, e espiar a tela do cliente não é a ação
+              principal deste modal — gerar o link é. */}
+          <Button asChild variant="secondary" size="lg">
             <Link
               href={`/agendar/${slug}`}
               target="_blank"
@@ -333,9 +335,13 @@ export function DialogoLinkAgendamento({
             desistir não gasta nada.
           </p>
 
+          {/* O âmbar desta tela é ESTE botão: gerar é a ação pela qual a
+              pessoa abriu o modal. "Um botão âmbar por tela" continua de pé
+              porque o do rodapé desceu para `secondary` no mesmo commit —
+              ver o rodapé. Dois âmbares seria o mesmo que nenhum. */}
           <Button
             type="button"
-            variant="secondary"
+            size="lg"
             className="sm:self-start"
             disabled={gerar.isPending}
             onClick={() => gerar.mutate()}
