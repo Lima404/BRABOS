@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarCheck, CalendarPlus, Loader2 } from "lucide-react";
 
 import {
@@ -16,6 +16,7 @@ import { LinhaDoTempoDia } from "@/components/agenda/linha-do-tempo-dia";
 import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { conflitoCom } from "@/lib/agenda/conflitos";
+import { proximoHorarioLivre } from "@/lib/agenda/horarios";
 import type { DadosAgendamento } from "@/app/(sistema)/agenda/acoes";
 import {
   ocupadoComoAgendamento,
@@ -53,6 +54,7 @@ export function AgendarPublico({
    */
   horarioInicial: string;
 }) {
+  const clienteQuery = useQueryClient();
   const [data, setData] = useState(() => hojeNaBarbearia());
   const [clienteNome, setClienteNome] = useState("");
   const [barbeiroId, setBarbeiroId] = useState(inicial.barbeiros[0]?.id ?? "");
@@ -160,6 +162,43 @@ export function AgendarPublico({
         return;
       }
 
+      // ============================================================
+      // O HORÁRIO QUE ACABOU DE SER MARCADO SOME DA LISTA
+      // ============================================================
+      //
+      // Sem isto, "Marcar outro horário" voltava para um dia desenhado ANTES
+      // desta marcação: o próprio horário continuava livre na lista e na
+      // faixa. Quem tentasse de novo levava a recusa do banco — a trava
+      // `agendamento_sem_sobreposicao` segura, e isso está testado —, mas
+      // levar recusa por um horário que a tela acabou de oferecer é a tela
+      // mentindo, não o banco protegendo.
+      //
+      // Escrevemos no cache ANTES de pedir o dia de novo, e os dois são
+      // precisos: o `setQueryData` é instantâneo e não depende de rede (a
+      // marcação ACABOU de ser confirmada pelo servidor, então sabemos que
+      // ela existe), e o `invalidateQueries` reconcilia com o servidor,
+      // trazendo junto o que OUTRAS pessoas marcaram enquanto esta estava
+      // preenchendo o nome.
+      const chaveDoDia = chaves.agendarPublico.dia(slug, resultado.data);
+
+      clienteQuery.setQueryData<AgendaPublica | null>(chaveDoDia, (velho) =>
+        velho
+          ? {
+              ...velho,
+              ocupados: [
+                ...velho.ocupados,
+                {
+                  barbeiroId: dados.barbeiroId,
+                  horario: resultado.horario,
+                  duracaoMin: servico?.duracaoMin ?? 30,
+                },
+              ],
+            }
+          : velho,
+      );
+
+      clienteQuery.invalidateQueries({ queryKey: chaveDoDia });
+
       setPronto({ data: resultado.data, horario: resultado.horario });
     } catch (causa) {
       console.error("[BARBOS] o agendamento não completou:", causa);
@@ -199,6 +238,24 @@ export function AgendarPublico({
             setPronto(null);
             setClienteNome("");
             setObservacao("");
+
+            // O campo ainda aponta para o horário que ele mesmo acabou de
+            // ocupar. Deixá-lo ali faria a tela voltar já com uma escolha
+            // inválida — e o seletor o mostraria etiquetado "ocupado", o que
+            // é honesto mas inútil: ninguém quer marcar de novo no mesmo
+            // minuto. Pula para o próximo livre, como na primeira abertura.
+            //
+            // O relógio é lido AQUI, dentro do clique, e nunca no render:
+            // ler no render faz o HTML do servidor discordar da hidratação.
+            const proximo = proximoHorarioLivre({
+              data,
+              duracaoMin: servico?.duracaoMin ?? 30,
+              barbeiroId,
+              agendamentos: ocupados,
+              configuracao: agenda.configuracao,
+              agora: ehHoje(data) ? agoraNaBarbearia() : null,
+            });
+            if (proximo) setHorario(proximo);
           }}
         >
           <CalendarPlus />
