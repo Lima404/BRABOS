@@ -197,6 +197,8 @@ export async function listarFolgas(): Promise<Folga[]> {
 type LinhaAgendamento = {
   id: string;
   cliente_nome: string;
+  /** Null em linha gravada antes da migração 0037. */
+  cliente_telefone: string | null;
   data: string;
   horario: string;
   estado: EstadoAgendamento;
@@ -229,8 +231,8 @@ export async function listarAgendamentosDoMes(
   const { data, error } = await supabase
     .from("agendamentos")
     .select(
-      "id, cliente_nome, data, horario, estado, observacao, preco_centavos," +
-        " duracao_min, barbeiro_id," +
+      "id, cliente_nome, cliente_telefone, data, horario, estado, observacao," +
+        " preco_centavos, duracao_min, barbeiro_id," +
         " servico:servicos(id, nome, cor, duracao_min, preco_centavos)",
     )
     .gte("data", `${mes}-01`)
@@ -267,6 +269,7 @@ export async function listarAgendamentosDoMes(
     .map((l) => ({
       id: l.id,
       clienteNome: l.cliente_nome,
+      clienteTelefone: l.cliente_telefone ?? undefined,
       servico: {
         id: l.servico.id,
         nome: l.servico.nome,
@@ -294,8 +297,9 @@ async function listarAgendamentosDoMesSemBarbeiro(
   const { data, error } = await supabase
     .from("agendamentos")
     .select(
-      "id, cliente_nome, data, horario, estado, observacao, preco_centavos," +
-        " duracao_min, servico:servicos(id, nome, cor, duracao_min, preco_centavos)",
+      "id, cliente_nome, cliente_telefone, data, horario, estado, observacao," +
+        " preco_centavos, duracao_min," +
+        " servico:servicos(id, nome, cor, duracao_min, preco_centavos)",
     )
     .gte("data", `${mes}-01`)
     .lte("data", ultimoDia(mes))
@@ -316,6 +320,7 @@ async function listarAgendamentosDoMesSemBarbeiro(
     .map((l) => ({
       id: l.id,
       clienteNome: l.cliente_nome,
+      clienteTelefone: l.cliente_telefone ?? undefined,
       servico: {
         id: l.servico.id,
         nome: l.servico.nome,

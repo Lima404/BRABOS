@@ -42,7 +42,19 @@ export type ConviteDaAgenda = {
 };
 
 export type AgendaPublica = {
-  barbearia: { id: string; nome: string; slug: string };
+  barbearia: {
+    id: string;
+    nome: string;
+    slug: string;
+    /**
+     * Para onde o cliente é mandado depois de marcar (migração 0036).
+     *
+     * `null` quando a barbearia não cadastrou número — e aí a tela
+     * simplesmente não oferece o WhatsApp, em vez de abrir uma conversa
+     * com ninguém.
+     */
+    telefone: string | null;
+  };
   convite: ConviteDaAgenda | null;
   configuracao: ConfiguracaoAgenda;
   servicos: Servico[];

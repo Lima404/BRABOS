@@ -33,6 +33,7 @@ import {
   agoraNaBarbearia,
   duracaoPorExtenso,
   ehHoje,
+  mascararTelefone,
   moeda,
   sanitizarNome,
   sanitizarTextoLivre,
@@ -44,6 +45,19 @@ import { cn } from "@/lib/utils";
  * ele por `form={ID_FORMULARIO_AGENDAMENTO}`. Se mudar aqui, muda lá.
  */
 export const ID_FORMULARIO_AGENDAMENTO = "formulario-agendamento";
+
+/**
+ * O valor da opção "Selecione um barbeiro".
+ *
+ * Não é `""`: o Radix usa a string vazia internamente para dizer "nada
+ * escolhido", e um `SelectItem value=""` estoura. Então a opção padrão tem
+ * um valor próprio, e o formulário o traduz de volta para `""` — que é o
+ * que as validações já chamam de "não escolheu".
+ *
+ * Fica fora do componente para o diálogo e a tela pública não precisarem
+ * conhecê-lo: lá fora, nada escolhido continua sendo `""`.
+ */
+const SEM_BARBEIRO = "sem-barbeiro";
 
 /**
  * O relógio da barbearia, seguro para hidratação.
@@ -86,6 +100,9 @@ function hhmmDe(minutos: number): string {
 export function FormularioAgendamento({
   clienteNome,
   aoMudarClienteNome,
+  clienteTelefone,
+  aoMudarClienteTelefone,
+  telefoneObrigatorio = true,
   barbeiroId,
   aoMudarBarbeiroId,
   barbeiros,
@@ -106,6 +123,20 @@ export function FormularioAgendamento({
 }: {
   clienteNome: string;
   aoMudarClienteNome: (v: string) => void;
+  /** Com máscara, do jeito que a pessoa digitou. */
+  clienteTelefone: string;
+  aoMudarClienteTelefone: (v: string) => void;
+  /**
+   * Falso só num caso: agendamento gravado ANTES da migração 0037, que
+   * não tem número porque não havia campo.
+   *
+   * Sem esta saída, abrir um desses para lançar um consumo ou corrigir a
+   * observação viraria "não dá para salvar" — o navegador recusa o envio
+   * de um `required` vazio, e a dona não tem como descobrir o telefone de
+   * um cliente que passou aqui em agosto. Quem marca HOJE continua tendo
+   * que informar.
+   */
+  telefoneObrigatorio?: boolean;
   barbeiroId: string;
   aoMudarBarbeiroId: (v: string) => void;
   barbeiros: Barbeiro[];
@@ -205,6 +236,7 @@ export function FormularioAgendamento({
     evento.preventDefault();
     aoSalvar({
       clienteNome,
+      clienteTelefone,
       barbeiroId,
       servicoId,
       data,
@@ -230,6 +262,34 @@ export function FormularioAgendamento({
         />
       </Campo>
 
+      {/* Obrigatório, e por isso sem a etiqueta "opcional": sem número a
+          barbearia não tem como avisar atraso nem falar com quem não
+          apareceu. A ajuda diz PARA QUÊ — pedir telefone sem dizer o
+          motivo é o jeito mais rápido de receber um número inventado. */}
+      <Campo
+        id="agendamento-telefone"
+        rotulo="Telefone"
+        opcional={!telefoneObrigatorio}
+        ajuda={
+          telefoneObrigatorio
+            ? "Com DDD. É por aqui que a barbearia fala com o cliente."
+            : "Este agendamento é de antes do campo existir. Se você souber o número, aproveite para guardá-lo."
+        }
+      >
+        <Input
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          value={clienteTelefone}
+          onChange={(e) =>
+            aoMudarClienteTelefone(mascararTelefone(e.target.value))
+          }
+          placeholder="(11) 98765-4321"
+          maxLength={15}
+          required={telefoneObrigatorio}
+        />
+      </Campo>
+
       <Campo id="agendamento-barbeiro" rotulo="Barbeiro">
         {barbeiros.length === 0 ? (
           /* Duas frases, porque são dois problemas com conserto diferente:
@@ -243,11 +303,30 @@ export function FormularioAgendamento({
               : "Cadastre um barbeiro em Barbearia antes de marcar horário."}
           </p>
         ) : (
-          <Select value={barbeiroId} onValueChange={aoMudarBarbeiroId}>
+          /* A primeira opção é "Selecione um barbeiro", e ela é o estado
+             inicial de propósito: enquanto o campo nascia já no primeiro
+             da lista, quem não mexesse nele marcava com um barbeiro que
+             não escolheu — e descobria no dia. Escolher não pode ser o
+             que acontece quando ninguém escolhe.
+
+             Ela continua na lista depois, e não só como placeholder:
+             quem abriu o campo sem querer precisa de um caminho de volta
+             que não seja escolher alguém. */
+          <Select
+            value={barbeiroId || SEM_BARBEIRO}
+            onValueChange={(v) =>
+              aoMudarBarbeiroId(v === SEM_BARBEIRO ? "" : v)
+            }
+          >
             <SelectGatilho>
-              <SelectValor placeholder="Quem atende" />
+              <SelectValor placeholder="Selecione um barbeiro" />
             </SelectGatilho>
             <SelectConteudo>
+              <SelectItem value={SEM_BARBEIRO}>
+                <span className="text-muted-foreground">
+                  Selecione um barbeiro
+                </span>
+              </SelectItem>
               {barbeiros.map((b) => (
                 <SelectItem key={b.id} value={b.id}>
                   {b.nome}

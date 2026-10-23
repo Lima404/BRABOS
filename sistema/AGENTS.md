@@ -959,6 +959,120 @@ chave e delegam para `agenda_publica` / `criar_agendamento_publico`. Duplicar
 ali dentro criaria uma segunda cópia das regras de expediente, de grade, de
 folga e de sobreposição — esperando divergir no primeiro ajuste.
 
+## Aviso de agendamento no celular
+
+Marcou pelo link público, o celular da barbearia toca — com o BARBOS
+fechado, porque quem mostra a notificação é o service worker
+(`public/sw.js`) e não a página. É Web Push, sem SMS e sem custo.
+
+**No iPhone só funciona com o BARBOS na tela de início.** O iOS não
+entrega push para site aberto no Safari. É por isso que existe
+`app/manifest.ts`: sem manifesto com `display: standalone`, o Safari não
+oferece a instalação direito. A tela detecta esse caso ANTES e mostra os
+três toques, em vez de um botão que falharia sem explicar.
+
+**`/sw.js` e `/manifest.webmanifest` estão em `ROTAS_ABERTAS`.** Barrados,
+o proxy devolvia 307 para o login e o navegador recebia HTML no lugar do
+arquivo: o worker não registra e a instalação não acontece — em silêncio.
+O navegador pede os dois sem cookie em várias situações, então exigir
+sessão ali seria exigir o impossível.
+
+### Dois avisos, e eles não competem
+
+**Push** avisa a BARBEARIA na hora, sem depender de ninguém tocar em nada.
+**WhatsApp** manda o CLIENTE para a conversa com o recado pronto, logo
+depois de marcar — e aí a barbearia fica com o contato salvo e um canal
+aberto para remarcar.
+
+O redirecionamento é automático (`window.location.href` num efeito, assim
+que o horário entra). No celular isso ABRE O APLICATIVO e a página fica
+viva atrás: voltando ao navegador, a confirmação ainda está lá. O botão
+"Avisar no WhatsApp" continua na tela e não é redundância — aparelho sem
+WhatsApp, pessoa que volta sem mandar, ou navegador que segura a
+navegação precisam de um jeito de tentar de novo. Redirecionamento
+automático sem saída é armadilha.
+
+**O telefone passou a ser público na tela de agendar (0036).** A view da
+loja continua sem ele; só `agenda_publica` o entrega, porque sem número
+não há para onde redirecionar. Decisão do Gabriel em 23/10/2026, com a
+consequência na mesa: quem tem o link vê o número. O campo em Barbearia
+diz isso na ajuda. Se um dia for preciso um número só para atendimento, o
+lugar é uma coluna nova em `barbearias` — não um `if` na tela.
+
+**`linkDoWhatsApp` decide o código do país pelo TAMANHO, não pelo
+começo.** `55` também é o DDD de Santa Maria: um celular de lá tem 11
+dígitos começando em 55 e AINDA precisa do país na frente. Só com 12 ou
+13 dígitos é que o país já veio.
+
+**O telefone do cliente é obrigatório, e a coluna aceita null (0037).**
+Não é contradição: existem agendamentos gravados antes do campo existir,
+e `not null` recusaria a própria migração. O obrigatório vale para o que
+entra agora e mora no formulário mais a ação de servidor; o banco cobra
+só o FORMATO (10 ou 11 dígitos, ou null). Editar um agendamento ANTIGO
+não exige o número — exigir prenderia a dona num formulário que não
+salva, para descobrir o telefone de um cliente de agosto. Quem marca
+hoje informa.
+
+A RPC pública ainda aceita chegar sem telefone, e isso é temporário: o
+banco é o mesmo da produção, e exigir lá derrubaria o agendamento online
+que está no ar antes do deploy desta tela. Depois do deploy, é trocar o
+`if` marcado "DEPOIS DO DEPLOY" na 0037.
+
+**A primeira opção do seletor de barbeiro é "Selecione um barbeiro".**
+Antes o campo nascia no primeiro da lista, e quem não mexesse nele
+marcava com um barbeiro que não escolheu — na tela pública isso é pior
+ainda, porque para quem está marcando os nomes não significam nada. O
+valor da opção é `SEM_BARBEIRO` e não `""`: o Radix usa a string vazia
+para dizer "nada escolhido", e um `SelectItem value=""` estoura. O
+formulário traduz de volta para `""` na saída, que é o que as validações
+já chamam de "não escolheu".
+
+Consequência aceita: enquanto ninguém escolhe barbeiro, a faixa do dia e
+a lista de horários não têm como saber o que está ocupado, e mostram o
+dia inteiro. Quem escolhe o barbeiro depois pode cair num horário que já
+era de alguém — e aí quem recusa é a trava de sobreposição, com o recado
+"esse horário já está ocupado".
+
+### Como o aviso sai sem sessão
+
+Quem marca pelo link não tem conta, e é NESSE instante que o aviso
+precisa sair. As assinaturas são fechadas por RLS e a chave
+`service_role` é proibida aqui, então a ponte é `avisar_agendamento`
+(0035): `security definer`, com três travas que a tornam inútil para
+quem não acabou de marcar de verdade — exige o id de um agendamento que
+existe, recusa agendamento com mais de 2 minutos, e é de TIRO ÚNICO
+(carimba `avisado_em`). O carimbo também dá idempotência: ação repetida
+não avisa duas vezes.
+
+Endurecer mais significa mover o envio para uma Edge Function com a
+chave VAPID guardada lá, e aí as assinaturas nunca saem do banco.
+
+**O envio roda em `after()`**, depois da resposta. O horário já está
+gravado e quem marcou precisa ver "Horário marcado" agora, não depois de
+esperar a Apple e o Google. E se o envio falhar, o cliente não tem o que
+fazer com esse erro. Sem `after()` restariam duas escolhas ruins: prender
+a confirmação numa rede que não é nossa, ou disparar e esquecer — e em
+servidor sem estado a função congela depois da resposta, matando o envio
+no meio.
+
+**A chave VAPID privada nunca pode ter prefixo `NEXT_PUBLIC`.** Com ela
+qualquer um manda notificação em nome do BARBOS para quem já assinou. A
+pública vai para o navegador de propósito, que é o papel dela. O contato
+(`VAPID_CONTATO`) é a URL do site e não e-mail pessoal: esse valor viaja
+em toda requisição para a Apple e o Google.
+
+**404 e 410 do serviço de push apagam a assinatura; o resto, não.** Os
+dois significam navegador desinstalado ou permissão revogada — não volta.
+Qualquer outra recusa pode ser instabilidade momentânea, e apagar por
+causa dela desligaria o aviso da barbearia sem ninguém pedir.
+
+**Cada aviso tem `tag` própria.** Com etiqueta fixa, o segundo aviso
+substitui o primeiro em silêncio e duas marcações viram uma só.
+
+**Tem botão de testar.** Sem ele, conferir se o aviso funciona exigiria
+pedir a alguém que marcasse de verdade — e esse é o tipo de recurso que a
+pessoa descobre que não funcionava no dia em que precisava dele.
+
 ## Folga é a exceção da semana, não a semana
 
 "Dias de atendimento" responde **toda semana** — desmarcar a segunda fecha

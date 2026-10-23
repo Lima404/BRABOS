@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarCheck, CalendarPlus, Loader2 } from "lucide-react";
+import { CalendarCheck, CalendarPlus, Loader2, MessageCircle } from "lucide-react";
 
 import {
   agendarPeloLink,
@@ -26,8 +26,10 @@ import { chaves } from "@/lib/query";
 import {
   agoraNaBarbearia,
   diaComSemana,
+  digitosDoTelefone,
   ehHoje,
   hojeNaBarbearia,
+  linkDoWhatsApp,
 } from "@/lib/formato";
 
 /**
@@ -57,7 +59,16 @@ export function AgendarPublico({
   const clienteQuery = useQueryClient();
   const [data, setData] = useState(() => hojeNaBarbearia());
   const [clienteNome, setClienteNome] = useState("");
-  const [barbeiroId, setBarbeiroId] = useState(inicial.barbeiros[0]?.id ?? "");
+  const [clienteTelefone, setClienteTelefone] = useState("");
+  /**
+   * Vazio: quem marca escolhe o barbeiro, e o campo abre em "Selecione um
+   * barbeiro".
+   *
+   * Nascia no primeiro da lista, e isso marcava com alguém que o cliente
+   * não escolheu — para ele os nomes ainda não significam nada, então o
+   * primeiro da lista é só o primeiro da lista.
+   */
+  const [barbeiroId, setBarbeiroId] = useState("");
   const [servicoId, setServicoId] = useState(inicial.servicos[0]?.id ?? "");
   const [horario, setHorario] = useState(horarioInicial);
   const [observacao, setObservacao] = useState("");
@@ -105,8 +116,12 @@ export function AgendarPublico({
       setErro("Informe seu nome.");
       return;
     }
+    if (digitosDoTelefone(dados.clienteTelefone).length < 10) {
+      setErro("Informe seu telefone com DDD — é por ele que a barbearia fala com você.");
+      return;
+    }
     if (!dados.barbeiroId) {
-      setErro("Escolha com quem você quer se atender.");
+      setErro("Selecione um barbeiro.");
       return;
     }
     if (!dados.servicoId) {
@@ -150,6 +165,7 @@ export function AgendarPublico({
       const resultado = await agendarPeloLink({
         slug,
         clienteNome: dados.clienteNome,
+        clienteTelefone: dados.clienteTelefone,
         barbeiroId: dados.barbeiroId,
         servicoId: dados.servicoId,
         data: dados.data,
@@ -210,6 +226,71 @@ export function AgendarPublico({
     }
   }
 
+  /**
+   * A conversa no WhatsApp da barbearia, com o recado já escrito.
+   *
+   * `null` quando a barbearia não cadastrou telefone — e aí a tela nem
+   * oferece, em vez de abrir conversa com ninguém.
+   *
+   * Mora aqui em cima, e não lá dentro do `if (pronto)`: hook não pode
+   * nascer depois de um `return`.
+   */
+  const avisoNoWhats = useMemo(() => {
+    if (!pronto) return null;
+
+    // O telefone entra junto do nome: quem recebe precisa saber com quem
+    // está falando E por onde responder. Sem ele, a dona só tem o número
+    // de quem mandou a mensagem — que é o certo quase sempre, mas não
+    // quando alguém marca pelo aparelho de outra pessoa.
+    const linhas = [
+      `Olá! Acabei de marcar um horário na ${agenda.barbearia.nome}.`,
+      "",
+      clienteNome.trim(),
+    ];
+
+    // O `if` não é defesa inútil: a tela pode estar aberta desde antes
+    // deste campo existir, e uma linha em branco no meio do recado é
+    // pior que uma linha a menos.
+    const telefone = clienteTelefone.trim();
+    if (telefone) linhas.push(telefone);
+
+    linhas.push(`${diaComSemana(pronto.data)} às ${pronto.horario}`);
+
+    const nomeDoBarbeiro = agenda.barbeiros.find((x) => x.id === barbeiroId)?.nome;
+    if (servico) {
+      linhas.push(
+        nomeDoBarbeiro ? `${servico.nome} com ${nomeDoBarbeiro}` : servico.nome,
+      );
+    }
+
+    return linkDoWhatsApp(agenda.barbearia.telefone, linhas.join("\n"));
+  }, [
+    pronto,
+    agenda.barbearia,
+    agenda.barbeiros,
+    barbeiroId,
+    clienteNome,
+    clienteTelefone,
+    servico,
+  ]);
+
+  /**
+   * Leva o cliente para o WhatsApp assim que o horário entra.
+   *
+   * No celular isto ABRE O APLICATIVO e a página fica viva atrás: voltando
+   * ao navegador, a confirmação ainda está lá. No computador a aba navega
+   * para o WhatsApp Web, que é o mesmo destino.
+   *
+   * O botão lá embaixo continua existindo e não é redundância: se o
+   * aparelho não tiver WhatsApp, se a pessoa voltar sem mandar, ou se o
+   * navegador segurar a navegação, ela precisa de um jeito de tentar de
+   * novo. Redirecionamento automático sem saída é armadilha.
+   */
+  useEffect(() => {
+    if (!avisoNoWhats) return;
+    window.location.href = avisoNoWhats;
+  }, [avisoNoWhats]);
+
   // Confirmação fica NA PÁGINA, não em toast: o cliente precisa reler o dia e
   // a hora, e um recado que some em quatro segundos não serve pra isso.
   if (pronto) {
@@ -227,16 +308,32 @@ export function AgendarPublico({
             {agenda.barbearia.nome}.
           </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Anote aí: não enviamos confirmação por mensagem ainda. Se precisar
-          desmarcar, fale com a barbearia.
-        </p>
+        {avisoNoWhats ? (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Abrindo o WhatsApp para você avisar a barbearia. Se não abrir
+              sozinho, toque no botão abaixo.
+            </p>
+            <Button asChild size="lg" className="w-full sm:w-auto">
+              <a href={avisoNoWhats} target="_blank" rel="noopener noreferrer">
+                <MessageCircle />
+                Avisar no WhatsApp
+              </a>
+            </Button>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Anote aí: não enviamos confirmação por mensagem ainda. Se precisar
+            desmarcar, fale com a barbearia.
+          </p>
+        )}
         <Button
           type="button"
           variant="outline"
           onClick={() => {
             setPronto(null);
             setClienteNome("");
+            setClienteTelefone("");
             setObservacao("");
 
             // O campo ainda aponta para o horário que ele mesmo acabou de
@@ -271,6 +368,8 @@ export function AgendarPublico({
         <FormularioAgendamento
           clienteNome={clienteNome}
           aoMudarClienteNome={setClienteNome}
+          clienteTelefone={clienteTelefone}
+          aoMudarClienteTelefone={setClienteTelefone}
           barbeiroId={barbeiroId}
           aoMudarBarbeiroId={setBarbeiroId}
           barbeiros={agenda.barbeiros.map((b) => ({

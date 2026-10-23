@@ -25,7 +25,30 @@ const ROTAS_DE_ENTRADA = ["/entrar", "/cadastrar", "/recuperar-senha"];
  * comum, não o raro: o computador do balcão fica com a sessão aberta o dia
  * todo.
  */
-const ROTAS_ABERTAS = [...ROTAS_DE_ENTRADA, "/auth", "/loja", "/agendar"];
+const ROTAS_ABERTAS = [
+  ...ROTAS_DE_ENTRADA,
+  "/auth",
+  "/loja",
+  "/agendar",
+  // ============================================================
+  // OS DOIS ARQUIVOS DO APLICATIVO INSTALADO
+  // ============================================================
+  //
+  // `/sw.js` é o service worker que mostra o aviso de agendamento, e
+  // `/manifest.webmanifest` é o que permite instalar o BARBOS na tela de
+  // início — sem o qual o iPhone não entrega notificação nenhuma.
+  //
+  // Barrados, os dois voltavam 307 para o login, e o navegador recebia o
+  // HTML da tela de entrada no lugar do arquivo: o worker não registra e a
+  // instalação não acontece. Pior, falha em silêncio — a tela diz "ligar o
+  // aviso" e o botão simplesmente não funciona.
+  //
+  // Não vaza nada: o worker não lê dado nenhum, e o manifesto só tem nome,
+  // cor e ícone. O navegador também pede os dois SEM cookie em várias
+  // situações, então exigir sessão aqui seria exigir o impossível.
+  "/sw.js",
+  "/manifest.webmanifest",
+];
 
 function comecaCom(caminho: string, rotas: string[]): boolean {
   return rotas.some(

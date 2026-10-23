@@ -269,6 +269,15 @@ export const ESTADOS: Record<
 export type Agendamento = {
   id: string;
   clienteNome: string;
+  /**
+   * Telefone de quem marcou, com DDD (migração 0037).
+   *
+   * Opcional no TIPO e obrigatório no FORMULÁRIO, e isso não é descuido:
+   * agendamento gravado antes da 0037 não tem número, porque não havia
+   * campo. Fingir que tem faria a tela escrever "undefined" no lugar de
+   * dizer que não sabe.
+   */
+  clienteTelefone?: string;
   /** Resolvido no repositório, junto com a leitura. */
   servico: ServicoResumo;
   /** Quem atende. Ausente em linha antiga sem migração 0015. */
