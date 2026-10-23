@@ -95,6 +95,51 @@ entrar banco de verdade, só `lib/repositorio.ts` muda.
 **Chaves de cache** ficam em `lib/query.ts`. Nunca escrever `queryKey` literal
 espalhado pelas telas.
 
+### As três camadas que evitam pedir duas vezes
+
+Elas resolvem problemas DIFERENTES, e só juntas fecham a conta. Uma tela
+nova precisa das três.
+
+**1. Dentro da mesma requisição — `cache()` do React.** O layout lê a
+sessão para desenhar a barra, e a página lê de novo. `generateMetadata`
+lê a loja para o título da aba, e a página lê de novo. Sem `cache()` são
+duas idas ao banco com a mesma resposta. Já estão embrulhados:
+`obterSessao`, `obterLojaPorSlug` e `obterAgendaPublica`.
+
+Medido em 23/10/2026, abrindo `/agendar/bicos` contra o MESMO banco:
+produção (sem `cache()`) chamava a RPC `agenda_publica_por_chave` **duas
+vezes**; com `cache()`, **uma**. Vale por requisição — nunca entre
+usuários, o que seria vazar sessão.
+
+Detalhe que surpreende: o Next já junta sozinho duas leituras GET
+idênticas no mesmo render, então `obterLojaPorSlug` não melhorou na
+medição. Quem não é juntado é POST — e toda RPC do Supabase é POST. É aí
+que `cache()` paga.
+
+**2. Entre navegações — `staleTimes` no `next.config.ts`.** O padrão do
+Next para rota dinâmica é ZERO: ir da Agenda ao Estoque e voltar remontava
+a Agenda inteira no servidor, com todos os `prefetchQuery` de novo, mesmo
+com o React Query do navegador cheio de dado fresco. Com 30 segundos,
+voltar para a tela que acabou de ser vista não custa nada. 30 é metade do
+`staleTime` do React Query (60s) de propósito.
+
+**3. Dentro da tela — React Query.** Toda tela do sistema está no padrão
+`prefetch` + `HydrationBoundary` + `useQuery`: Agenda, Dashboard, Estoque,
+Barbearia e a Loja pública. **`router.refresh()` não é a ferramenta** para
+atualizar lista depois de gravar — ele remonta a página inteira no
+servidor, sessão e tudo, para mexer numa tabela que a invalidação resolve.
+Ele sobrou num lugar só, e por um motivo: trocar o NOME da barbearia muda
+o cabeçalho, que é do layout e não do cache.
+
+A chave da equipe (`chaves.barbearia.barbeiros`) é a MESMA na Agenda, no
+Dashboard e na Barbearia. É o que faz cadastrar um barbeiro numa tela
+consertar as três.
+
+**Ação de servidor como `queryFn` precisa de seta**: `queryFn: () =>
+minhaAcao()`, nunca `queryFn: minhaAcao`. O React Query chama a função com
+o contexto dele (que carrega um `AbortSignal`), e ação de servidor
+SERIALIZA o que recebe.
+
 ## Ordem de construção
 
 Agenda de hoje → novo agendamento → cliente → serviços → estoque → relatório.

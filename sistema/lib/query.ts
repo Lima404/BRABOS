@@ -92,8 +92,6 @@ export const chaves = {
     todas: ["dashboard"] as const,
     /** Intervalo + filtros — chave completa do resumo. */
     resumo: (chave: string) => ["dashboard", "resumo", chave] as const,
-    /** @deprecated use `resumo` — mantido pro prefetch do mês atual. */
-    mes: (mes: string) => ["dashboard", "mes", mes] as const,
   },
   estoque: {
     todas: ["estoque"] as const,
@@ -101,6 +99,22 @@ export const chaves = {
   },
   barbearia: {
     todas: ["barbearia"] as const,
+    /**
+     * A equipe. A MESMA chave na Agenda, no Dashboard e na Barbearia — é
+     * o que faz navegar entre as três não pedir a lista três vezes.
+     */
     barbeiros: ["barbearia", "barbeiros"] as const,
+    /** Celulares que recebem o aviso de agendamento (migração 0035). */
+    aparelhos: ["barbearia", "aparelhos"] as const,
+  },
+  /**
+   * A vitrine. Por apelido, e não uma chave só: a dona abre a loja dela,
+   * mas a tela é pública e a mesma aba pode ter aberto a loja de outra
+   * barbearia antes.
+   */
+  loja: {
+    todas: ["loja"] as const,
+    produtos: (slug: string) => ["loja", slug, "produtos"] as const,
+    clientes: (slug: string) => ["loja", slug, "clientes"] as const,
   },
 };

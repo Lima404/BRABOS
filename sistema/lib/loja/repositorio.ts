@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import { ehTipoProduto, type TipoProduto } from "@/lib/estoque/tipos";
 import { hojeNaBarbearia } from "@/lib/formato";
@@ -16,8 +18,17 @@ export type Loja = {
   nome: string;
 };
 
-/** `null` quando o apelido não existe ou a loja está fechada. */
-export async function obterLojaPorSlug(slug: string): Promise<Loja | null> {
+/**
+ * `null` quando o apelido não existe ou a loja está fechada.
+ *
+ * `cache()` porque esta função é chamada DUAS VEZES na mesma requisição:
+ * uma em `generateMetadata`, para o título da aba, e outra na página. Eram
+ * duas idas ao banco para a mesma resposta. Vale por requisição — a
+ * próxima pessoa que abrir a loja lê do banco de novo.
+ */
+export const obterLojaPorSlug = cache(async function obterLojaPorSlug(
+  slug: string,
+): Promise<Loja | null> {
   const supabase = await criarClienteServidor();
 
   const { data, error } = await supabase
@@ -32,7 +43,7 @@ export async function obterLojaPorSlug(slug: string): Promise<Loja | null> {
   }
 
   return data ? (data as Loja) : null;
-}
+});
 
 /**
  * Uma linha do seletor "Lançar em".

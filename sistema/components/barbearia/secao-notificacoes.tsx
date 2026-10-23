@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   BellOff,
@@ -16,11 +16,11 @@ import {
   listarAparelhosAvisados,
   removerAparelhoAvisado,
   salvarAparelhoAvisado,
-  type AssinaturaDeAviso,
 } from "@/app/(sistema)/barbearia/acoes";
 import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
+import { chaves } from "@/lib/query";
 import { cn } from "@/lib/utils";
 
 /**
@@ -104,18 +104,30 @@ function nomeDoAparelho(): string {
   return "Computador";
 }
 
-export function SecaoNotificacoes({
-  aparelhosIniciais,
-}: {
-  aparelhosIniciais: AssinaturaDeAviso[];
-}) {
-  const router = useRouter();
+/**
+ * A lista de aparelhos vem do React Query, com prefetch na página.
+ *
+ * A ação de servidor é a própria `queryFn` — sem rota `/api` no meio,
+ * como já é na tela pública de agendar. O que importa é a CHAVE: ligar o
+ * aviso num celular e desligar noutro mexem na mesma lista, e quem
+ * atualiza a tela é a invalidação, não `router.refresh()`.
+ */
+export function SecaoNotificacoes() {
+  const clienteQuery = useQueryClient();
   const { avisar } = useToast();
 
   const [estado, setEstado] = useState<Estado>("carregando");
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [aparelhos, setAparelhos] = useState(aparelhosIniciais);
+
+  const { data: aparelhos = [] } = useQuery({
+    queryKey: chaves.barbearia.aparelhos,
+    // Envolvida numa seta, e não passada por referência: o React Query
+    // chama a `queryFn` com o contexto dele (que carrega um AbortSignal),
+    // e ação de servidor SERIALIZA o que recebe. Chamando sem argumento,
+    // não há o que serializar.
+    queryFn: () => listarAparelhosAvisados(),
+  });
 
   useEffect(() => {
     let vivo = true;
@@ -161,8 +173,9 @@ export function SecaoNotificacoes({
   }, []);
 
   async function recarregar() {
-    setAparelhos(await listarAparelhosAvisados());
-    router.refresh();
+    await clienteQuery.invalidateQueries({
+      queryKey: chaves.barbearia.aparelhos,
+    });
   }
 
   async function ligar() {
@@ -191,8 +204,8 @@ export function SecaoNotificacoes({
         applicationServerKey: chaveParaBytes(CHAVE_PUBLICA),
       });
 
-      const chaves = assinatura.toJSON().keys;
-      if (!chaves?.p256dh || !chaves?.auth) {
+      const chavesDaAssinatura = assinatura.toJSON().keys;
+      if (!chavesDaAssinatura?.p256dh || !chavesDaAssinatura?.auth) {
         setErro("O navegador devolveu uma assinatura incompleta.");
         await assinatura.unsubscribe();
         return;
@@ -200,8 +213,8 @@ export function SecaoNotificacoes({
 
       const salvo = await salvarAparelhoAvisado({
         endpoint: assinatura.endpoint,
-        p256dh: chaves.p256dh,
-        auth: chaves.auth,
+        p256dh: chavesDaAssinatura.p256dh,
+        auth: chavesDaAssinatura.auth,
         aparelho: nomeDoAparelho(),
       });
 

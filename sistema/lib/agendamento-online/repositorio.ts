@@ -1,5 +1,7 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import {
   CONFIGURACAO_PADRAO,
@@ -41,7 +43,13 @@ export type LeituraAgendaPublica =
  * o cliente do link não tem sessão, e as tabelas continuam fechadas pelo RLS.
  * Nada aqui toca `agendamentos`, `servicos` ou `barbeiros` direto.
  */
-export async function obterAgendaPublica(
+/**
+ * `cache()`: a página de agendar chama isto, e `generateMetadata` chama
+ * de novo para montar o título da aba. Eram duas execuções da RPC
+ * `agenda_publica_por_chave` — que no caminho do convite ainda trava a
+ * linha do convite — para desenhar uma tela só. Vale por requisição.
+ */
+export const obterAgendaPublica = cache(async function obterAgendaPublica(
   /** Apelido da barbearia OU código de convite — ver migração 0033. */
   chave: string,
   data: string,
@@ -161,7 +169,7 @@ export async function obterAgendaPublica(
       })),
     },
   };
-}
+});
 
 function lista(valor: unknown): Record<string, unknown>[] {
   return Array.isArray(valor) ? (valor as Record<string, unknown>[]) : [];

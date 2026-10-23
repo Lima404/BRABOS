@@ -89,7 +89,9 @@ export function DialogoLinkAgendamento({
 
   const { data: convites, isPending } = useQuery({
     queryKey: chaves.agenda.convites,
-    queryFn: listarConvitesDaAgenda,
+    // Sem argumento, pelo mesmo motivo da lista de aparelhos: o contexto
+    // do React Query não tem por que atravessar para o servidor.
+    queryFn: () => listarConvitesDaAgenda(),
     // Só carrega com o modal ABERTO: esta tela mora dentro da agenda e
     // quase nunca é aberta — buscar sempre gastaria 4G de quem está
     // atendendo, por uma lista que ninguém pediu.

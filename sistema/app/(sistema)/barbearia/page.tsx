@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { listarAparelhosAvisados } from "@/app/(sistema)/barbearia/acoes";
 import { FormularioDadosBarbearia } from "@/components/barbearia/formulario-dados";
@@ -9,19 +10,41 @@ import {
   listarBarbeiros,
 } from "@/lib/barbearia/repositorio";
 import { obterBarbearia } from "@/lib/conta";
+import { chaves, obterQueryClient } from "@/lib/query";
 
 export const metadata: Metadata = { title: "Barbearia" };
 
+/**
+ * Prefetch no servidor e `HydrationBoundary`, como a Agenda, o Estoque e o
+ * Dashboard. Esta era a última tela do sistema que descia os dados como
+ * `props` cruas e se atualizava com `router.refresh()`.
+ *
+ * O que isso muda na prática: a equipe aqui é a MESMA chave de cache da
+ * equipe na Agenda e no Dashboard. Quem vem da Agenda já chega com a lista
+ * pronta, e cadastrar um barbeiro aqui conserta as três telas sem
+ * recarregar nenhuma.
+ */
 export default async function BarbeariaPage() {
   const barbearia = await obterBarbearia();
+  const queryClient = obterQueryClient();
 
-  const [barbeiros, disponivel, aparelhos] = barbearia
-    ? await Promise.all([
-        listarBarbeiros(),
-        equipeDisponivel(),
-        listarAparelhosAvisados(),
-      ])
-    : [[], false, []];
+  // `disponivel` continua prop, de propósito: é "a migração 0014 rodou?",
+  // uma resposta sobre o formato do banco, que não muda enquanto a tela
+  // está aberta. Cache com invalidação seria cerimônia sem dono.
+  const disponivel = barbearia ? await equipeDisponivel() : false;
+
+  if (barbearia) {
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: chaves.barbearia.barbeiros,
+        queryFn: listarBarbeiros,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: chaves.barbearia.aparelhos,
+        queryFn: () => listarAparelhosAvisados(),
+      }),
+    ]);
+  }
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -48,12 +71,14 @@ export default async function BarbeariaPage() {
       )}
 
       {barbearia ? (
-        <SecaoEquipe barbeiros={barbeiros} disponivel={disponivel} />
-      ) : null}
+        <HydrationBoundary state={dehydrate(queryClient)}>
+          <SecaoEquipe disponivel={disponivel} />
 
-      {/* Depois da equipe: ligar o aviso num celular só faz sentido quando
-          já existe agenda para avisar sobre. */}
-      {barbearia ? <SecaoNotificacoes aparelhosIniciais={aparelhos} /> : null}
+          {/* Depois da equipe: ligar o aviso num celular só faz sentido
+              quando já existe agenda para avisar sobre. */}
+          <SecaoNotificacoes />
+        </HydrationBoundary>
+      ) : null}
     </div>
   );
 }
