@@ -91,8 +91,17 @@ export async function obterAgendaPublica(
     return { ok: false, motivo: "nao-encontrada" };
   }
 
-  const barbearia = r.barbearia as AgendaPublica["barbearia"] | undefined;
-  if (!barbearia?.id) return { ok: false, motivo: "nao-encontrada" };
+  const bruta = r.barbearia as Record<string, unknown> | undefined;
+  if (!bruta?.id) return { ok: false, motivo: "nao-encontrada" };
+
+  const barbearia: AgendaPublica["barbearia"] = {
+    id: texto(bruta.id),
+    nome: texto(bruta.nome),
+    slug: texto(bruta.slug),
+    // Banco sem a migração 0036 não manda o campo. A tela some com o
+    // botão do WhatsApp em vez de parar de abrir.
+    telefone: typeof bruta.telefone === "string" ? bruta.telefone : null,
+  };
 
   const cfg = (r.configuracao ?? {}) as Record<string, unknown>;
 

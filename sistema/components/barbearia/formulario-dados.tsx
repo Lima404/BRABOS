@@ -81,7 +81,10 @@ export function FormularioDadosBarbearia({
       <Campo
         rotulo="Telefone"
         opcional
-        ajuda="Com DDD. Usado pra contato e, depois, WhatsApp."
+        // O "depois" virou agora: quem marca pelo link é mandado para este
+        // número no WhatsApp. Dizer isso aqui é o mínimo — o campo passou a
+        // ser público, e a dona precisa saber disso ANTES de preencher.
+        ajuda="Com DDD. É para onde o cliente é mandado no WhatsApp depois de marcar pelo link — então quem abre o link vê este número."
       >
         <Input
           type="tel"

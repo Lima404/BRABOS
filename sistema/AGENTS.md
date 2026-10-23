@@ -977,6 +977,33 @@ arquivo: o worker não registra e a instalação não acontece — em silêncio.
 O navegador pede os dois sem cookie em várias situações, então exigir
 sessão ali seria exigir o impossível.
 
+### Dois avisos, e eles não competem
+
+**Push** avisa a BARBEARIA na hora, sem depender de ninguém tocar em nada.
+**WhatsApp** manda o CLIENTE para a conversa com o recado pronto, logo
+depois de marcar — e aí a barbearia fica com o contato salvo e um canal
+aberto para remarcar.
+
+O redirecionamento é automático (`window.location.href` num efeito, assim
+que o horário entra). No celular isso ABRE O APLICATIVO e a página fica
+viva atrás: voltando ao navegador, a confirmação ainda está lá. O botão
+"Avisar no WhatsApp" continua na tela e não é redundância — aparelho sem
+WhatsApp, pessoa que volta sem mandar, ou navegador que segura a
+navegação precisam de um jeito de tentar de novo. Redirecionamento
+automático sem saída é armadilha.
+
+**O telefone passou a ser público na tela de agendar (0036).** A view da
+loja continua sem ele; só `agenda_publica` o entrega, porque sem número
+não há para onde redirecionar. Decisão do Gabriel em 23/10/2026, com a
+consequência na mesa: quem tem o link vê o número. O campo em Barbearia
+diz isso na ajuda. Se um dia for preciso um número só para atendimento, o
+lugar é uma coluna nova em `barbearias` — não um `if` na tela.
+
+**`linkDoWhatsApp` decide o código do país pelo TAMANHO, não pelo
+começo.** `55` também é o DDD de Santa Maria: um celular de lá tem 11
+dígitos começando em 55 e AINDA precisa do país na frente. Só com 12 ou
+13 dígitos é que o país já veio.
+
 ### Como o aviso sai sem sessão
 
 Quem marca pelo link não tem conta, e é NESSE instante que o aviso

@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarCheck, CalendarPlus, Loader2 } from "lucide-react";
+import { CalendarCheck, CalendarPlus, Loader2, MessageCircle } from "lucide-react";
 
 import {
   agendarPeloLink,
@@ -28,6 +28,7 @@ import {
   diaComSemana,
   ehHoje,
   hojeNaBarbearia,
+  linkDoWhatsApp,
 } from "@/lib/formato";
 
 /**
@@ -210,6 +211,52 @@ export function AgendarPublico({
     }
   }
 
+  /**
+   * A conversa no WhatsApp da barbearia, com o recado já escrito.
+   *
+   * `null` quando a barbearia não cadastrou telefone — e aí a tela nem
+   * oferece, em vez de abrir conversa com ninguém.
+   *
+   * Mora aqui em cima, e não lá dentro do `if (pronto)`: hook não pode
+   * nascer depois de um `return`.
+   */
+  const avisoNoWhats = useMemo(() => {
+    if (!pronto) return null;
+
+    const linhas = [
+      `Olá! Acabei de marcar um horário na ${agenda.barbearia.nome}.`,
+      "",
+      clienteNome.trim(),
+      `${diaComSemana(pronto.data)} às ${pronto.horario}`,
+    ];
+
+    const nomeDoBarbeiro = agenda.barbeiros.find((x) => x.id === barbeiroId)?.nome;
+    if (servico) {
+      linhas.push(
+        nomeDoBarbeiro ? `${servico.nome} com ${nomeDoBarbeiro}` : servico.nome,
+      );
+    }
+
+    return linkDoWhatsApp(agenda.barbearia.telefone, linhas.join("\n"));
+  }, [pronto, agenda.barbearia, agenda.barbeiros, barbeiroId, clienteNome, servico]);
+
+  /**
+   * Leva o cliente para o WhatsApp assim que o horário entra.
+   *
+   * No celular isto ABRE O APLICATIVO e a página fica viva atrás: voltando
+   * ao navegador, a confirmação ainda está lá. No computador a aba navega
+   * para o WhatsApp Web, que é o mesmo destino.
+   *
+   * O botão lá embaixo continua existindo e não é redundância: se o
+   * aparelho não tiver WhatsApp, se a pessoa voltar sem mandar, ou se o
+   * navegador segurar a navegação, ela precisa de um jeito de tentar de
+   * novo. Redirecionamento automático sem saída é armadilha.
+   */
+  useEffect(() => {
+    if (!avisoNoWhats) return;
+    window.location.href = avisoNoWhats;
+  }, [avisoNoWhats]);
+
   // Confirmação fica NA PÁGINA, não em toast: o cliente precisa reler o dia e
   // a hora, e um recado que some em quatro segundos não serve pra isso.
   if (pronto) {
@@ -227,10 +274,25 @@ export function AgendarPublico({
             {agenda.barbearia.nome}.
           </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Anote aí: não enviamos confirmação por mensagem ainda. Se precisar
-          desmarcar, fale com a barbearia.
-        </p>
+        {avisoNoWhats ? (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Abrindo o WhatsApp para você avisar a barbearia. Se não abrir
+              sozinho, toque no botão abaixo.
+            </p>
+            <Button asChild size="lg" className="w-full sm:w-auto">
+              <a href={avisoNoWhats} target="_blank" rel="noopener noreferrer">
+                <MessageCircle />
+                Avisar no WhatsApp
+              </a>
+            </Button>
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Anote aí: não enviamos confirmação por mensagem ainda. Se precisar
+            desmarcar, fale com a barbearia.
+          </p>
+        )}
         <Button
           type="button"
           variant="outline"

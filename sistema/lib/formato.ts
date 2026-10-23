@@ -199,6 +199,30 @@ export function mascararTelefone(texto: string): string {
   return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`;
 }
 
+/**
+ * Link de conversa no WhatsApp com a mensagem já escrita.
+ *
+ * `null` quando o número não serve para nada — sem DDD não dá para montar
+ * endereço, e um link quebrado é pior que botão nenhum.
+ *
+ * O código do país entra quando falta. A conta do "já tem 55?" olha o
+ * TAMANHO e não só o começo: `55` também é o DDD de Santa Maria, então um
+ * celular de lá (11 dígitos, começando em 55) ainda precisa do país na
+ * frente. Com 12 ou 13 dígitos o país já veio.
+ */
+export function linkDoWhatsApp(
+  telefone: string | null | undefined,
+  texto: string,
+): string | null {
+  const digitos = digitosDoTelefone(telefone ?? "");
+  if (digitos.length < 10) return null;
+
+  const comPais =
+    digitos.startsWith("55") && digitos.length >= 12 ? digitos : `55${digitos}`;
+
+  return `https://wa.me/${comPais}?text=${encodeURIComponent(texto)}`;
+}
+
 /** Só os dígitos do telefone — útil pra validar tamanho. */
 export function digitosDoTelefone(texto: string): string {
   return texto.replace(/\D/g, "");
