@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import { obterAgendaPublica } from "@/lib/agendamento-online/repositorio";
+import { avisarAgendamento } from "@/lib/notificacoes/servidor";
 import type { AgendaPublica } from "@/lib/agendamento-online/tipos";
 import { sanitizarNome, textoLivreParaBanco } from "@/lib/formato";
 
@@ -95,10 +97,31 @@ export async function agendarPeloLink(entrada: {
       return { ok: false, erro: "Não consegui marcar agora. Tente de novo." };
     }
 
-    const resposta = data as { ok?: boolean; erro?: string } | null;
+    const resposta = data as {
+      ok?: boolean;
+      erro?: string;
+      agendamentoId?: string;
+    } | null;
 
     if (!resposta?.ok) {
       return { ok: false, erro: resposta?.erro ?? "Não consegui marcar." };
+    }
+
+    // ============================================================
+    // O AVISO SAI DEPOIS DA RESPOSTA, NUNCA ANTES
+    // ============================================================
+    //
+    // `after()` roda com a resposta já entregue. O horário está gravado e o
+    // cliente precisa ver "Horário marcado" agora — não depois de esperar a
+    // Apple e o Google responderem. E se o envio falhar, quem marcou não
+    // tem o que fazer com esse erro: o agendamento existe do mesmo jeito.
+    //
+    // Sem `after()` haveria duas escolhas ruins: aguardar o push (a tela de
+    // confirmação fica presa numa rede que não é nossa) ou disparar e
+    // esquecer (em servidor sem estado a função congela depois da resposta,
+    // e o envio morre no meio).
+    if (resposta.agendamentoId) {
+      after(() => avisarAgendamento(resposta.agendamentoId!));
     }
 
     // A dona vê o horário novo na agenda dela sem precisar recarregar na mão.

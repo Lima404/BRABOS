@@ -959,6 +959,64 @@ chave e delegam para `agenda_publica` / `criar_agendamento_publico`. Duplicar
 ali dentro criaria uma segunda cópia das regras de expediente, de grade, de
 folga e de sobreposição — esperando divergir no primeiro ajuste.
 
+## Aviso de agendamento no celular
+
+Marcou pelo link público, o celular da barbearia toca — com o BARBOS
+fechado, porque quem mostra a notificação é o service worker
+(`public/sw.js`) e não a página. É Web Push, sem SMS e sem custo.
+
+**No iPhone só funciona com o BARBOS na tela de início.** O iOS não
+entrega push para site aberto no Safari. É por isso que existe
+`app/manifest.ts`: sem manifesto com `display: standalone`, o Safari não
+oferece a instalação direito. A tela detecta esse caso ANTES e mostra os
+três toques, em vez de um botão que falharia sem explicar.
+
+**`/sw.js` e `/manifest.webmanifest` estão em `ROTAS_ABERTAS`.** Barrados,
+o proxy devolvia 307 para o login e o navegador recebia HTML no lugar do
+arquivo: o worker não registra e a instalação não acontece — em silêncio.
+O navegador pede os dois sem cookie em várias situações, então exigir
+sessão ali seria exigir o impossível.
+
+### Como o aviso sai sem sessão
+
+Quem marca pelo link não tem conta, e é NESSE instante que o aviso
+precisa sair. As assinaturas são fechadas por RLS e a chave
+`service_role` é proibida aqui, então a ponte é `avisar_agendamento`
+(0035): `security definer`, com três travas que a tornam inútil para
+quem não acabou de marcar de verdade — exige o id de um agendamento que
+existe, recusa agendamento com mais de 2 minutos, e é de TIRO ÚNICO
+(carimba `avisado_em`). O carimbo também dá idempotência: ação repetida
+não avisa duas vezes.
+
+Endurecer mais significa mover o envio para uma Edge Function com a
+chave VAPID guardada lá, e aí as assinaturas nunca saem do banco.
+
+**O envio roda em `after()`**, depois da resposta. O horário já está
+gravado e quem marcou precisa ver "Horário marcado" agora, não depois de
+esperar a Apple e o Google. E se o envio falhar, o cliente não tem o que
+fazer com esse erro. Sem `after()` restariam duas escolhas ruins: prender
+a confirmação numa rede que não é nossa, ou disparar e esquecer — e em
+servidor sem estado a função congela depois da resposta, matando o envio
+no meio.
+
+**A chave VAPID privada nunca pode ter prefixo `NEXT_PUBLIC`.** Com ela
+qualquer um manda notificação em nome do BARBOS para quem já assinou. A
+pública vai para o navegador de propósito, que é o papel dela. O contato
+(`VAPID_CONTATO`) é a URL do site e não e-mail pessoal: esse valor viaja
+em toda requisição para a Apple e o Google.
+
+**404 e 410 do serviço de push apagam a assinatura; o resto, não.** Os
+dois significam navegador desinstalado ou permissão revogada — não volta.
+Qualquer outra recusa pode ser instabilidade momentânea, e apagar por
+causa dela desligaria o aviso da barbearia sem ninguém pedir.
+
+**Cada aviso tem `tag` própria.** Com etiqueta fixa, o segundo aviso
+substitui o primeiro em silêncio e duas marcações viram uma só.
+
+**Tem botão de testar.** Sem ele, conferir se o aviso funciona exigiria
+pedir a alguém que marcasse de verdade — e esse é o tipo de recurso que a
+pessoa descobre que não funcionava no dia em que precisava dele.
+
 ## Folga é a exceção da semana, não a semana
 
 "Dias de atendimento" responde **toda semana** — desmarcar a segunda fecha

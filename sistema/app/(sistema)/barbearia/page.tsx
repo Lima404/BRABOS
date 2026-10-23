@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 
+import { listarAparelhosAvisados } from "@/app/(sistema)/barbearia/acoes";
 import { FormularioDadosBarbearia } from "@/components/barbearia/formulario-dados";
 import { SecaoEquipe } from "@/components/barbearia/secao-equipe";
+import { SecaoNotificacoes } from "@/components/barbearia/secao-notificacoes";
 import {
   equipeDisponivel,
   listarBarbeiros,
@@ -13,9 +15,13 @@ export const metadata: Metadata = { title: "Barbearia" };
 export default async function BarbeariaPage() {
   const barbearia = await obterBarbearia();
 
-  const [barbeiros, disponivel] = barbearia
-    ? await Promise.all([listarBarbeiros(), equipeDisponivel()])
-    : [[], false];
+  const [barbeiros, disponivel, aparelhos] = barbearia
+    ? await Promise.all([
+        listarBarbeiros(),
+        equipeDisponivel(),
+        listarAparelhosAvisados(),
+      ])
+    : [[], false, []];
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -44,6 +50,10 @@ export default async function BarbeariaPage() {
       {barbearia ? (
         <SecaoEquipe barbeiros={barbeiros} disponivel={disponivel} />
       ) : null}
+
+      {/* Depois da equipe: ligar o aviso num celular só faz sentido quando
+          já existe agenda para avisar sobre. */}
+      {barbearia ? <SecaoNotificacoes aparelhosIniciais={aparelhos} /> : null}
     </div>
   );
 }
