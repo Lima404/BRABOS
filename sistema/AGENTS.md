@@ -1004,6 +1004,35 @@ começo.** `55` também é o DDD de Santa Maria: um celular de lá tem 11
 dígitos começando em 55 e AINDA precisa do país na frente. Só com 12 ou
 13 dígitos é que o país já veio.
 
+**O telefone do cliente é obrigatório, e a coluna aceita null (0037).**
+Não é contradição: existem agendamentos gravados antes do campo existir,
+e `not null` recusaria a própria migração. O obrigatório vale para o que
+entra agora e mora no formulário mais a ação de servidor; o banco cobra
+só o FORMATO (10 ou 11 dígitos, ou null). Editar um agendamento ANTIGO
+não exige o número — exigir prenderia a dona num formulário que não
+salva, para descobrir o telefone de um cliente de agosto. Quem marca
+hoje informa.
+
+A RPC pública ainda aceita chegar sem telefone, e isso é temporário: o
+banco é o mesmo da produção, e exigir lá derrubaria o agendamento online
+que está no ar antes do deploy desta tela. Depois do deploy, é trocar o
+`if` marcado "DEPOIS DO DEPLOY" na 0037.
+
+**A primeira opção do seletor de barbeiro é "Selecione um barbeiro".**
+Antes o campo nascia no primeiro da lista, e quem não mexesse nele
+marcava com um barbeiro que não escolheu — na tela pública isso é pior
+ainda, porque para quem está marcando os nomes não significam nada. O
+valor da opção é `SEM_BARBEIRO` e não `""`: o Radix usa a string vazia
+para dizer "nada escolhido", e um `SelectItem value=""` estoura. O
+formulário traduz de volta para `""` na saída, que é o que as validações
+já chamam de "não escolheu".
+
+Consequência aceita: enquanto ninguém escolhe barbeiro, a faixa do dia e
+a lista de horários não têm como saber o que está ocupado, e mostram o
+dia inteiro. Quem escolhe o barbeiro depois pode cair num horário que já
+era de alguém — e aí quem recusa é a trava de sobreposição, com o recado
+"esse horário já está ocupado".
+
 ### Como o aviso sai sem sessão
 
 Quem marca pelo link não tem conta, e é NESSE instante que o aviso

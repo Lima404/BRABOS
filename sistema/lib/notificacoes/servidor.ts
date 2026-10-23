@@ -37,6 +37,8 @@ export type Recado = {
 
 type DadosDoAviso = {
   clienteNome: string;
+  /** Com DDD. String vazia em agendamento anterior à migração 0037. */
+  clienteTelefone: string;
   /** AAAA-MM-DD */
   data: string;
   /** HH:MM */
@@ -73,11 +75,23 @@ function chaves(): { publica: string; privada: string; contato: string } | null 
   return { publica, privada, contato };
 }
 
-/** "PEDRO SILVA · Quinta-feira, 23 de outubro às 14:00". */
+/**
+ * "PEDRO SILVA · (84) 99630-8743
+ *  Quinta-feira, 23 de outubro às 14:00
+ *  BARBA com KADU"
+ *
+ * O telefone fica na PRIMEIRA linha, junto do nome: na notificação
+ * fechada só as duas primeiras aparecem, e o número é o que faz a dona
+ * agir — ligar, confirmar, remarcar. Vazio em agendamento antigo, e aí
+ * a linha volta a ser só o nome.
+ */
 function corpoDoAviso(d: DadosDoAviso): string {
+  const quem = d.clienteTelefone
+    ? `${d.clienteNome} · ${d.clienteTelefone}`
+    : d.clienteNome;
   const quando = `${diaComSemana(d.data)} às ${d.horario}`;
   const comQuem = d.barbeiro ? ` com ${d.barbeiro}` : "";
-  return `${d.clienteNome} · ${quando}\n${d.servico}${comQuem}`;
+  return `${quem}\n${quando}\n${d.servico}${comQuem}`;
 }
 
 /**

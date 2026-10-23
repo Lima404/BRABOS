@@ -48,7 +48,9 @@ import { descricaoDoPasso } from "@/lib/agenda/tipos";
 import {
   agoraNaBarbearia,
   diaComSemana,
+  digitosDoTelefone,
   ehHoje,
+  mascararTelefone,
   moeda,
   sanitizarNome,
 } from "@/lib/formato";
@@ -145,11 +147,29 @@ function Conteudo({
   const [clienteNome, setClienteNome] = useState(
     sanitizarNome(emEdicao?.clienteNome ?? ""),
   );
+  const [clienteTelefone, setClienteTelefone] = useState(
+    mascararTelefone(emEdicao?.clienteTelefone ?? ""),
+  );
+  /**
+   * O telefone é obrigatório para marcar, e também para editar um
+   * agendamento que já tem número.
+   *
+   * A exceção é o agendamento gravado antes da migração 0037: ele não tem
+   * telefone porque não havia campo, e exigir um aqui prenderia a dona —
+   * ela abriria para lançar um consumo e não conseguiria salvar, sem ter
+   * como descobrir o número de um cliente de agosto.
+   */
+  const telefoneObrigatorio = !emEdicao || Boolean(emEdicao.clienteTelefone);
+  /**
+   * Nasce VAZIO quando ninguém escolheu ainda.
+   *
+   * O `barbeiros[0]?.id` saiu daqui: ele fazia o campo começar no primeiro
+   * da lista, e quem não mexesse nele marcava com um barbeiro que não
+   * escolheu. O que fica é o que a PESSOA já escolheu — o barbeiro do
+   * agendamento em edição, ou o filtro que ela aplicou na barra da agenda.
+   */
   const [barbeiroId, setBarbeiroId] = useState(
-    emEdicao?.barbeiroId ??
-      barbeiroIdInicial ??
-      barbeiros[0]?.id ??
-      "",
+    emEdicao?.barbeiroId ?? barbeiroIdInicial ?? "",
   );
   const [servicoId, setServicoId] = useState(
     emEdicao?.servico.id ?? servicos[0]?.id ?? "",
@@ -336,8 +356,21 @@ function Conteudo({
       setErro("Informe o nome do cliente.");
       return;
     }
+    // Só depois do nome: quem esqueceu os dois lê o recado de cima
+    // primeiro, e o campo de cima é o que ele já estava preenchendo.
+    const digitos = digitosDoTelefone(dados.clienteTelefone);
+    if (telefoneObrigatorio && digitos.length === 0) {
+      setErro("Informe o telefone do cliente.");
+      return;
+    }
+    // Meio digitado é erro em qualquer caso — inclusive no agendamento
+    // antigo, onde o campo é opcional mas não pode virar lixo.
+    if (digitos.length > 0 && (digitos.length < 10 || digitos.length > 11)) {
+      setErro("Informe o telefone do cliente com DDD (10 ou 11 dígitos).");
+      return;
+    }
     if (!dados.barbeiroId) {
-      setErro("Escolha o barbeiro.");
+      setErro("Selecione um barbeiro.");
       return;
     }
     if (!dados.servicoId) {
@@ -500,6 +533,9 @@ function Conteudo({
           <FormularioAgendamento
             clienteNome={clienteNome}
             aoMudarClienteNome={setClienteNome}
+            clienteTelefone={clienteTelefone}
+            aoMudarClienteTelefone={setClienteTelefone}
+            telefoneObrigatorio={telefoneObrigatorio}
             barbeiroId={barbeiroId}
             aoMudarBarbeiroId={setBarbeiroId}
             barbeiros={barbeiros}

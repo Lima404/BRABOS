@@ -7,7 +7,11 @@ import { criarClienteServidor } from "@/lib/supabase/servidor";
 import { obterAgendaPublica } from "@/lib/agendamento-online/repositorio";
 import { avisarAgendamento } from "@/lib/notificacoes/servidor";
 import type { AgendaPublica } from "@/lib/agendamento-online/tipos";
-import { sanitizarNome, textoLivreParaBanco } from "@/lib/formato";
+import {
+  digitosDoTelefone,
+  sanitizarNome,
+  textoLivreParaBanco,
+} from "@/lib/formato";
 
 /**
  * Marcação feita pelo cliente, pelo link público. Roda SEM sessão.
@@ -28,6 +32,8 @@ const FALHA_DE_TRANSPORTE =
 export async function agendarPeloLink(entrada: {
   slug: string;
   clienteNome: string;
+  /** Com DDD. Obrigatório desde a migração 0037. */
+  clienteTelefone: string;
   barbeiroId: string;
   servicoId: string;
   /** AAAA-MM-DD */
@@ -39,13 +45,24 @@ export async function agendarPeloLink(entrada: {
   try {
     const slug = entrada.slug.trim();
     const nome = sanitizarNome(entrada.clienteNome).trim();
+    const telefone = (entrada.clienteTelefone ?? "").trim();
+    const digitos = digitosDoTelefone(telefone);
 
     if (!slug) return { ok: false, erro: "Link inválido." };
     if (nome.length < 2) {
       return { ok: false, erro: "Informe seu nome." };
     }
+    // Cobrado aqui e não só na tela: esta função é um endereço HTTP
+    // público, e é ela que decide se o telefone é obrigatório enquanto a
+    // RPC ainda aceita chegar sem ele (ver o cabeçalho da 0037).
+    if (digitos.length === 0) {
+      return { ok: false, erro: "Informe seu telefone." };
+    }
+    if (digitos.length < 10 || digitos.length > 11) {
+      return { ok: false, erro: "Informe seu telefone com DDD (10 ou 11 dígitos)." };
+    }
     if (!entrada.barbeiroId) {
-      return { ok: false, erro: "Escolha o barbeiro." };
+      return { ok: false, erro: "Selecione um barbeiro." };
     }
     if (!entrada.servicoId) {
       return { ok: false, erro: "Escolha o serviço." };
@@ -69,6 +86,7 @@ export async function agendarPeloLink(entrada: {
       {
       p_chave: slug,
       p_cliente_nome: nome,
+      p_cliente_telefone: telefone,
       p_barbeiro_id: entrada.barbeiroId,
       p_servico_id: entrada.servicoId,
       p_data: entrada.data,
@@ -88,9 +106,13 @@ export async function agendarPeloLink(entrada: {
         error.message?.includes("criar_agendamento_publico") ||
         error.code === "PGRST202"
       ) {
+        // A 0037 mudou a ASSINATURA da função (o telefone entrou). Sem
+        // ela aplicada, o PostgREST não acha a função com estes
+        // argumentos e devolve PGRST202 — o mesmo erro de quando a 0033
+        // nunca rodou. Daí as duas migrações no recado.
         return {
           ok: false,
-          erro: "O agendamento online ainda não está ligado no banco. Rode a migração 0033.",
+          erro: "O agendamento online ainda não está ligado no banco. Rode as migrações 0033 e 0037.",
         };
       }
 

@@ -11,6 +11,7 @@ import {
   type Convite,
 } from "@/lib/convites/tipos";
 import {
+  digitosDoTelefone,
   nomeDeItemParaBanco,
   nomeParaBanco,
   textoLivreParaBanco,
@@ -510,6 +511,13 @@ const DATA = /^\d{4}-\d{2}-\d{2}$/;
 
 export type DadosAgendamento = {
   clienteNome: string;
+  /**
+   * Com DDD, como a máscara entrega: "(84) 99630-8743".
+   *
+   * Obrigatório ao marcar. Pode chegar vazio ao EDITAR um agendamento
+   * anterior à migração 0037 — ver `validarAgendamento`.
+   */
+  clienteTelefone: string;
   servicoId: string;
   /** Barbeiro que atende. */
   barbeiroId: string;
@@ -520,7 +528,23 @@ export type DadosAgendamento = {
   observacao?: string;
 };
 
-function validarAgendamento(d: DadosAgendamento): string | null {
+/**
+ * `exigeTelefone` é falso só ao EDITAR.
+ *
+ * Marcar exige o número. Editar não pode exigir, porque os agendamentos
+ * gravados antes da migração 0037 não têm nenhum — e aí abrir um deles
+ * para lançar consumo viraria um formulário que não salva. O formato
+ * continua cobrado nos dois casos: se veio algo, tem que ser telefone.
+ *
+ * A consequência é que uma edição pode apagar um telefone que existia.
+ * Fica assim de propósito: conferir isso custaria ler o agendamento antes
+ * de validar, e é a própria barbearia mexendo nos dados dela — o RLS já
+ * garante que é na dela.
+ */
+function validarAgendamento(
+  d: DadosAgendamento,
+  { exigeTelefone }: { exigeTelefone: boolean },
+): string | null {
   // Depois de sanitizar: quem mandou só "###" enviou três caracteres e não
   // sobrou nenhum. Aceitar isso gravaria um agendamento sem nome.
   const cliente = nomeParaBanco(d.clienteNome);
@@ -531,6 +555,18 @@ function validarAgendamento(d: DadosAgendamento): string | null {
   if (cliente.length > 80) {
     return "O nome do cliente está longo demais.";
   }
+
+  // Obrigatório desde a 0037, e cobrado AQUI e não só na tela: ação de
+  // servidor é endereço HTTP público. O banco cobra o formato (10 ou 11
+  // dígitos); quem exige que o campo exista é esta linha.
+  const digitos = digitosDoTelefone(d.clienteTelefone ?? "");
+  if (exigeTelefone && digitos.length === 0) {
+    return "Informe o telefone do cliente.";
+  }
+  if (digitos.length > 0 && (digitos.length < 10 || digitos.length > 11)) {
+    return "Informe o telefone do cliente com DDD (10 ou 11 dígitos).";
+  }
+
   if (!d.servicoId) return "Escolha o serviço.";
   if (!d.barbeiroId) return "Escolha o barbeiro.";
   if (!DATA.test(d.data)) return "Informe a data no formato AAAA-MM-DD.";
@@ -583,7 +619,7 @@ export async function criarAgendamento(
   d: DadosAgendamento,
 ): Promise<Resultado> {
   return protegido("criar agendamento", async () => {
-    const problema = validarAgendamento(d);
+    const problema = validarAgendamento(d, { exigeTelefone: true });
     if (problema) return { ok: false, erro: problema };
 
     const supabase = await criarClienteServidor();
@@ -635,6 +671,10 @@ export async function criarAgendamento(
     const { error } = await supabase.from("agendamentos").insert({
       barbearia_id: user.id,
       cliente_nome: nomeParaBanco(d.clienteNome),
+      // Guardado COM máscara, igual ao telefone da barbearia e ao do
+      // barbeiro: é o formato que a dona lê, e quem precisa só dos
+      // dígitos (o link do WhatsApp) os extrai na hora.
+      cliente_telefone: d.clienteTelefone.trim(),
       servico_id: d.servicoId,
       barbeiro_id: d.barbeiroId,
       data: d.data,
@@ -648,6 +688,14 @@ export async function criarAgendamento(
     });
 
     if (error) {
+      // Antes do `42703` genérico: coluna que falta é SEMPRE 42703, e a
+      // mensagem de baixo mandaria rodar a 0015 por causa da 0037.
+      if (error.message?.includes("cliente_telefone")) {
+        return {
+          ok: false,
+          erro: "O telefone do cliente ainda não existe no banco. Rode a migração 0037.",
+        };
+      }
       if (
         error.message?.includes("barbeiro_id") ||
         error.code === "42703"
@@ -685,7 +733,7 @@ export async function atualizarAgendamento(
   return protegido("atualizar agendamento", async () => {
     if (!id) return { ok: false, erro: "Agendamento não informado." };
 
-    const problema = validarAgendamento(d);
+    const problema = validarAgendamento(d, { exigeTelefone: false });
     if (problema) return { ok: false, erro: problema };
 
     const supabase = await criarClienteServidor();
@@ -734,6 +782,7 @@ export async function atualizarAgendamento(
       .from("agendamentos")
       .update({
         cliente_nome: nomeParaBanco(d.clienteNome),
+        cliente_telefone: d.clienteTelefone.trim() || null,
         servico_id: d.servicoId,
         barbeiro_id: d.barbeiroId,
         data: d.data,
@@ -745,6 +794,14 @@ export async function atualizarAgendamento(
       .eq("id", id);
 
     if (error) {
+      // Antes do `42703` genérico: coluna que falta é SEMPRE 42703, e a
+      // mensagem de baixo mandaria rodar a 0015 por causa da 0037.
+      if (error.message?.includes("cliente_telefone")) {
+        return {
+          ok: false,
+          erro: "O telefone do cliente ainda não existe no banco. Rode a migração 0037.",
+        };
+      }
       if (
         error.message?.includes("barbeiro_id") ||
         error.code === "42703"
