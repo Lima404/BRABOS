@@ -37,6 +37,10 @@
 -- Depois do deploy, exigir no banco também é trocar o `if` marcado
 -- "DEPOIS DO DEPLOY" lá embaixo. Até lá a recusa é da ação de servidor,
 -- que a tela nova sempre atravessa.
+--
+-- FEITO: a migração 0038 fez essa troca, em 23/10/2026, logo depois do
+-- deploy. O SQL daqui não foi reescrito — migração é histórico. Esta
+-- nota existe para quem ler a 0037 e parar nela.
 -- ============================================================
 
 -- ------------------------------------------------------------

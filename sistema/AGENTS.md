@@ -1013,10 +1013,13 @@ não exige o número — exigir prenderia a dona num formulário que não
 salva, para descobrir o telefone de um cliente de agosto. Quem marca
 hoje informa.
 
-A RPC pública ainda aceita chegar sem telefone, e isso é temporário: o
-banco é o mesmo da produção, e exigir lá derrubaria o agendamento online
-que está no ar antes do deploy desta tela. Depois do deploy, é trocar o
-`if` marcado "DEPOIS DO DEPLOY" na 0037.
+A RPC pública exige o telefone desde a **0038**, aplicada logo depois do
+deploy de 23/10/2026 (merge 077d0c5). A 0037 tinha aceitado chegar sem
+número de propósito — o banco é o mesmo da produção, e exigir ali teria
+derrubado o agendamento online que estava no ar por causa de uma tela
+que ainda não tinha subido. A ordem importa e é a mesma sempre que uma
+RPC pública ganhar argumento obrigatório: migração frouxa, deploy,
+migração que aperta.
 
 **A primeira opção do seletor de barbeiro é "Selecione um barbeiro".**
 Antes o campo nascia no primeiro da lista, e quem não mexesse nele
