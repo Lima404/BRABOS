@@ -150,6 +150,11 @@ export async function obterAgendaPublica(
       barbeiros: lista(r.barbeiros).map((b) => ({
         id: texto(b.id),
         nome: texto(b.nome),
+        // Ausente = banco ainda sem a 0039. Null em vez de string vazia
+        // para a tela conseguir distinguir "sem número" de "não veio".
+        telefone: typeof b.telefone === "string" && b.telefone.trim()
+          ? b.telefone
+          : null,
       })),
       // Ausente = banco ainda sem a 0020. Sem folga nenhuma é como o sistema
       // funcionava antes dela, então `false` é o padrão certo.
