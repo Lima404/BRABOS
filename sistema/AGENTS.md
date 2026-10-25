@@ -999,6 +999,34 @@ consequência na mesa: quem tem o link vê o número. O campo em Barbearia
 diz isso na ajuda. Se um dia for preciso um número só para atendimento, o
 lugar é uma coluna nova em `barbearias` — não um `if` na tela.
 
+**Desde a 0039 o destino é o BARBEIRO, e a barbearia virou reserva.**
+Quem corta o cabelo é quem sabe remarcar, quem precisa saber do atraso de
+dez minutos e quem perde a tarde quando o cliente some; mandar tudo para
+o número geral obrigava alguém a repassar. Pedido do Gabriel em
+25/10/2026.
+
+O preço disso é maior que o da 0036 e está escrito no cabeçalho da
+migração: **o celular de TODA a equipe ativa desce para o navegador de
+quem abre o link** — não só o do barbeiro escolhido, porque é a lista
+inteira que monta o seletor. Conferido na tela: os quatro números
+aparecem no código-fonte da página. E o número da 0036 é da empresa,
+enquanto este é da PESSOA, e a conta que decide não é a dela. Se um dia a
+equipe quiser separar trabalho de pessoal, o lugar é uma coluna nova em
+`barbeiros` (`telefone_publico`).
+
+A reserva da barbearia **não** é para barbeiro sem telefone — a 0014
+proíbe isso no banco, e está testado. Ela cobre a tela nova falando com
+um banco sem a 0039: ali o telefone chega indefinido e o cliente vai para
+a barbearia, como ia antes, em vez de ficar sem WhatsApp durante a janela
+do deploy.
+
+**A montagem do recado mora em `recadoDoAgendamento`** (lib), fora do
+componente, porque o destino tem três saídas (barbeiro, barbearia,
+ninguém) e o texto muda junto: falando com o barbeiro o recado o
+cumprimenta pelo nome e o serviço vai sozinho; falando com a barbearia
+ele é impessoal e o serviço leva o "com FULANO", porque aí quem lê
+precisa saber de quem é o horário.
+
 **`linkDoWhatsApp` decide o código do país pelo TAMANHO, não pelo
 começo.** `55` também é o DDD de Santa Maria: um celular de lá tem 11
 dígitos começando em 55 e AINDA precisa do país na frente. Só com 12 ou

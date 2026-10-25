@@ -20,6 +20,7 @@ import { proximoHorarioLivre } from "@/lib/agenda/horarios";
 import type { DadosAgendamento } from "@/app/(sistema)/agenda/acoes";
 import {
   ocupadoComoAgendamento,
+  recadoDoAgendamento,
   type AgendaPublica,
 } from "@/lib/agendamento-online/tipos";
 import { chaves } from "@/lib/query";
@@ -29,7 +30,6 @@ import {
   digitosDoTelefone,
   ehHoje,
   hojeNaBarbearia,
-  linkDoWhatsApp,
 } from "@/lib/formato";
 
 /**
@@ -238,32 +238,19 @@ export function AgendarPublico({
   const avisoNoWhats = useMemo(() => {
     if (!pronto) return null;
 
-    // O telefone entra junto do nome: quem recebe precisa saber com quem
-    // está falando E por onde responder. Sem ele, a dona só tem o número
-    // de quem mandou a mensagem — que é o certo quase sempre, mas não
-    // quando alguém marca pelo aparelho de outra pessoa.
-    const linhas = [
-      `Olá! Acabei de marcar um horário na ${agenda.barbearia.nome}.`,
-      "",
-      clienteNome.trim(),
-    ];
-
-    // O `if` não é defesa inútil: a tela pode estar aberta desde antes
-    // deste campo existir, e uma linha em branco no meio do recado é
-    // pior que uma linha a menos.
-    const telefone = clienteTelefone.trim();
-    if (telefone) linhas.push(telefone);
-
-    linhas.push(`${diaComSemana(pronto.data)} às ${pronto.horario}`);
-
-    const nomeDoBarbeiro = agenda.barbeiros.find((x) => x.id === barbeiroId)?.nome;
-    if (servico) {
-      linhas.push(
-        nomeDoBarbeiro ? `${servico.nome} com ${nomeDoBarbeiro}` : servico.nome,
-      );
-    }
-
-    return linkDoWhatsApp(agenda.barbearia.telefone, linhas.join("\n"));
+    // A montagem mora em `recadoDoAgendamento` (lib), fora do componente:
+    // a escolha do destino tem três saídas e o texto muda junto com ela,
+    // e isso precisa ser testável sem abrir navegador.
+    return recadoDoAgendamento({
+      nomeDaBarbearia: agenda.barbearia.nome,
+      telefoneDaBarbearia: agenda.barbearia.telefone,
+      barbeiro: agenda.barbeiros.find((x) => x.id === barbeiroId) ?? null,
+      clienteNome,
+      clienteTelefone,
+      diaPorExtenso: diaComSemana(pronto.data),
+      horario: pronto.horario,
+      nomeDoServico: servico?.nome ?? null,
+    });
   }, [
     pronto,
     agenda.barbearia,
@@ -288,7 +275,7 @@ export function AgendarPublico({
    */
   useEffect(() => {
     if (!avisoNoWhats) return;
-    window.location.href = avisoNoWhats;
+    window.location.href = avisoNoWhats.link;
   }, [avisoNoWhats]);
 
   // Confirmação fica NA PÁGINA, não em toast: o cliente precisa reler o dia e
@@ -311,13 +298,20 @@ export function AgendarPublico({
         {avisoNoWhats ? (
           <>
             <p className="text-sm text-muted-foreground">
-              Abrindo o WhatsApp para você avisar a barbearia. Se não abrir
-              sozinho, toque no botão abaixo.
+              Abrindo o WhatsApp para você avisar{" "}
+              <span className="font-medium text-foreground">
+                {avisoNoWhats.para}
+              </span>
+              . Se não abrir sozinho, toque no botão abaixo.
             </p>
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <a href={avisoNoWhats} target="_blank" rel="noopener noreferrer">
+              <a
+                href={avisoNoWhats.link}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <MessageCircle />
-                Avisar no WhatsApp
+                Avisar {avisoNoWhats.para} no WhatsApp
               </a>
             </Button>
           </>
@@ -374,9 +368,10 @@ export function AgendarPublico({
           aoMudarBarbeiroId={setBarbeiroId}
           barbeiros={agenda.barbeiros.map((b) => ({
             ...b,
-            // O formulário pede `Barbeiro` completo, mas a tela pública não
-            // recebe telefone — e não deve mesmo. Campo vazio, não inventado.
-            telefone: "",
+            // O formulário pede `Barbeiro` completo, onde o telefone é
+            // obrigatório. Aqui ele pode faltar (0039), e aí desce vazio:
+            // o seletor usa id e nome, mais nada.
+            telefone: b.telefone ?? "",
           }))}
           servicoId={servicoId}
           aoMudarServicoId={setServicoId}
