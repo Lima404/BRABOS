@@ -7,15 +7,20 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Campo, Opcao } from "@/components/ui/campo";
+import { ListaDeAtributos } from "@/components/dashboard/lista-de-atributos";
 import { Input, InputDeTempo } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { RadioGrupo, RadioItem } from "@/components/ui/radio";
 import { buscarConfiguracao } from "@/lib/agenda/api";
 import { buscarBarbeiros } from "@/lib/barbearia/api";
 import {
+  atributosDoFiltro,
   filtroPadrao,
+  removerAtributo,
   SECOES_FILTRO,
+  type AtributoDoFiltro,
   type FiltroDashboard,
+  type NomesDoFiltro,
   type PeriodoFiltro,
   type SecaoFiltro,
 } from "@/lib/dashboard/filtros";
@@ -119,6 +124,31 @@ export function DialogoFiltrosDashboard({
     [produtosLoja, q],
   );
 
+  // Os nomes saem das MESMAS listas que montam os checkboxes, então a ficha
+  // e a linha marcada nunca divergem. Os produtos vêm da lista inteira, e
+  // não da peneirada da vitrine: um item que acabou no estoque sai do
+  // seletor, mas se já estava escolhido a ficha precisa continuar sabendo
+  // o nome dele.
+  const nomes = useMemo<NomesDoFiltro>(
+    () => ({
+      servicos: new Map(servicos.map((s) => [s.id, s.nome])),
+      barbeiros: new Map(barbeiros.map((b) => [b.id, b.nome])),
+      produtos: new Map((produtosData ?? []).map((p) => [p.id, p.nome])),
+    }),
+    [servicos, barbeiros, produtosData],
+  );
+
+  // Do RASCUNHO, não do que está aplicado: as fichas mostram o que vai
+  // acontecer quando a pessoa clicar em "Aplicar filtros".
+  const atributos = useMemo(
+    () => atributosDoFiltro(rascunho, mesAtual, nomes),
+    [rascunho, mesAtual, nomes],
+  );
+
+  function tirarAtributo(atributo: AtributoDoFiltro) {
+    setRascunho((atual) => removerAtributo(atual, atributo, mesAtual));
+  }
+
   function limpar() {
     setRascunho(filtroPadrao(mesAtual));
     setSecao("todos");
@@ -163,19 +193,28 @@ export function DialogoFiltrosDashboard({
       classNameCorpo="p-0 overflow-hidden flex flex-col"
       rodape={
         <>
-          {/* Os dois se anulam: um esconde os serviços, o outro esconde a
-              loja, e o recorte volta vazio. Avisar aqui, no rodapé, é o
-              único lugar que a pessoa enxerga esteja em que seção estiver —
-              e as duas escolhas moram em seções diferentes, então ninguém
-              vê as duas ao mesmo tempo. */}
-          {/* A ÚNICA contradição que sobrou. Serviço + produto não entra
-              aqui: marcar os dois é pedir os dois, e isso funciona. */}
-          {rascunho.soLoja && rascunho.servicoIds.length > 0 ? (
-            <p className="mr-auto text-sm text-destructive">
-              “Só loja” manda esconder os serviços, e você marcou um — o
-              recorte vai vir zerado.
-            </p>
-          ) : null}
+          <div className="mr-auto flex min-w-0 flex-col gap-2 sm:max-w-[58%]">
+            {/* O recorte inteiro numa linha só, alcançável de qualquer
+                seção. Clicar numa ficha tira aquele atributo. */}
+            <ListaDeAtributos
+              atributos={atributos}
+              aoRemover={tirarAtributo}
+            />
+
+            {/* Os dois se anulam: um esconde os serviços, o outro esconde a
+                loja, e o recorte volta vazio. Avisar aqui, no rodapé, é o
+                único lugar que a pessoa enxerga esteja em que seção
+                estiver — e as duas escolhas moram em seções diferentes,
+                então ninguém vê as duas ao mesmo tempo. */}
+            {/* A ÚNICA contradição que sobrou. Serviço + produto não entra
+                aqui: marcar os dois é pedir os dois, e isso funciona. */}
+            {rascunho.soLoja && rascunho.servicoIds.length > 0 ? (
+              <p className="text-sm text-destructive">
+                “Só loja” manda esconder os serviços, e você marcou um — o
+                recorte vai vir zerado.
+              </p>
+            ) : null}
+          </div>
           <Button type="button" variant="outline" onClick={limpar}>
             Limpar
           </Button>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ListFilter, RefreshCw } from "lucide-react";
 
@@ -14,9 +15,10 @@ import { buscarBarbeiros } from "@/lib/barbearia/api";
 import { buscarResumoDashboard } from "@/lib/dashboard/api";
 import { useCoresDoGrafico } from "@/lib/dashboard/cores";
 import {
+  atributosDoFiltro,
   chaveDoIntervalo,
-  contarCriteriosAtivos,
-  filtroPadrao,
+  filtroDaBusca,
+  filtroParaBusca,
   intervaloDoFiltro,
   resumoDoFiltro,
   type FiltroDashboard,
@@ -32,12 +34,40 @@ import { mesPorExtenso, moeda } from "@/lib/formato";
  *
  * Filtros (período, serviços, barbeiros, só loja) mudam a query — a RPC
  * `resumo_dashboard` (0016) devolve os números do recorte.
+ *
+ * O FILTRO NÃO MORA AQUI: mora na URL. Este componente só lê. Foi o que
+ * destravou favoritar um recorte, recarregar sem perder a escolha, mandar
+ * o link pronto para o sócio e usar o botão voltar para desfazer — com o
+ * filtro num `useState` o voltar saía do dashboard inteiro.
  */
 export function Dashboard({ mes }: { mes: string }) {
   const cores = useCoresDoGrafico();
   const [filtrosAberto, setFiltrosAberto] = useState(false);
-  const [filtro, setFiltro] = useState<FiltroDashboard>(() =>
-    filtroPadrao(mes),
+
+  const caminho = usePathname();
+  const busca = useSearchParams();
+  const filtro = useMemo(() => filtroDaBusca(busca, mes), [busca, mes]);
+
+  /**
+   * Aplicar = trocar a URL.
+   *
+   * `history.pushState` e não `router.push`: o App Router enxerga a troca
+   * e o `useSearchParams` acima re-renderiza, mas o SERVIDOR não é
+   * visitado de novo. Com `router.push` cada clique em "Aplicar filtros"
+   * mandaria a página rodar `resumo_dashboard` no servidor enquanto o
+   * React Query já está buscando a mesma coisa no navegador — duas idas ao
+   * banco para um número só. `push` e não `replace` porque o voltar
+   * desfazer o filtro é metade da graça de ele estar na URL.
+   */
+  const aplicar = useCallback(
+    (novo: FiltroDashboard) => {
+      const qs = filtroParaBusca(novo, mes).toString();
+      // Reaplicar o mesmo recorte não merece uma parada a mais no botão
+      // voltar.
+      if (qs === busca.toString()) return;
+      window.history.pushState(null, "", qs ? `${caminho}?${qs}` : caminho);
+    },
+    [busca, caminho, mes],
   );
 
   const intervalo = useMemo(
@@ -52,7 +82,13 @@ export function Dashboard({ mes }: { mes: string }) {
   });
 
   const resumo = data ?? RESUMO_VAZIO;
-  const criterios = contarCriteriosAtivos(filtro, mes);
+
+  // O MESMO número que o rodapé do diálogo mostra em fichas. Contava
+  // grupos antes ("serviços" valia 1 com cinco marcados), e a partir do
+  // momento em que as fichas aparecem lado a lado os dois precisam bater —
+  // badge "2" sobre uma lista de cinco fichas é um dos dois mentindo.
+  // Aqui não há nomes em mãos, e nem precisa: só o tamanho da lista.
+  const criterios = atributosDoFiltro(filtro, mes).length;
 
   // As listas existem só para escrever o nome do que foi escolhido. Cada uma
   // é buscada apenas quando há filtro daquele tipo: quem abre o dashboard sem
@@ -253,7 +289,7 @@ export function Dashboard({ mes }: { mes: string }) {
         aoMudarAberto={setFiltrosAberto}
         valor={filtro}
         mesAtual={mes}
-        aoAplicar={setFiltro}
+        aoAplicar={aplicar}
       />
     </div>
   );
