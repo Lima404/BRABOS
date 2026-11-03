@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo_Black, Inter } from "next/font/google";
 
 import { Providers } from "@/app/providers";
+import { SITE } from "@/lib/site";
 import "./globals.css";
 
 /**
@@ -22,6 +23,17 @@ const archivoBlack = Archivo_Black({
 });
 
 export const metadata: Metadata = {
+  /**
+   * A base de todo endereço absoluto que o Next monta sozinho —
+   * `canonical`, Open Graph, Twitter. Sem ela o Next avisa no build e
+   * cai no endereço do deploy, que muda a cada publicação: o link que o
+   * WhatsApp pré-visualiza apontaria para um endereço de build.
+   *
+   * O endereço da Vercel continua servindo o site; o que esta linha diz
+   * é qual é o endereço de CASA, para onde um buscador ou uma
+   * pré-visualização deve apontar.
+   */
+  metadataBase: new URL(SITE),
   title: {
     default: "BARBOS",
     template: "%s · BARBOS",

@@ -95,6 +95,47 @@ entrar banco de verdade, só `lib/repositorio.ts` muda.
 **Chaves de cache** ficam em `lib/query.ts`. Nunca escrever `queryKey` literal
 espalhado pelas telas.
 
+## O endereço: www.barboss.com.br
+
+Comprado em 03/11/2026, registrado com DNS na GoDaddy
+(`ns73/ns74.domaincontrol.com`). Os dois nomes — com e sem `www` — estão
+no projeto da Vercel, e `barboss.com.br` **redireciona** para o `www`
+(308, no `next.config.ts`).
+
+**Um endereço só, e não dois servindo a mesma coisa.** Cookie é por host:
+com os dois abertos, quem entrasse pelo `www` e abrisse um link sem ele
+apareceria deslogado. E o buscador veria duas versões de cada página.
+
+**`brabos-ruddy.vercel.app` continua de pé e não deve ser removido.**
+Link de agendamento já foi mandado por WhatsApp e QR code de loja pode já
+estar impresso apontando para lá — papel na parede não se atualiza. O
+redirecionamento é só do apelido sem `www`; o endereço da Vercel passa
+direto.
+
+**Nada no sistema monta endereço a partir da constante `SITE`**
+(`lib/site.ts`). O link que a barbearia copia sai de
+`window.location.origin` e o link do e-mail sai do cabeçalho da
+requisição (`origemDaRequisicao`) — por isso a troca de domínio não
+exigiu mexer em nenhuma tela. `SITE` serve a três coisas só: o
+redirecionamento, o `metadataBase` do layout e, por fora do código, o
+valor de `VAPID_CONTATO`.
+
+**Duas coisas vivem FORA do repositório e têm que acompanhar:**
+
+1. **Supabase → Authentication → URL Configuration.** O link de
+   confirmação e o de recuperação de senha são montados com o host da
+   requisição, e o Supabase só aceita `redirectTo` que esteja na lista de
+   Redirect URLs. Sem `https://www.barboss.com.br/**` lá, quem se
+   cadastrar pelo domínio novo recebe um e-mail que volta para o Site URL
+   antigo — e o fluxo morre sem dizer por quê. Manter o endereço da
+   Vercel na lista também, pelo mesmo motivo do QR code. **Nunca usar
+   `https://*.vercel.app/**`**: isso abriria o retorno para qualquer
+   projeto hospedado na Vercel.
+2. **`VAPID_CONTATO`** (variável na Vercel). É a URL que viaja para a
+   Apple e o Google em todo aviso de agendamento. Continua apontando para
+   o endereço antigo até ser trocada à mão no painel — o que não quebra
+   nada enquanto aquele endereço responder.
+
 ## Ordem de construção
 
 Agenda de hoje → novo agendamento → cliente → serviços → estoque → relatório.
