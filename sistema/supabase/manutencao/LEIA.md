@@ -62,3 +62,38 @@ SQL Editor apagaria o banco em silêncio, e não tem lixeira.
 Depois de rodar você fica deslogado e precisa cadastrar de novo em
 `/cadastrar`. Recriando com o mesmo e-mail e senha, o `.env.local` volta a
 valer sozinho.
+
+## `povoar-outubro-2026.sql`
+
+Enche outubro de 2026 da barbearia **BARBOS** (slug `bicos`) com 230
+agendamentos concluídos — 6 a 12 por dia, nos 27 dias de atendimento do mês.
+Para ver a agenda e o dashboard cheios sem depender de movimento real.
+
+Concluídos porque outubro já passou: um 'agendado' num mês vencido não entra
+no dashboard e fica estranho na agenda.
+
+**Ele respeita o que a barbearia tem configurado**, lido do banco antes de
+gerar: segunda a sábado, por turno (09:00–12:00 e 14:00–21:00), passo de 30
+minutos, os 5 serviços ativos com duração e preço de cada um, e só os 3
+barbeiros ativos. Nenhum atendimento atravessa o almoço ou o fechamento, e
+nenhum barbeiro atende dois ao mesmo tempo — a trava
+`agendamento_sem_sobreposicao` recusaria. Os 11 agendamentos que outubro já
+tinha entraram no cálculo para não colidir.
+
+**Desfazer é uma linha.** Todo id começa com `0ad5eed0` ("seed" em
+hexadecimal):
+
+```sql
+delete from public.agendamentos where id::text like '0ad5eed0-%';
+```
+
+A marca está no ID e não na observação de propósito: observação aparece no
+cartão da agenda, e escrever "demonstração" em duzentos cartões estragaria
+justamente o que o script existe para mostrar.
+
+O script começa apagando o que ele mesmo inseriu, então rodar duas vezes não
+duplica.
+
+**Os telefones são da faixa 90000-xxxx**, que não é atribuída a celular no
+Brasil. Passam no CHECK de DDD e o botão de WhatsApp não cai no número de
+ninguém.
