@@ -3,11 +3,12 @@
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ListFilter, RefreshCw } from "lucide-react";
+import { ListFilter, PencilLine, RefreshCw } from "lucide-react";
 
 import { CartoesBalanco } from "@/components/dashboard/cartoes-balanco";
 import { ComparativoMeses } from "@/components/dashboard/comparativo-meses";
 import { DialogoFiltrosDashboard } from "@/components/dashboard/dialogo-filtros";
+import { DialogoRegistroManual } from "@/components/dashboard/dialogo-registro-manual";
 import { Rosca, type Fatia } from "@/components/dashboard/rosca";
 import { Button } from "@/components/ui/button";
 import { buscarConfiguracao } from "@/lib/agenda/api";
@@ -43,6 +44,7 @@ import { mesPorExtenso, moeda } from "@/lib/formato";
 export function Dashboard({ mes }: { mes: string }) {
   const cores = useCoresDoGrafico();
   const [filtrosAberto, setFiltrosAberto] = useState(false);
+  const [registroAberto, setRegistroAberto] = useState(false);
 
   const caminho = usePathname();
   const busca = useSearchParams();
@@ -221,7 +223,14 @@ export function Dashboard({ mes }: { mes: string }) {
             ) : null}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {/* Primeiro e em destaque: na barbearia que não usa agenda, este
+              botão é o ÚNICO jeito de o número existir. Quem usa agenda
+              nunca precisa dele. */}
+          <Button type="button" onClick={() => setRegistroAberto(true)}>
+            <PencilLine />
+            Registro manual
+          </Button>
           <Button
             type="button"
             variant="outline"
@@ -283,6 +292,11 @@ export function Dashboard({ mes }: { mes: string }) {
       </div>
 
       <ComparativoMeses meses={resumo.meses} />
+
+      <DialogoRegistroManual
+        aberto={registroAberto}
+        aoMudarAberto={setRegistroAberto}
+      />
 
       <DialogoFiltrosDashboard
         aberto={filtrosAberto}

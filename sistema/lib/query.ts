@@ -94,6 +94,15 @@ export const chaves = {
     resumo: (chave: string) => ["dashboard", "resumo", chave] as const,
     /** @deprecated use `resumo` — mantido pro prefetch do mês atual. */
     mes: (mes: string) => ["dashboard", "mes", mes] as const,
+    /**
+     * O que já foi lançado à mão num dia (0040).
+     *
+     * A chave inclui o barbeiro porque cada um tem o SEU dia: trocar o
+     * seletor dentro do modal troca de contagem, e sem isso a do barbeiro
+     * anterior apareceria como se fosse dele.
+     */
+    registroManual: (dia: string, barbeiroId: string | null) =>
+      ["dashboard", "registro-manual", dia, barbeiroId ?? "balcao"] as const,
   },
   estoque: {
     todas: ["estoque"] as const,
