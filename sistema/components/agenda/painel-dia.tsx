@@ -12,7 +12,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
-import { Switch } from "@/components/ui/switch";
+import { ChaveSquish } from "@/components/ui/chave-squish";
 import { CLASSES_SERVICO, ESTADOS, type Agendamento } from "@/lib/agenda/tipos";
 import { diaComSemana, diaCurto, ehHoje, moeda } from "@/lib/formato";
 import { cn } from "@/lib/utils";
@@ -108,16 +108,18 @@ export function PainelDia({
         {doDia.length > 0 ? (
           <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-muted-foreground">
             <span>{diaFechado ? "Dia concluído" : "Concluir o dia"}</span>
-            <Switch
-              tamanho="pequeno"
-              checked={diaFechado}
-              disabled={fechandoODia}
-              onCheckedChange={alternarODia}
-              aria-label={
+            <ChaveSquish
+              ligada={diaFechado}
+              desabilitada={fechandoODia}
+              aoMudar={alternarODia}
+              rotulo={
                 diaFechado
                   ? `Reabrir os ${doDia.length} atendimentos do dia`
                   : `Concluir os ${doDia.length} atendimentos do dia`
               }
+              // O invólucro de 44px não pode esticar o cabeçalho, que já
+              // tem duas linhas de texto do lado.
+              className="-my-3"
             />
           </label>
         ) : null}
@@ -223,7 +225,7 @@ function ItemDoDia({
               cliente corte ANTES de chegar nela — sem o vão, nome comprido
               passaria por baixo de um controle. */}
           {cancelado ? null : (
-            <span aria-hidden="true" className="w-7 shrink-0" />
+            <span aria-hidden="true" className="w-9 shrink-0" />
           )}
           <ChevronDown
             aria-hidden="true"
@@ -271,10 +273,9 @@ function ItemDoDia({
         ) : null}
       </button>
 
-      {/* A CHAVE. Fica sobre o vão reservado lá em cima: `right-9` são os
-          12px de recuo do cartão + 16px da seta + 8px do intervalo entre
-          elas. `top-3.5` centra os 16px da chave na linha de 20px, que
-          começa nos 12px de recuo de cima.
+      {/* A CHAVE. Fica sobre o vão reservado lá em cima, que começa a
+          36px da direita: 12px de recuo do cartão + 16px da seta + 8px do
+          intervalo entre elas.
 
           Ela aplica na hora, sem confirmar, porque é para isso que serve:
           o barbeiro acabou de cortar, tem a mão ocupada, e o gesto tem que
@@ -285,13 +286,15 @@ function ItemDoDia({
           quer dizer nada, e chave que não faz sentido ainda assim convida
           ao toque. */}
       {cancelado ? null : (
-        <div className="absolute top-3.5 right-9">
-          <Switch
-            tamanho="pequeno"
-            checked={concluido}
-            disabled={alternando}
-            onCheckedChange={aoAlternarConclusao}
-            aria-label={`Concluir o atendimento de ${a.clienteNome} às ${a.horario}`}
+        // `right-8` e `top-0`: o invólucro de 44x44 é invisível, e é o
+        // DESENHO de 36x18 dentro dele que precisa cair sobre o vão
+        // reservado lá em cima (que começa a 36px da direita).
+        <div className="absolute top-0 right-8">
+          <ChaveSquish
+            ligada={concluido}
+            desabilitada={alternando}
+            aoMudar={aoAlternarConclusao}
+            rotulo={`Concluir o atendimento de ${a.clienteNome} às ${a.horario}`}
           />
         </div>
       )}
