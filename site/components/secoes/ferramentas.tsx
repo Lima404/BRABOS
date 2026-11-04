@@ -300,7 +300,7 @@ function Palco({
           >
             <Rotulo capitulo="ferramentas">O que ele faz</Rotulo>
             <Revela
-              texto="Quatro coisas que você faz todo dia — e que o papel não faz direito."
+              texto="Quatro coisas que você faz todo dia e que o papel não faz direito."
               className="mt-5 text-[clamp(1.6rem,3.2vw,2.75rem)] leading-[1.06] font-bold tracking-[-0.025em] text-balance"
             />
 

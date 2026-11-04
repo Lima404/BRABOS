@@ -18,7 +18,7 @@ const PASSOS = [
   {
     titulo: "Põe os serviços e a equipe",
     texto:
-      "Corte, barba, sobrancelha — com preço, duração e cor. Depois os barbeiros, cada um com o próprio horário.",
+      "Corte, barba e sobrancelha, com preço, duração e cor. Depois os barbeiros, cada um com o próprio horário.",
   },
   {
     titulo: "Manda o link pro cliente",
@@ -61,7 +61,7 @@ export function Passos() {
           />
           <p className="mt-5 max-w-xl text-base leading-7 text-graf-300">
             Se o cliente da barbearia usa, a barbearia usa também. Não existe
-            sistema de barbearia que o barbeiro usa e o cliente dele não — por
+            sistema de barbearia que o barbeiro usa e o cliente dele não. Por
             isso o último passo é dele.
           </p>
         </div>

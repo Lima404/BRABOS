@@ -33,7 +33,7 @@ export const metadata: Metadata = {
    */
   metadataBase: new URL(SITE),
   title: {
-    default: "BARBOS — a barbearia sai do caderno",
+    default: "BARBOS · a barbearia sai do caderno",
     template: "%s · BARBOS",
   },
   description:

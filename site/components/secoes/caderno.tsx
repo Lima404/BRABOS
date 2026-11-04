@@ -66,7 +66,7 @@ export function Caderno() {
             className="mt-5 text-[clamp(1.75rem,3.6vw,3rem)] leading-[1.05] font-bold tracking-[-0.025em] text-balance"
           />
           <p className="mt-5 max-w-xl text-base leading-7 text-graf-300">
-            O caderno funciona — até o dia em que molha, some ou fica na
+            O caderno funciona até o dia em que molha, some ou fica na
             outra loja. E o sistema complicado, cheio de cadastro e de
             configuração, só troca uma dor de cabeça por outra. O BARBOS fica
             no simples bem feito. Role e veja o mesmo mês dos dois jeitos.

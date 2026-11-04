@@ -86,7 +86,7 @@ export function Celular() {
         <div>
           <Rotulo capitulo="celular">No celular</Rotulo>
           <Revela
-            texto="Feito pra uma mão só — porque a outra está segurando a máquina."
+            texto="Feito pra uma mão só, porque a outra está segurando a máquina."
             destaque="uma mão só"
             className="mt-5 text-[clamp(1.75rem,3.6vw,3rem)] leading-[1.05] font-bold tracking-[-0.025em] text-balance"
           />

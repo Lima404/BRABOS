@@ -27,7 +27,7 @@ export function MockupDashboard({ inicio = 0 }: { inicio?: number }) {
             <div>
               <h3 className="titulo-tela">Dashboard</h3>
               <p className="subtitulo-tela">
-                mês 2026-10 — só o que já foi atendido e pago.
+                mês 2026-10, só o que já foi atendido e pago.
               </p>
             </div>
             <span className="botao-acao">Registro manual</span>
@@ -87,7 +87,7 @@ export function MockupDashboard({ inicio = 0 }: { inicio?: number }) {
           <div className="quadros">
             <QuadroDeValores
               titulo="Serviços do período"
-              sub="Qual serviço tem mais procura — e quanto cada um rendeu."
+              sub="Qual serviço tem mais procura e quanto cada um rendeu."
               linhas={SERVICOS}
               centro={CAIXA.atendimentos}
               rodape="atendimentos"

@@ -48,7 +48,7 @@ export function Cabecalho() {
       onFocusCapture={() => setEscondido(false)}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-4 sm:px-6">
-        <a href="#topo" className="flex shrink-0 items-center" aria-label="BARBOS — voltar ao início">
+        <a href="#topo" className="flex shrink-0 items-center" aria-label="BARBOS, voltar ao início">
           <Image
             src="/marca/logo-escuro.png"
             alt="BARBOS"

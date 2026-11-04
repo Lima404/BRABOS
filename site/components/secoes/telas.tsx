@@ -45,7 +45,7 @@ export function Telas() {
       <TelaPresa
         numero="02"
         etiqueta="Dashboard"
-        legenda="Quanto entrou, em quê, e com quem. Soma serviço e loja no mesmo lugar — e mostra o mês fraco junto com o forte."
+        legenda="Quanto entrou, em quê, e com quem. Soma serviço e loja no mesmo lugar e mostra o mês fraco junto com o forte."
       >
         <MockupDashboard />
       </TelaPresa>
