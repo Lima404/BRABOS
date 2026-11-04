@@ -313,9 +313,15 @@ export function DialogoRegistroManual({
               className={cn(
                 "shrink-0 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+                // `background` e não `secondary`: no tema escuro
+                // `--secondary` é #1c2027, a MESMA cor de `--popover`, que é
+                // a superfície do modal — o item escolhido ficava sem fundo
+                // nenhum e só o peso da letra o distinguia. `--background`
+                // é mais fundo que a superfície nos dois temas, então a aba
+                // escolhida afunda em vez de sumir.
                 aba === a.id
-                  ? "bg-secondary text-foreground"
-                  : "text-muted-foreground hover:bg-secondary/50 hover:text-foreground",
+                  ? "bg-background text-foreground"
+                  : "text-muted-foreground hover:bg-background/50 hover:text-foreground",
               )}
             >
               {a.rotulo}
