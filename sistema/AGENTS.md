@@ -809,6 +809,164 @@ cartão LOJA inteiro, e o TOTAL somava duas metades de recortes diferentes.
 Virou função por isso — o próximo filtro que mexer na loja muda um lugar, não
 cinco.
 
+### Registro manual do dia (0040)
+
+Há barbearia que não quer agenda — quer o dashboard. O dono fecha o
+expediente e anota: "o GABRIEL fez 5 cabelos, 4 barbas e 6 cabelo+barba; a
+DAIANNE fez 3, 7 e 8; saíram 12 energéticos". O botão **Registro manual**,
+no topo do dashboard, abre a mesa onde isso é digitado.
+
+**Serviço manual NÃO é agendamento. Venda manual É venda.** Essa assimetria
+é a decisão central, e ela não é arbitrária:
+
+Gravar cada corte como um `agendamento` 'concluido' faria o dashboard
+funcionar sem mudar uma linha — e foi descartado, porque vazaria para fora
+do dashboard por três portas: `agendamentos` tem `unique (barbearia_id,
+data, horario)` e a trava gist da 0015 (33 cortes precisariam de 33
+horários inventados que não se sobrepõem, e a trava recusaria quase todos);
+`cliente_nome` é `not null` (entrariam 33 clientes chamados "Registro
+manual"); e `agenda_publica` monta os horários OCUPADOS a partir de
+`agendamentos`, então os cortes inventados fechariam horários de verdade na
+tela pública de quem usa as duas coisas.
+
+Venda manual não tem nada disso: ela é uma venda. Entra em `vendas` e
+`itens_venda`, baixa o estoque e `vendas_no_caixa` a enxerga de graça.
+Inventar um segundo lugar para guardar venda criaria exatamente a
+divergência que a 0026 existe para evitar.
+
+**`servicos_no_caixa` é a irmã de `vendas_no_caixa`.** A contagem manual
+mora em `registros_servico_manual`, e a view junta as duas origens no único
+lugar que precisa enxergar as duas. O dashboard somava serviço em QUATRO
+lugares; sem a view, a regra seria escrita quatro vezes — e é assim que, meses
+depois, se descobre que uma das cópias não foi atualizada junto.
+
+A view expande a contagem com `generate_series`, **uma linha por corte**, de
+propósito: `count(*)` e `sum(preco_centavos)` continuam valendo sem mudar
+nenhuma expressão de soma dentro da `resumo_dashboard`. Trinta linhas por dia
+não é volume para Postgres nenhum.
+
+**`data_caixa`.** Registrar na segunda o movimento do sábado jogaria o
+dinheiro no dia da digitação, porque o dashboard datava a venda por
+`criado_em`. Agora `vendas_no_caixa` publica `data_caixa` =
+`coalesce(dia_manual, criado_em no fuso da barbearia)`, e os ONZE lugares
+que convertiam o fuso à mão leem uma coluna.
+
+**A venda passou a ter dono direto.** Até aqui a única forma de uma venda
+ter barbeiro era estar pendurada num agendamento. `vendas.barbeiro_id` é o
+dono direto, e `venda_no_recorte` ganhou um argumento para olhar os dois —
+sem isso a venda manual sumiria do dashboard no instante em que alguém
+filtrasse por barbeiro, que é justamente o que o dono faz depois de lançar
+por barbeiro.
+
+#### Duas regras da mesa
+
+**CORRIGE, NÃO SOMA.** O modal pergunta "quantos ele fez no dia", e reabrir
+mostra o que já está lá. Trocar 5 por 6 deixa 6; o estoque anda só a
+DIFERENÇA. É a mesma forma da `ajustar_comanda` (0011), e pela mesma razão:
+somando, quem corrige 5 para 6 ficaria com 11, e o número errado só
+apareceria no fechamento do mês.
+
+**Corte exige barbeiro; venda, não.** Corte sempre tem quem cortou. A
+geladeira do balcão é da loja e entra como avulsa, igual à do QR —
+lembrando que, com filtro de barbeiro ligado, venda de balcão fica de fora
+do recorte (a mesma regra da 0028, escrita no painel Loja do diálogo).
+
+**Estoque insuficiente BLOQUEIA.** Lançar 10 energéticos com 3 na prateleira
+é recusado, nomeando o produto e o que há. Decisão do Gabriel em 03/11/2026,
+contra as alternativas de zerar ou deixar negativo: estoque que mente em
+silêncio só aparece semanas depois. A tela avisa antes, mas quem recusa é a
+`registrar_dia_manual`, que lê o estoque com `for update` dentro da mesma
+transação em que baixa — o número da tela pode estar velho, porque o QR da
+loja vende sozinho enquanto o modal está aberto.
+
+**Tudo ou nada.** Falta de estoque em qualquer produto aborta o bloco
+inteiro, inclusive os serviços, que são processados antes. Meia gravação é
+pior que nenhuma: o dono não teria como saber onde parou.
+
+#### A ordem de subir
+
+A 0040 é compatível com o código que está no ar: as colunas novas são
+anuláveis, as views novas ninguém lê ainda, e a `resumo_dashboard` devolve
+os mesmos números enquanto não houver lançamento manual. Então vale a regra
+já escrita aqui: **migração primeiro, deploy depois.** A tela sem a migração
+responde "Rode a migração 0040"; a migração sem a tela não muda nada.
+
+### O recorte mora na URL, e a URL não é confiável
+
+O filtro **não** é estado do componente. Ele é a busca do endereço:
+`/dashboard?periodo=ano&ano=2025&barbeiros=<uuid>&loja=1`. `lib/dashboard/filtros.ts`
+tem o par `filtroParaBusca` / `filtroDaBusca`, e o dashboard só LÊ, com
+`useSearchParams`.
+
+Virou URL porque quatro coisas que pareciam defeito eram a mesma falta:
+recarregar devolvia o mês inteiro, o botão voltar saía da tela em vez de
+desfazer o filtro, favoritar um recorte não dava, e mandar "olha o
+faturamento do KADU em outubro" para o sócio exigia descrever os cliques —
+o link não carregava escolha nenhuma.
+
+**O padrão não escreve nada.** Mês corrente sem recorte = `/dashboard` limpo.
+Só o que a pessoa escolheu aparece na barra, e quem olha a barra lê a escolha.
+
+**Aplicar usa `window.history.pushState`, não `router.push`.** O App Router
+intercepta o `pushState` (confirmado em `node_modules/next/dist/client/components/app-router.js`:
+ele só repassa sem avisar o router quando o `state` tem `__NA`/`_N`, que são
+as marcas internas dele) e o `useSearchParams` re-renderiza — sem visitar o
+servidor. Com `router.push`, cada clique em "Aplicar filtros" faria a página
+do servidor rodar `resumo_dashboard` enquanto o React Query já está buscando
+a mesma coisa no navegador: duas idas ao banco para um número só. `push` e
+não `replace` porque desfazer o filtro no botão voltar é metade da graça.
+
+**`filtroDaBusca` nunca confia no que leu.** Id que não é uuid, data com
+formato impossível e período inventado são descartados e caem no padrão; uuid
+com lixo grudado é recusado INTEIRO, não aparado — aparar o prefixo válido
+rodaria a consulta com um id que ninguém pediu e mostraria números de outro
+serviço como se fossem os do recorte. Há teto de 60 ids por lista.
+
+Isso não é zelo exagerado, é o que faltava: a rota `/api/dashboard` já
+peneirava os uuids sozinha, mas a PÁGINA DO SERVIDOR agora chama
+`obterResumoDashboard` com o que sair daqui, e `p_servico_ids uuid[]` derruba
+a consulta inteira ao receber qualquer coisa que não seja uuid. Esse caminho
+não tinha peneira nenhuma.
+
+**O prefetch do servidor usa o recorte da URL**, e não mais o mês corrente
+fixo. É o que faz um link filtrado chegar pronto, em vez de mostrar novembro
+inteiro e trocar os valores um instante depois.
+
+### A lista de atributos: o filtro inteiro numa linha
+
+O rodapé do diálogo mostra uma ficha por atributo escolhido
+(`ListaDeAtributos`). Clicar numa ficha tira aquele atributo — é a mesma ação
+do checkbox lá dentro, só que alcançável sem procurar a seção.
+
+Era o buraco do diálogo antigo: as escolhas ficam espalhadas por quatro
+seções, **uma de cada vez na tela**, e não havia lugar nenhum que mostrasse as
+quatro juntas. Quem marcava barbeiro, trocava para serviços e voltava não
+tinha como conferir sem passear pelas abas.
+
+**As fichas mostram o RASCUNHO, não o aplicado.** Elas dizem o que vai
+acontecer quando a pessoa clicar em "Aplicar filtros"; a URL só muda nesse
+clique.
+
+**Acima de três fichas vem um `+N`**, que abre no hover E no clique: no
+computador o hover é o jeito natural de espiar, e no celular ele não existe.
+O clique também FIXA o painel, senão tirar uma ficha de dentro dele fecharia
+tudo no primeiro movimento do mouse para fora. Esc e clique fora fecham, e o
+Esc precisa de `stopPropagation` ou atravessa e fecha o modal inteiro junto.
+
+**O período só vira ficha quando saiu do padrão.** Ficha que está sempre lá e
+cujo botão de tirar não muda nada visível ensina a pessoa que as fichas não
+fazem nada.
+
+**O número no botão "Filtros" conta ATRIBUTOS, não grupos.** Contava grupos
+antes — "serviços" valia 1 com cinco marcados. A partir do momento em que as
+fichas aparecem lado a lado, badge "2" sobre uma lista de cinco fichas é um
+dos dois mentindo. Mesma função (`atributosDoFiltro`) alimenta os dois.
+
+Nada disso mexeu no banco: `resumo_dashboard` já recebe os ids em `uuid[]` e
+casa com `= any(...)`, então vários serviços ou vários barbeiros marcados já
+somavam desde a **0016**. A tabela de "o que está marcado manda", acima,
+continua valendo igual.
+
 **Uma chamada só para a tela inteira.** Cartões, roscas e a série de todos os
 meses saem do mesmo resumo. Três requisições montariam a tela em pedaços, e
 somar no navegador exigiria baixar o histórico a cada abertura — e ainda

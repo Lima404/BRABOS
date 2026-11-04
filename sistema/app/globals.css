@@ -132,6 +132,14 @@
   --input: #7c8595; /* graf-400: borda de CAMPO — 3,72:1, exigido por WCAG 1.4.11 */
   --ring: #f0a93b; /* foco em ambar */
 
+  /* A chave de conclusão da agenda, ligada: âmbar com volume.
+     Mora aqui, e não dentro do componente, porque o SquishSwitch recebe a
+     cor como VALOR (prop), e não como classe — sem um token nomeado, o
+     degradê viraria hexadecimal copiado no meio do TSX, que é como a
+     paleta começa a divergir no primeiro ajuste.
+     Igual ao --primary, não muda entre os temas: o âmbar é a ação nos dois. */
+  --chave-ligada: linear-gradient(135deg, #f0a93b 0%, #a9660f 100%);
+
   --agendado: #1b4fbf;
   --agendado-fundo: #e4edfd;
   --confirmado: #146c45;
