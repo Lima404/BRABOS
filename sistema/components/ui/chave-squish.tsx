@@ -53,6 +53,14 @@ export function ChaveSquish({
       width={36}
       height={18}
       radius={9}
+      // `speed` vai de 0 a 100 e vira rigidez da mola lá dentro
+      // (`170 - (50 - speed) * 1.1`). 100 é o teto, e é o que o Gabriel
+      // mandou na própria URL do componente.
+      speed={100}
+      // A cor acompanha o movimento. No padrão de 320ms o trilho ainda
+      // estava virando de cinza para âmbar bem depois de a bolinha ter
+      // chegado — e é a COR que a pessoa lê como "pegou".
+      colorDuration={140}
       trackColor="var(--secondary)"
       trackOnColor="var(--chave-ligada)"
       thumbColor="var(--card)"

@@ -29,6 +29,7 @@ import {
   CONFIGURACAO_PADRAO,
   datasDeFolga,
   type Agendamento,
+  type EstadoAgendamento,
 } from "@/lib/agenda/tipos";
 import { hojeNaBarbearia, mesISO } from "@/lib/formato";
 
@@ -110,6 +111,53 @@ export function Agenda({
     setComanda({ aberto: true, agendamento });
   }
 
+  // ============================================================
+  // A chave vira na hora, e a verdade chega depois
+  // ============================================================
+  //
+  // O estado da chave sai da agenda do mês, que é cache do React Query.
+  // Sem isto, o caminho era: toque -> ação de servidor -> resposta ->
+  // invalidar -> refetch do mês inteiro -> só então a chave virava. Em
+  // 4G de rua isso é mais de um segundo de chave parada, e a pessoa toca
+  // de novo achando que não pegou.
+  //
+  // Agora o cache muda PRIMEIRO. Se a gravação falhar, o palpite é
+  // desfeito e o aviso diz o que houve — e, dê certo ou errado, o
+  // `onSettled` busca a verdade do banco por cima.
+  const chaveDoMes = chaves.agenda.mes(mes);
+
+  type PalpiteAnterior = { anterior: Agendamento[] | undefined };
+
+  async function virarNoCache(
+    ids: string[],
+    estado: EstadoAgendamento,
+  ): Promise<PalpiteAnterior> {
+    // Um refetch já em voo chegaria DEPOIS e reescreveria o palpite com o
+    // estado velho — a chave voltaria sozinha por um instante.
+    await clienteQuery.cancelQueries({ queryKey: chaveDoMes });
+
+    const anterior = clienteQuery.getQueryData<Agendamento[]>(chaveDoMes);
+    const alvos = new Set(ids);
+
+    clienteQuery.setQueryData<Agendamento[]>(chaveDoMes, (atual) =>
+      (atual ?? []).map((a) => (alvos.has(a.id) ? { ...a, estado } : a)),
+    );
+
+    return { anterior };
+  }
+
+  function desfazerNoCache(contexto: PalpiteAnterior | undefined) {
+    if (contexto?.anterior) {
+      clienteQuery.setQueryData(chaveDoMes, contexto.anterior);
+    }
+  }
+
+  function reconciliar() {
+    clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas });
+    // O dashboard conta o que está concluído: o número muda junto.
+    clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
+  }
+
   const concluir = useMutation({
     mutationFn: (a: Agendamento) => mudarEstadoAgendamento(a.id, "concluido"),
     onSuccess: (resultado, a) => {
@@ -164,8 +212,15 @@ export function Agenda({
   const alternarConclusao = useMutation({
     mutationFn: ({ a, concluir }: { a: Agendamento; concluir: boolean }) =>
       mudarEstadoAgendamento(a.id, concluir ? "concluido" : "agendado"),
-    onSuccess: (resultado, { a, concluir }) => {
+    // A chave vira ANTES da ida ao servidor. Era o que a fazia parecer
+    // travada: o estado dela vem da agenda do mês, e a agenda do mês só
+    // mudava depois da resposta mais o refetch. O desenho era rápido; a
+    // espera é que era longa.
+    onMutate: async ({ a, concluir }) =>
+      virarNoCache([a.id], concluir ? "concluido" : "agendado"),
+    onSuccess: (resultado, { a, concluir }, contexto) => {
       if (!resultado.ok) {
+        desfazerNoCache(contexto);
         avisar({
           tom: "erro",
           titulo: concluir ? "Não consegui concluir" : "Não consegui reabrir",
@@ -173,10 +228,6 @@ export function Agenda({
         });
         return;
       }
-
-      clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas });
-      // O dashboard conta o que está concluído: o número muda junto.
-      clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
 
       avisar({
         tom: "sucesso",
@@ -186,14 +237,19 @@ export function Agenda({
           : "Enquanto estiver reaberto, o que foi consumido nele não conta no caixa.",
       });
     },
-    onError: (causa) => {
+    onError: (causa, _entrada, contexto) => {
       console.error("[BARBOS] a ação não completou:", causa);
+      desfazerNoCache(contexto);
       avisar({
         tom: "erro",
         titulo: "Não consegui mudar o atendimento",
         descricao: "Recarregue a página e tente de novo.",
       });
     },
+    // Sempre: o palpite otimista é substituído pela verdade do banco, dê
+    // certo ou dê errado. É o que impede um erro de rede de deixar a tela
+    // afirmando algo que não aconteceu.
+    onSettled: reconciliar,
   });
 
   /**
@@ -212,8 +268,11 @@ export function Agenda({
         ids,
         concluir ? "concluido" : "agendado",
       ),
-    onSuccess: (resultado, { concluir }) => {
+    onMutate: async ({ ids, concluir }) =>
+      virarNoCache(ids, concluir ? "concluido" : "agendado"),
+    onSuccess: (resultado, { concluir }, contexto) => {
       if (!resultado.ok) {
+        desfazerNoCache(contexto);
         avisar({
           tom: "erro",
           titulo: concluir
@@ -224,9 +283,6 @@ export function Agenda({
         return;
       }
 
-      clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas });
-      clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
-
       const quantos = resultado.quantos;
       avisar({
         tom: "sucesso",
@@ -236,14 +292,16 @@ export function Agenda({
           : `${quantos} ${quantos === 1 ? "atendimento voltou" : "atendimentos voltaram"} para agendado. O consumo deles sai do caixa até concluir de novo.`,
       });
     },
-    onError: (causa) => {
+    onError: (causa, _entrada, contexto) => {
       console.error("[BARBOS] a ação não completou:", causa);
+      desfazerNoCache(contexto);
       avisar({
         tom: "erro",
         titulo: "Não consegui mudar o dia",
         descricao: "Recarregue a página e tente de novo.",
       });
     },
+    onSettled: reconciliar,
   });
 
   const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
@@ -411,7 +469,11 @@ export function Agenda({
           o calendário na coluna larga — daí o `order` só a partir de `lg`.
           A ordem do DOM é a do celular de propósito: `order` muda o desenho,
           não a leitura, e é o celular que tem que bater. */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
+      {/* A coluna do dia era de 19rem e apertava: o nome do cliente
+          cortava no meio e a linha de "4 agendamentos · R$ 120,00" quebrava
+          em duas. 24rem resolve as duas e ainda sobra largura de mês cheio
+          para o calendário, que é quem fica com o resto. */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start">
         <div className="lg:order-2">
           <PainelDia
             dia={dia}
@@ -421,13 +483,6 @@ export function Agenda({
             aoConcluir={abrirComanda}
             aoAlternarConclusao={(a, concluir) =>
               alternarConclusao.mutate({ a, concluir })
-            }
-            // Só o cartão em voo trava. Uma trava global deixaria a lista
-            // inteira dura enquanto um atendimento fecha.
-            alternandoId={
-              alternarConclusao.isPending
-                ? (alternarConclusao.variables?.a.id ?? null)
-                : null
             }
             aoConcluirODia={(ids, concluir) =>
               fecharODia.mutate({ ids, concluir })

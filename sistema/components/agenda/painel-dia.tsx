@@ -35,7 +35,6 @@ export function PainelDia({
   aoEditar,
   aoConcluir,
   aoAlternarConclusao,
-  alternandoId,
   aoConcluirODia,
   fechandoODia,
 }: {
@@ -46,10 +45,15 @@ export function PainelDia({
   aoEditar: (agendamento: Agendamento) => void;
   /** Abre a comanda do atendimento; quem conclui de fato e o modal. */
   aoConcluir: (agendamento: Agendamento) => void;
-  /** A chave do cabeçalho: conclui e desconclui num toque só. */
+  /**
+   * A chave do cartão: conclui e desconclui num toque só.
+   *
+   * Sem `disabled` enquanto grava, de propósito: a agenda muda o cache
+   * ANTES de falar com o servidor, então a chave já está na posição certa
+   * e travá-la só acrescentaria um piscar de cinza. Toque repetido não
+   * machuca — a última gravação manda, e o refetch reconcilia.
+   */
   aoAlternarConclusao: (agendamento: Agendamento, concluir: boolean) => void;
-  /** Qual cartão espera resposta — só a chave dele trava. */
-  alternandoId: string | null;
   /** A chave do cabeçalho: fecha ou reabre o dia inteiro de uma vez. */
   aoConcluirODia: (ids: string[], concluir: boolean) => void;
   fechandoODia: boolean;
@@ -154,7 +158,6 @@ export function PainelDia({
               aoEditar={() => aoEditar(a)}
               aoConcluir={() => aoConcluir(a)}
               aoAlternarConclusao={(c) => aoAlternarConclusao(a, c)}
-              alternando={alternandoId === a.id || fechandoODia}
             />
           ))}
         </ul>
@@ -170,7 +173,6 @@ function ItemDoDia({
   aoEditar,
   aoConcluir,
   aoAlternarConclusao,
-  alternando,
 }: {
   agendamento: Agendamento;
   aberto: boolean;
@@ -178,7 +180,6 @@ function ItemDoDia({
   aoEditar: () => void;
   aoConcluir: () => void;
   aoAlternarConclusao: (concluir: boolean) => void;
-  alternando: boolean;
 }) {
   const cor = CLASSES_SERVICO[a.servico.cor];
   const estado = ESTADOS[a.estado];
@@ -292,7 +293,6 @@ function ItemDoDia({
         <div className="absolute top-0 right-8">
           <ChaveSquish
             ligada={concluido}
-            desabilitada={alternando}
             aoMudar={aoAlternarConclusao}
             rotulo={`Concluir o atendimento de ${a.clienteNome} às ${a.horario}`}
           />
