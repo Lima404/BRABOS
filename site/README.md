@@ -35,3 +35,33 @@ com a Root Directory em `site/`, nada acima desta pasta entra no build.
 A fonte da verdade continua sendo `identidade/design-guide.md` — se o
 manual mudar, `app/globals.css` e `public/marca/` precisam ser
 conferidos na mão.
+
+## De onde vêm as imagens
+
+Todas foram geradas no Higgsfield e tratadas aqui. Nenhuma é foto de
+banco de imagens, e nenhuma tem marca de outra empresa.
+
+| Arquivo | Como foi feito |
+|---|---|
+| `public/cadeira/q*.webp` | Foto da cadeira → fundo removido → montada sobre um halo âmbar → vídeo de giro de 5s → `scripts/quadros-da-cadeira.sh` |
+| `public/ferramentas/*.webp` | Uma imagem por peça, fundo removido, aparada na caixa do objeto |
+| `public/caderno.webp` | Imagem direta, **com** o fundo de madeira: ali a madeira velha é o argumento, não um deslize do manual |
+
+O halo âmbar da cadeira está **gravado nos quadros**, não é CSS. Por isso
+o canvas do herói leva uma máscara radial: sem ela aparece a costura
+retangular do canvas contra o fundo da página.
+
+## A coreografia
+
+Toda seção animada é uma `<Cena>`. Ela mede o quanto já atravessou a tela
+e escreve isso em `--p`, de 0 a 1, direto no DOM — uma variável, uma vez
+por quadro, sem re-renderizar nada. O resto é CSS (`.entra`, `.cresce`,
+`.entra-moldura` em `app/globals.css`).
+
+Duas consequências que valem saber antes de mexer:
+
+- **A animação é reversível de graça.** Rolar para cima desmonta a tela na
+  ordem inversa, porque tudo é função de `--p` e não um gatilho.
+- **`--p` começa em 1, não em 0.** Se o JavaScript não rodar, a página
+  aparece montada em vez de aparecer vazia. É também o que quem pediu
+  movimento reduzido vê: a `Cena` nem chega a escrever na variável.

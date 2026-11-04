@@ -10,6 +10,16 @@ import type { NextConfig } from "next";
  * `next.config.ts` do SISTEMA, que compara o cabecalho `Host` com o nome
  * exato — `site.barboss.com.br` nunca bate naquela regra.
  */
-const nextConfig: NextConfig = {};
+const nextConfig: NextConfig = {
+  /*
+   * O selo de ferramentas do Next não aparece aqui.
+   *
+   * Ele é útil enquanto se desenvolve, mas `next start` também o mostra —
+   * e este projeto vai ser aberto no computador de outra pessoa para
+   * conferir o site antes de publicar. Um selo preto no canto, nessa
+   * hora, parece defeito do site.
+   */
+  devIndicators: false,
+};
 
 export default nextConfig;

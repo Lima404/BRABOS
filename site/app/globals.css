@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./mockup.css";
 
 /*
  * Cores do BARBOS, copiadas de identidade/tokens.json.
@@ -41,6 +42,9 @@
 
 html {
   scroll-behavior: smooth;
+  /* A barra do topo é fixa: sem isto, um link de âncora joga o título
+     debaixo dela e a pessoa acha que o link não funcionou. */
+  scroll-padding-top: 6rem;
 }
 
 body {
@@ -90,5 +94,87 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* ===========================================================================
+   A MONTAGEM POR SCROLL
+   ===========================================================================
+
+   Uma seção inteira é coreografada por UMA variável: `--p`, que vai de 0 a 1
+   conforme a seção atravessa a tela. O JavaScript escreve essa variável
+   direto no elemento, uma vez por quadro, sem re-renderizar o React — e todo
+   o resto é CSS puro.
+
+   Por que assim: a agenda do mockup tem mais de cem pedaços entrando em
+   cascata. Se cada um fosse um estado do React, cada quadro do scroll
+   custaria uma re-renderização de cem componentes. Com uma variável só, o
+   navegador resolve tudo no compositor.
+
+   E tem um efeito colateral bom: a coreografia é REVERSÍVEL de graça. Rolar
+   para cima desmonta a tela na ordem inversa, sem uma linha a mais. */
+
+@property --p {
+  syntax: "<number>";
+  inherits: true;
+  /* 1 = montado. Se o JavaScript nunca rodar, a página aparece pronta em vez
+     de aparecer vazia — que é o pior jeito de falhar. */
+  initial-value: 1;
+}
+
+/*
+ * Um pedaço que entra quando `--p` passa pelo seu degrau.
+ *
+ *   --degrau  em que ponto do scroll este pedaço começa a entrar (0 a 1)
+ *   --janela  quanto do scroll ele leva para entrar
+ *   --sobe    de quantos pixels abaixo ele sobe
+ *   --encolhe de quanto ele cresce, 0 para não crescer
+ */
+.entra {
+  --degrau: 0;
+  --janela: 0.12;
+  --sobe: 14px;
+  --encolhe: 0;
+  --avanco: clamp(0, calc((var(--p) - var(--degrau)) / var(--janela)), 1);
+
+  opacity: var(--avanco);
+  transform: translate3d(0, calc((1 - var(--avanco)) * var(--sobe)), 0)
+    scale(calc(1 - (1 - var(--avanco)) * var(--encolhe)));
+  will-change: opacity, transform;
+}
+
+/* Entra crescendo a partir do nada — para os cartões e os chips da agenda. */
+.entra-pop {
+  --sobe: 6px;
+  --encolhe: 0.14;
+}
+
+/* A moldura da janela se desenhando: a borda surge antes do conteúdo. */
+.entra-moldura {
+  --avanco: clamp(0, calc((var(--p) - var(--degrau)) / var(--janela)), 1);
+  opacity: var(--avanco);
+  clip-path: inset(calc((1 - var(--avanco)) * 50%) 0 calc((1 - var(--avanco)) * 50%) 0 round 12px);
+}
+
+/* Uma barra que cresce da base. Usada no gráfico de mês a mês. */
+.cresce {
+  --degrau: 0;
+  --janela: 0.18;
+  --avanco: clamp(0, calc((var(--p) - var(--degrau)) / var(--janela)), 1);
+  transform: scaleY(var(--avanco));
+  transform-origin: bottom;
+}
+
+/*
+ * Quem pediu menos movimento vê tudo montado, parado. `--p` fica em 1 e o
+ * JavaScript nem chega a escrever nela (ver components/ui/cena.tsx).
+ */
+@media (prefers-reduced-motion: reduce) {
+  .entra,
+  .entra-moldura,
+  .cresce {
+    opacity: 1 !important;
+    transform: none !important;
+    clip-path: none !important;
   }
 }

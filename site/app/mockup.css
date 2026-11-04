@@ -1,0 +1,652 @@
+/* ===========================================================================
+   AS TELAS DO SISTEMA, RECONSTRUÍDAS
+   ===========================================================================
+
+   A Agenda e o Dashboard do BARBOS, remontados em HTML a partir das telas
+   reais. Não são capturas de tela: são elementos de verdade.
+
+   Por que o trabalho a mais: uma captura é uma imagem só, e a seção inteira
+   existe para a tela se CONSTRUIR peça por peça enquanto a pessoa rola. Com
+   imagem não dá para animar a célula 14 do calendário. Além disso texto de
+   verdade fica nítido em qualquer tela, e a imagem de uma tela densa fica
+   borrada no celular.
+
+   O tamanho de tudo aqui sai de `cqw` — um por cento da largura do próprio
+   mockup. Uma variável só governa a escala, e a tela inteira encolhe junta,
+   sem um único `@media`. */
+
+.mockup {
+  container-type: inline-size;
+  font-size: clamp(5.5px, 1.06cqw, 13px);
+
+  --fundo: #0d0f12;
+  --superficie: #14171c;
+  --elevado: #1c2027;
+  --borda: #2a2f38;
+  --divisor: #1c2027;
+  --texto: #ffffff;
+  --fraco: #a8b0bc;
+  --apagado: #7c8595;
+  --ambar: #f0a93b;
+}
+
+/* Em tela estreita o mockup ganha rolagem própria, senão ele fica com letra
+   de 4px e não se lê nada. A rolagem é DELE, não da página. */
+.mockup-area {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-graf-700) transparent;
+}
+
+.mockup-interno {
+  min-width: 46rem;
+}
+
+/* --- a moldura ----------------------------------------------------------- */
+.janela {
+  overflow: hidden;
+  border: 1px solid var(--color-graf-700);
+  border-radius: 0.75rem;
+  background: var(--fundo);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.janela-barra {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  border-bottom: 1px solid var(--borda);
+  background: var(--superficie);
+  padding: 0.75em 1em;
+}
+
+.janela-bolinha {
+  width: 0.72em;
+  height: 0.72em;
+  border-radius: 999px;
+  background: var(--borda);
+}
+
+.janela-endereco {
+  margin-left: 0.6em;
+  border-radius: 999px;
+  background: var(--fundo);
+  padding: 0.3em 1em;
+  font-size: 0.78em;
+  color: var(--apagado);
+}
+
+.janela-corpo {
+  display: flex;
+  min-height: 30em;
+}
+
+/* --- a barra lateral ----------------------------------------------------- */
+.lateral {
+  display: flex;
+  width: 11em;
+  flex: none;
+  flex-direction: column;
+  gap: 0.35em;
+  border-right: 1px solid var(--divisor);
+  background: var(--superficie);
+  padding: 1em 0.7em;
+}
+
+.lateral-marca {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.2em 0.5em 1.1em;
+}
+
+.lateral-simbolo {
+  display: grid;
+  width: 1.5em;
+  height: 1.5em;
+  flex: none;
+  place-items: center;
+  border-radius: 0.35em;
+  background: var(--ambar);
+  font-size: 0.95em;
+  font-weight: 900;
+  color: #14171c;
+}
+
+.lateral-nome {
+  font-size: 0.95em;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.lateral-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  border-radius: 0.45em;
+  padding: 0.6em 0.7em;
+  font-size: 0.85em;
+  color: var(--fraco);
+}
+
+.lateral-item[data-ativo="sim"] {
+  background: var(--elevado);
+  font-weight: 600;
+  color: var(--texto);
+  box-shadow: inset 0.18em 0 0 var(--ambar);
+}
+
+.lateral-ponto {
+  width: 0.85em;
+  height: 0.85em;
+  flex: none;
+  border-radius: 0.2em;
+  border: 1px solid currentColor;
+  opacity: 0.6;
+}
+
+/* --- o conteúdo ---------------------------------------------------------- */
+.conteudo {
+  flex: 1;
+  min-width: 0;
+  padding: 1.2em 1.3em;
+}
+
+.titulo-tela {
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.subtitulo-tela {
+  margin-top: 0.25em;
+  font-size: 0.85em;
+  color: var(--fraco);
+}
+
+.barra-ferramentas {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 1em;
+}
+
+.pilula {
+  border-radius: 0.45em;
+  border: 1px solid var(--borda);
+  padding: 0.5em 0.9em;
+  font-size: 0.82em;
+  color: var(--fraco);
+}
+
+.pilula[data-forte="sim"] {
+  background: var(--elevado);
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.mes-atual {
+  font-size: 1em;
+  font-weight: 700;
+}
+
+.contagem {
+  font-size: 0.82em;
+  color: var(--fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.botao-acao {
+  margin-left: auto;
+  border-radius: 0.45em;
+  background: var(--ambar);
+  padding: 0.55em 1em;
+  font-size: 0.82em;
+  font-weight: 700;
+  color: #14171c;
+}
+
+/* --- os chips de serviço ------------------------------------------------- */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45em;
+  margin-top: 0.9em;
+  border-radius: 0.5em;
+  border: 1px solid var(--divisor);
+  background: var(--superficie);
+  padding: 0.55em 0.7em;
+}
+
+.filtro {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  border-radius: 0.4em;
+  padding: 0.35em 0.6em;
+  font-size: 0.78em;
+  color: var(--fraco);
+}
+
+.filtro[data-ativo="sim"] {
+  background: var(--elevado);
+  font-weight: 600;
+  color: var(--texto);
+}
+
+.filtro-ponto {
+  width: 0.5em;
+  height: 0.5em;
+  border-radius: 999px;
+}
+
+.filtro-numero {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+/* --- o calendário -------------------------------------------------------- */
+.area-calendario {
+  display: flex;
+  gap: 0.9em;
+  margin-top: 0.9em;
+  align-items: flex-start;
+}
+
+.calendario {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 0.5em;
+  border: 1px solid var(--divisor);
+  background: var(--superficie);
+}
+
+.semana-cabecalho,
+.semana {
+  display: grid;
+  /* `minmax(0, 1fr)` e nao `1fr`: os chips tem `white-space: nowrap`, e
+     com `1fr` o tamanho minimo da coluna vira o do chip mais comprido —
+     as sete colunas somadas estouravam a janela e a coluna de sabado
+     ficava cortada. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.semana-cabecalho > div {
+  border-bottom: 1px solid var(--divisor);
+  padding: 0.55em 0;
+  text-align: center;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--fraco);
+}
+
+.dia {
+  display: flex;
+  min-width: 0;
+  min-height: 5.2em;
+  flex-direction: column;
+  gap: 0.2em;
+  border-top: 1px solid var(--divisor);
+  border-right: 1px solid var(--divisor);
+  padding: 0.35em;
+}
+
+.dia:nth-child(7n) {
+  border-right: 0;
+}
+
+.dia[data-fora="sim"] {
+  background: rgba(13, 15, 18, 0.55);
+}
+
+.dia[data-hoje="sim"] {
+  outline: 1px solid var(--ambar);
+  outline-offset: -1px;
+}
+
+.dia-numero {
+  align-self: flex-end;
+  font-size: 0.74em;
+  color: var(--apagado);
+  font-variant-numeric: tabular-nums;
+}
+
+.dia[data-fora="sim"] .dia-numero {
+  opacity: 0.4;
+}
+
+.dia-folga {
+  margin-top: auto;
+  font-size: 0.65em;
+  letter-spacing: 0.08em;
+  color: var(--apagado);
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35em;
+  overflow: hidden;
+  border-radius: 0.25em;
+  padding: 0.22em 0.35em;
+  font-size: 0.7em;
+  white-space: nowrap;
+}
+
+.chip-ponto {
+  width: 0.4em;
+  height: 0.4em;
+  flex: none;
+  border-radius: 999px;
+}
+
+.chip-hora {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chip-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fraco);
+}
+
+.chip-mais {
+  padding-left: 0.35em;
+  font-size: 0.68em;
+  color: var(--apagado);
+}
+
+/* --- o painel do dia ----------------------------------------------------- */
+.painel-dia {
+  width: 16em;
+  flex: none;
+  border-radius: 0.5em;
+  border: 1px solid var(--divisor);
+  background: var(--superficie);
+  padding: 0.8em;
+}
+
+.painel-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6em;
+}
+
+.painel-titulo {
+  font-size: 0.92em;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.painel-resumo {
+  margin-top: 0.25em;
+  font-size: 0.75em;
+  color: var(--fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.rotulo-chave {
+  font-size: 0.72em;
+  color: var(--fraco);
+}
+
+/* A chave de concluir, a mesma do sistema: pequena, com degradê âmbar. */
+.chave {
+  position: relative;
+  width: 2.1em;
+  height: 1.05em;
+  flex: none;
+  border-radius: 999px;
+  background: var(--borda);
+  transition: background 220ms ease;
+}
+
+.chave[data-ligada="sim"] {
+  background: linear-gradient(135deg, #f0a93b 0%, #a9660f 100%);
+}
+
+.chave::after {
+  content: "";
+  position: absolute;
+  top: 0.15em;
+  left: 0.15em;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: 999px;
+  background: #ffffff;
+  transition: transform 220ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.chave[data-ligada="sim"]::after {
+  transform: translateX(1.05em);
+}
+
+.cartao-dia {
+  margin-top: 0.6em;
+  border-radius: 0.45em;
+  border: 1px solid var(--borda);
+  background: var(--elevado);
+  padding: 0.6em;
+}
+
+.cartao-topo {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.cartao-hora {
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.cartao-nome {
+  overflow: hidden;
+  font-size: 0.85em;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cartao-base {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-top: 0.5em;
+}
+
+.etiqueta {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.3em;
+  overflow: hidden;
+  border-radius: 999px;
+  font-size: 0.7em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.etiqueta-estado {
+  border-radius: 999px;
+  background: var(--divisor);
+  padding: 0.2em 0.5em;
+  font-size: 0.68em;
+  color: var(--fraco);
+}
+
+.cartao-preco {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 0.8em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- o dashboard --------------------------------------------------------- */
+.cartoes-caixa {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.7em;
+  margin-top: 1em;
+}
+
+.cartao-caixa {
+  border-radius: 0.5em;
+  border: 1px solid var(--divisor);
+  background: var(--superficie);
+  padding: 0.85em;
+}
+
+.cartao-caixa[data-forte="sim"] {
+  border-color: rgba(240, 169, 59, 0.45);
+  background: linear-gradient(
+    160deg,
+    rgba(240, 169, 59, 0.1) 0%,
+    var(--superficie) 60%
+  );
+}
+
+.cartao-caixa-rotulo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--fraco);
+  text-transform: uppercase;
+}
+
+.cartao-caixa-valor {
+  margin-top: 0.45em;
+  font-size: 1.5em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.cartao-caixa-nota {
+  margin-top: 0.3em;
+  font-size: 0.74em;
+  color: var(--fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.quadros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7em;
+  margin-top: 0.7em;
+}
+
+.quadro {
+  border-radius: 0.5em;
+  border: 1px solid var(--divisor);
+  background: var(--superficie);
+  padding: 0.85em;
+}
+
+.quadro-titulo {
+  font-size: 0.95em;
+  font-weight: 700;
+}
+
+.quadro-sub {
+  margin-top: 0.2em;
+  font-size: 0.74em;
+  color: var(--fraco);
+}
+
+.quadro-corpo {
+  display: flex;
+  align-items: center;
+  gap: 0.9em;
+  margin-top: 0.8em;
+}
+
+.lista-valores {
+  flex: 1;
+  min-width: 0;
+}
+
+.linha-valor {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  border-bottom: 1px solid var(--divisor);
+  padding: 0.42em 0;
+  font-size: 0.78em;
+}
+
+.linha-valor:last-child {
+  border-bottom: 0;
+}
+
+.linha-nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.linha-qtd {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.linha-total {
+  width: 5.2em;
+  text-align: right;
+  color: var(--fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- o gráfico de mês a mês ---------------------------------------------- */
+.barras {
+  display: flex;
+  align-items: flex-end;
+  gap: 1.4em;
+  height: 8em;
+  margin-top: 0.9em;
+  padding: 0 0.6em;
+}
+
+.barra-coluna {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4em;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.barra-pilha {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  justify-content: flex-end;
+  border-radius: 0.2em 0.2em 0 0;
+  overflow: hidden;
+}
+
+.barra-loja {
+  background: #4fc3d9;
+}
+
+.barra-servico {
+  background: var(--ambar);
+}
+
+.barra-rotulo {
+  font-size: 0.72em;
+  color: var(--fraco);
+}
