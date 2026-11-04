@@ -12,6 +12,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
+import { Switch } from "@/components/ui/switch";
 import { CLASSES_SERVICO, ESTADOS, type Agendamento } from "@/lib/agenda/tipos";
 import { diaComSemana, diaCurto, ehHoje, moeda } from "@/lib/formato";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,8 @@ export function PainelDia({
   aoNovoAgendamento,
   aoEditar,
   aoConcluir,
+  aoAlternarConclusao,
+  alternandoId,
 }: {
   /** AAAA-MM-DD */
   dia: string;
@@ -41,6 +44,10 @@ export function PainelDia({
   aoEditar: (agendamento: Agendamento) => void;
   /** Abre a comanda do atendimento; quem conclui de fato e o modal. */
   aoConcluir: (agendamento: Agendamento) => void;
+  /** A chave do cabeçalho: conclui e desconclui num toque só. */
+  aoAlternarConclusao: (agendamento: Agendamento, concluir: boolean) => void;
+  /** Qual cartão espera resposta — só a chave dele trava. */
+  alternandoId: string | null;
 }) {
   const hoje = ehHoje(dia);
   const total = agendamentos.reduce((s, a) => s + a.precoCentavos, 0);
@@ -98,6 +105,8 @@ export function PainelDia({
               }
               aoEditar={() => aoEditar(a)}
               aoConcluir={() => aoConcluir(a)}
+              aoAlternarConclusao={(c) => aoAlternarConclusao(a, c)}
+              alternando={alternandoId === a.id}
             />
           ))}
         </ul>
@@ -112,22 +121,32 @@ function ItemDoDia({
   aoAlternar,
   aoEditar,
   aoConcluir,
+  aoAlternarConclusao,
+  alternando,
 }: {
   agendamento: Agendamento;
   aberto: boolean;
   aoAlternar: () => void;
   aoEditar: () => void;
   aoConcluir: () => void;
+  aoAlternarConclusao: (concluir: boolean) => void;
+  alternando: boolean;
 }) {
   const cor = CLASSES_SERVICO[a.servico.cor];
   const estado = ESTADOS[a.estado];
-  const encerrado = a.estado === "concluido" || a.estado === "cancelado";
+  const concluido = a.estado === "concluido";
+  const cancelado = a.estado === "cancelado";
+  const encerrado = concluido || cancelado;
   const idAcoes = useId();
 
   return (
     <li
       className={cn(
-        "flex flex-col rounded-lg border border-border border-l-[3px]",
+        // `relative` por causa da chave: ela é um controle DENTRO de um
+        // cartão que inteiro já é um botão, e botão não pode conter botão —
+        // nem no HTML, nem no gesto (o toque na chave abriria as ações
+        // junto). Ela fica POR CIMA, irmã do botão, e não descendente dele.
+        "relative flex flex-col rounded-lg border border-border border-l-[3px]",
         cor.borda,
         encerrado && "opacity-70",
       )}
@@ -154,6 +173,12 @@ function ItemDoDia({
           <span className="min-w-0 flex-1 truncate font-semibold">
             {a.clienteNome}
           </span>
+          {/* O lugar da chave, vazio aqui dentro. Existe para que o nome do
+              cliente corte ANTES de chegar nela — sem o vão, nome comprido
+              passaria por baixo de um controle. */}
+          {cancelado ? null : (
+            <span aria-hidden="true" className="w-11 shrink-0" />
+          )}
           <ChevronDown
             aria-hidden="true"
             className={cn(
@@ -200,6 +225,29 @@ function ItemDoDia({
         ) : null}
       </button>
 
+      {/* A CHAVE. Fica sobre o vão reservado lá em cima: `right-9` são os
+          12px de recuo do cartão + 16px da seta + 8px do intervalo entre
+          elas. `top-2.5` centra os 24px da chave na linha de 20px.
+
+          Ela aplica na hora, sem confirmar, porque é para isso que serve:
+          o barbeiro acabou de cortar, tem a mão ocupada, e o gesto tem que
+          caber num toque. O caminho cuidadoso continua no botão Concluir,
+          que abre a comanda para conferir o consumo antes de fechar.
+
+          Cancelado não tem chave: concluir um horário que não aconteceu não
+          quer dizer nada, e chave que não faz sentido ainda assim convida
+          ao toque. */}
+      {cancelado ? null : (
+        <div className="absolute top-2.5 right-9">
+          <Switch
+            checked={concluido}
+            disabled={alternando}
+            onCheckedChange={aoAlternarConclusao}
+            aria-label={`Concluir o atendimento de ${a.clienteNome} às ${a.horario}`}
+          />
+        </div>
+      )}
+
       {/* `hidden` em vez de desmontar: o `aria-controls` acima aponta pra um
           elemento que precisa existir na arvore mesmo fechado. */}
       <div
@@ -221,8 +269,8 @@ function ItemDoDia({
             botao ausente — a pessoa toca e fica esperando. */}
         {encerrado ? (
           <p className="flex min-h-11 items-center text-sm text-muted-foreground sm:flex-1">
-            {a.estado === "concluido"
-              ? "Atendimento concluído."
+            {concluido
+              ? "Concluído. A chave no topo reabre."
               : "Agendamento cancelado."}
           </p>
         ) : (

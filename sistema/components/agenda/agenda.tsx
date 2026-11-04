@@ -120,6 +120,10 @@ export function Agenda({
       }
       setComanda((c) => ({ ...c, aberto: false }));
       clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas });
+      // Pelo mesmo motivo da chave do cartão: concluir é o que faz o
+      // atendimento e o consumo dele entrarem no caixa. Faltava aqui, e a
+      // diferença só não aparecia porque ninguém tinha os dois caminhos.
+      clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
       avisar({
         tom: "sucesso",
         titulo: "Atendimento concluído",
@@ -131,6 +135,59 @@ export function Agenda({
       avisar({
         tom: "erro",
         titulo: "Não consegui concluir",
+        descricao: "Recarregue a página e tente de novo.",
+      });
+    },
+  });
+
+  /**
+   * A chave do cartão: conclui e desconclui sem abrir nada.
+   *
+   * Separada da mutação `concluir` acima de propósito, e as duas convivem:
+   * o BOTÃO Concluir abre a comanda primeiro, para o barbeiro conferir com
+   * o cliente o que ele consumiu; a CHAVE fecha direto, porque quem acabou
+   * de cortar e já sabe que não houve consumo não deveria passar por um
+   * modal para dizer isso.
+   *
+   * Desconcluir volta para `agendado`, e não para o estado anterior: não
+   * guardamos histórico de estado, e inventar "confirmado" porque era isso
+   * antes seria chute. `agendado` é o estado base e não afirma nada que
+   * não se saiba.
+   *
+   * Tem CONSEQUÊNCIA NO DINHEIRO nos dois sentidos: `vendas_no_caixa`
+   * (0026) só conta a venda pendurada num atendimento concluído. Por isso o
+   * aviso de reabertura diz isso em letras, em vez de só confirmar o gesto.
+   */
+  const alternarConclusao = useMutation({
+    mutationFn: ({ a, concluir }: { a: Agendamento; concluir: boolean }) =>
+      mudarEstadoAgendamento(a.id, concluir ? "concluido" : "agendado"),
+    onSuccess: (resultado, { a, concluir }) => {
+      if (!resultado.ok) {
+        avisar({
+          tom: "erro",
+          titulo: concluir ? "Não consegui concluir" : "Não consegui reabrir",
+          descricao: resultado.erro,
+        });
+        return;
+      }
+
+      clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas });
+      // O dashboard conta o que está concluído: o número muda junto.
+      clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
+
+      avisar({
+        tom: "sucesso",
+        titulo: concluir ? "Atendimento concluído" : "Atendimento reaberto",
+        descricao: concluir
+          ? `${a.clienteNome} · ${a.horario}`
+          : "Enquanto estiver reaberto, o que foi consumido nele não conta no caixa.",
+      });
+    },
+    onError: (causa) => {
+      console.error("[BARBOS] a ação não completou:", causa);
+      avisar({
+        tom: "erro",
+        titulo: "Não consegui mudar o atendimento",
         descricao: "Recarregue a página e tente de novo.",
       });
     },
@@ -309,6 +366,16 @@ export function Agenda({
             aoNovoAgendamento={abrirNovoAgendamento}
             aoEditar={abrirEdicao}
             aoConcluir={abrirComanda}
+            aoAlternarConclusao={(a, concluir) =>
+              alternarConclusao.mutate({ a, concluir })
+            }
+            // Só o cartão em voo trava. Uma trava global deixaria a lista
+            // inteira dura enquanto um atendimento fecha.
+            alternandoId={
+              alternarConclusao.isPending
+                ? (alternarConclusao.variables?.a.id ?? null)
+                : null
+            }
           />
         </div>
 
