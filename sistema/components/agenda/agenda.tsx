@@ -10,7 +10,10 @@ import { DialogoComanda } from "@/components/agenda/dialogo-comanda";
 import { DialogoConfiguracao } from "@/components/agenda/dialogo-configuracao";
 import { DialogoLinkAgendamento } from "@/components/agenda/dialogo-link-agendamento";
 import { DialogoNovoAgendamento } from "@/components/agenda/dialogo-novo-agendamento";
-import { mudarEstadoAgendamento } from "@/app/(sistema)/agenda/acoes";
+import {
+  mudarEstadoAgendamento,
+  mudarEstadoDeVariosAgendamentos,
+} from "@/app/(sistema)/agenda/acoes";
 import { Legenda } from "@/components/agenda/legenda";
 import { PainelDia } from "@/components/agenda/painel-dia";
 import { Button } from "@/components/ui/button";
@@ -188,6 +191,56 @@ export function Agenda({
       avisar({
         tom: "erro",
         titulo: "Não consegui mudar o atendimento",
+        descricao: "Recarregue a página e tente de novo.",
+      });
+    },
+  });
+
+  /**
+   * A chave do CABEÇALHO: fecha ou reabre o dia inteiro.
+   *
+   * O painel já manda só os ids que vão mudar, então fechar um dia com seis
+   * de oito já concluídos escreve duas linhas.
+   *
+   * O aviso diz o número que VOLTOU DO BANCO, não o que foi pedido: id que
+   * não é desta barbearia simplesmente não casa no `update`, e repetir o
+   * pedido como se fosse o resultado seria a tela inventando um número.
+   */
+  const fecharODia = useMutation({
+    mutationFn: ({ ids, concluir }: { ids: string[]; concluir: boolean }) =>
+      mudarEstadoDeVariosAgendamentos(
+        ids,
+        concluir ? "concluido" : "agendado",
+      ),
+    onSuccess: (resultado, { concluir }) => {
+      if (!resultado.ok) {
+        avisar({
+          tom: "erro",
+          titulo: concluir
+            ? "Não consegui concluir o dia"
+            : "Não consegui reabrir o dia",
+          descricao: resultado.erro,
+        });
+        return;
+      }
+
+      clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas });
+      clienteQuery.invalidateQueries({ queryKey: chaves.dashboard.todas });
+
+      const quantos = resultado.quantos;
+      avisar({
+        tom: "sucesso",
+        titulo: concluir ? "Dia concluído" : "Dia reaberto",
+        descricao: concluir
+          ? `${quantos} ${quantos === 1 ? "atendimento fechado" : "atendimentos fechados"}.`
+          : `${quantos} ${quantos === 1 ? "atendimento voltou" : "atendimentos voltaram"} para agendado. O consumo deles sai do caixa até concluir de novo.`,
+      });
+    },
+    onError: (causa) => {
+      console.error("[BARBOS] a ação não completou:", causa);
+      avisar({
+        tom: "erro",
+        titulo: "Não consegui mudar o dia",
         descricao: "Recarregue a página e tente de novo.",
       });
     },
@@ -376,6 +429,10 @@ export function Agenda({
                 ? (alternarConclusao.variables?.a.id ?? null)
                 : null
             }
+            aoConcluirODia={(ids, concluir) =>
+              fecharODia.mutate({ ids, concluir })
+            }
+            fechandoODia={fecharODia.isPending}
           />
         </div>
 

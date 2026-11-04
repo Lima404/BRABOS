@@ -36,6 +36,8 @@ export function PainelDia({
   aoConcluir,
   aoAlternarConclusao,
   alternandoId,
+  aoConcluirODia,
+  fechandoODia,
 }: {
   /** AAAA-MM-DD */
   dia: string;
@@ -48,6 +50,9 @@ export function PainelDia({
   aoAlternarConclusao: (agendamento: Agendamento, concluir: boolean) => void;
   /** Qual cartão espera resposta — só a chave dele trava. */
   alternandoId: string | null;
+  /** A chave do cabeçalho: fecha ou reabre o dia inteiro de uma vez. */
+  aoConcluirODia: (ids: string[], concluir: boolean) => void;
+  fechandoODia: boolean;
 }) {
   const hoje = ehHoje(dia);
   const total = agendamentos.reduce((s, a) => s + a.precoCentavos, 0);
@@ -56,25 +61,66 @@ export function PainelDia({
   // fora da tela justo quando a pessoa esta procurando o proximo horario.
   const [abertoId, setAbertoId] = useState<string | null>(null);
 
+  // Cancelado fica de fora da conta do dia: horário que não aconteceu não
+  // tem o que concluir, e deixá-lo dentro faria a chave do topo nunca
+  // chegar a "ligada" num dia com um cancelamento.
+  const doDia = agendamentos.filter((a) => a.estado !== "cancelado");
+  const concluidos = doDia.filter((a) => a.estado === "concluido");
+  const diaFechado = doDia.length > 0 && concluidos.length === doDia.length;
+
+  function alternarODia(concluir: boolean) {
+    // Só o que vai MUDAR vai para o banco: fechar um dia com seis de oito
+    // já concluídos escreve duas linhas, não oito.
+    const alvos = concluir
+      ? doDia.filter((a) => a.estado !== "concluido")
+      : concluidos;
+    aoConcluirODia(
+      alvos.map((a) => a.id),
+      concluir,
+    );
+  }
+
   return (
     <section
       aria-label={`Agendamentos de ${diaComSemana(dia)}`}
       className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4"
     >
-      <header>
-        <h2 className="font-semibold">
-          {hoje ? `Hoje, ${diaCurto(dia)}` : diaComSemana(dia)}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          <span data-numero>{agendamentos.length}</span>{" "}
-          {agendamentos.length === 1 ? "agendamento" : "agendamentos"}
-          {total > 0 ? (
-            <>
-              {" · "}
-              <span data-numero>{moeda(total)}</span>
-            </>
-          ) : null}
-        </p>
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="font-semibold">
+            {hoje ? `Hoje, ${diaCurto(dia)}` : diaComSemana(dia)}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            <span data-numero>{agendamentos.length}</span>{" "}
+            {agendamentos.length === 1 ? "agendamento" : "agendamentos"}
+            {total > 0 ? (
+              <>
+                {" · "}
+                <span data-numero>{moeda(total)}</span>
+              </>
+            ) : null}
+          </p>
+        </div>
+
+        {/* A chave do dia. Com rótulo ao lado de propósito: chave solta num
+            cabeçalho não diz o que liga, e esta liga TODAS as outras de uma
+            vez — é a que menos pode ser adivinhada. */}
+        {doDia.length > 0 ? (
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+            <span>{diaFechado ? "Dia concluído" : "Concluir o dia"}</span>
+            <Switch
+              tamanho="pequeno"
+              checked={diaFechado}
+              disabled={fechandoODia}
+              onCheckedChange={alternarODia}
+              aria-label={
+                diaFechado
+                  ? `Reabrir os ${doDia.length} atendimentos do dia`
+                  : `Concluir os ${doDia.length} atendimentos do dia`
+              }
+            />
+          </label>
+        ) : null}
       </header>
 
       {agendamentos.length === 0 ? (
@@ -106,7 +152,7 @@ export function PainelDia({
               aoEditar={() => aoEditar(a)}
               aoConcluir={() => aoConcluir(a)}
               aoAlternarConclusao={(c) => aoAlternarConclusao(a, c)}
-              alternando={alternandoId === a.id}
+              alternando={alternandoId === a.id || fechandoODia}
             />
           ))}
         </ul>
@@ -177,7 +223,7 @@ function ItemDoDia({
               cliente corte ANTES de chegar nela — sem o vão, nome comprido
               passaria por baixo de um controle. */}
           {cancelado ? null : (
-            <span aria-hidden="true" className="w-11 shrink-0" />
+            <span aria-hidden="true" className="w-7 shrink-0" />
           )}
           <ChevronDown
             aria-hidden="true"
@@ -227,7 +273,8 @@ function ItemDoDia({
 
       {/* A CHAVE. Fica sobre o vão reservado lá em cima: `right-9` são os
           12px de recuo do cartão + 16px da seta + 8px do intervalo entre
-          elas. `top-2.5` centra os 24px da chave na linha de 20px.
+          elas. `top-3.5` centra os 16px da chave na linha de 20px, que
+          começa nos 12px de recuo de cima.
 
           Ela aplica na hora, sem confirmar, porque é para isso que serve:
           o barbeiro acabou de cortar, tem a mão ocupada, e o gesto tem que
@@ -238,8 +285,9 @@ function ItemDoDia({
           quer dizer nada, e chave que não faz sentido ainda assim convida
           ao toque. */}
       {cancelado ? null : (
-        <div className="absolute top-2.5 right-9">
+        <div className="absolute top-3.5 right-9">
           <Switch
+            tamanho="pequeno"
             checked={concluido}
             disabled={alternando}
             onCheckedChange={aoAlternarConclusao}

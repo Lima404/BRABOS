@@ -152,10 +152,15 @@ const FALHA_DE_TRANSPORTE =
  *
  * Aqui a exceção vira `Resultado`, e o original vai pro log do servidor.
  */
-async function protegido(
+/**
+ * Genérico sobre o resultado porque nem toda ação devolve só `ok`: a de
+ * lote devolve QUANTAS mudaram. O que ele acrescenta é sempre
+ * `{ ok: false, erro }`, que cabe em qualquer um desses formatos.
+ */
+async function protegido<T extends { ok: boolean }>(
   operacao: string,
-  corpo: () => Promise<Resultado>,
-): Promise<Resultado> {
+  corpo: () => Promise<T>,
+): Promise<T | { ok: false; erro: string }> {
   try {
     return await corpo();
   } catch (erro) {
@@ -849,6 +854,64 @@ export async function mudarEstadoAgendamento(
     revalidatePath("/agenda");
     return { ok: true };
   });
+}
+
+export type ResultadoEmLote =
+  | { ok: true; quantos: number }
+  | { ok: false; erro: string };
+
+/**
+ * Teto de ids por chamada.
+ *
+ * Um dia de barbearia não passa de algumas dezenas de horários. O teto
+ * existe porque a ação aceita o que mandarem — e um `in` com dez mil ids
+ * é uma consulta que ninguém da tela conseguiria pedir.
+ */
+const TETO_DO_LOTE = 120;
+
+/**
+ * Muda o estado de vários agendamentos de uma vez.
+ *
+ * Uma consulta só, e não uma por linha: a chave do topo da agenda fecha o
+ * dia inteiro: com uma chamada por horário, a sétima falhando deixaria
+ * seis concluídos e nenhum aviso de onde parou.
+ *
+ * Devolve QUANTAS mudaram, lido do retorno do banco e não do que a tela
+ * mandou. Id de outra barbearia simplesmente não casa (RLS), e aí o número
+ * é menor que o pedido — é assim que o aviso na tela fala a verdade em vez
+ * de repetir o que foi pedido.
+ */
+export async function mudarEstadoDeVariosAgendamentos(
+  ids: string[],
+  estado: EstadoAgendamento,
+): Promise<ResultadoEmLote> {
+  const resultado = await protegido("mudar estado em lote", async () => {
+    if (!ESTADOS[estado]) {
+      return { ok: false as const, erro: "Estado desconhecido." };
+    }
+
+    const limpos = [...new Set(ids.filter((id) => typeof id === "string" && id))]
+      .slice(0, TETO_DO_LOTE);
+
+    if (limpos.length === 0) {
+      return { ok: false as const, erro: "Nenhum atendimento para mudar." };
+    }
+
+    const supabase = await criarClienteServidor();
+
+    const { data, error } = await supabase
+      .from("agendamentos")
+      .update({ estado })
+      .in("id", limpos)
+      .select("id");
+
+    if (error) return traduzir("mudar estado em lote", error);
+
+    revalidatePath("/agenda");
+    return { ok: true as const, quantos: data?.length ?? 0 };
+  });
+
+  return resultado as ResultadoEmLote;
 }
 
 /**
