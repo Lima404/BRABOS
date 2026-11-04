@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/*
+ * Cores do BARBOS, copiadas de identidade/tokens.json.
+ *
+ * Copiadas e nao importadas: com a Root Directory da Vercel apontando
+ * para `site/`, nada acima desta pasta entra no build. Se o manual
+ * mudar, estes valores tem que ser conferidos na mao — e o
+ * identidade/design-guide.md continua sendo a fonte da verdade.
+ *
+ * O site e ESCURO, so. Diferente do sistema, que tem tema claro e
+ * escuro porque o barbeiro trabalha com sol na tela: aqui e uma
+ * apresentacao, e ela se compromete com um visual so.
+ */
+@theme inline {
+  --color-graf-950: #0d0f12;
+  --color-graf-900: #14171c;
+  --color-graf-800: #1c2027;
+  --color-graf-700: #2a2f38;
+  --color-graf-500: #5b6472;
+  --color-graf-400: #7c8595;
+  --color-graf-300: #a8b0bc;
+  --color-graf-200: #c9cfd8;
+  --color-graf-100: #e4e7ec;
+  --color-graf-50: #f4f6f8;
+
+  --color-ambar-800: #8a5309;
+  --color-ambar-700: #a9660f;
+  --color-ambar-600: #d98e1e;
+  --color-ambar-500: #f0a93b;
+  --color-ambar-300: #f7ce8a;
+  --color-ambar-100: #fcedd3;
+
+  --font-ui: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-marca: var(--font-archivo-black), var(--font-inter), sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  /* Fundo explicito: sem isto a pagina herda o branco do navegador por
+     um quadro, e o site escuro pisca branco ao abrir. */
+  background-color: var(--color-graf-950);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * A faixa barbearia. Unico aceno visual ao oficio que o manual
+ * autoriza — diagonal ambar/grafite de 4 a 6px, no topo da tela e como
+ * divisor de secao. Nunca dentro do logo, nunca como fundo de tela
+ * inteira.
+ */
+.faixa-barbearia {
+  height: 5px;
+  flex: none;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-ambar-500) 0 12px,
+    var(--color-graf-900) 12px 24px
+  );
+}
+
+/* Horario, preco e quantidade nunca dancam de largura. Regra do manual,
+   e o site mostra numeros de dashboard. */
+.numeros {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Quem pediu menos movimento no sistema operacional ve o site inteiro,
+ * parado. Nenhuma secao pode depender de animacao para aparecer.
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

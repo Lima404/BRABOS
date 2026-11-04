@@ -1,0 +1,21 @@
+# Dependencias
+/node_modules
+
+# Build do Next
+/.next
+/out
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Variaveis de ambiente
+.env
+.env.*
+!.env.example
+
+# Vercel
+.vercel
+
+# Quadros da cadeira gerados pelo ffmpeg a partir do video do Higgsfield.
+# Sao ~70 arquivos de imagem que podem ser regerados pelo script em
+# scripts/ — nao engordar o repositorio com eles ate decidirmos o contrario.
+/public/cadeira/*.webp
