@@ -32,8 +32,40 @@ export function Janela({
 
 const ITENS = ["Agenda", "Estoque", "Dashboard", "Barbearia", "Loja"] as const;
 
-/** A barra lateral do sistema, com os itens entrando em cascata. */
+/**
+ * A barra lateral do sistema, com os itens entrando em cascata.
+ *
+ * Vem junto com o topo do celular: o CSS mostra um ou outro conforme a
+ * largura do mockup, como o sistema de verdade faz (no telefone a lateral
+ * vira um menu atrás do botão de três traços).
+ */
 export function Lateral({
+  ativo,
+  inicio,
+}: {
+  ativo: (typeof ITENS)[number];
+  inicio: number;
+}) {
+  return (
+    <>
+      <div className="topo-celular entra" style={degrau(inicio, 0.05)}>
+        <svg viewBox="0 0 20 20" className="topo-celular-menu" aria-hidden="true">
+          <path
+            d="M3 5.5h14M3 10h14M3 14.5h14"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
+        <span className="lateral-simbolo">B</span>
+        <span className="lateral-nome">BARBOS</span>
+      </div>
+      <Barra ativo={ativo} inicio={inicio} />
+    </>
+  );
+}
+
+function Barra({
   ativo,
   inicio,
 }: {

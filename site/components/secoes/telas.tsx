@@ -69,7 +69,10 @@ function TelaPresa({
       className="palco-alto relative mt-12 h-[190vh] lg:h-[280vh]"
       modo="presa"
     >
-      <div className="palco sticky top-20">
+      {/* No celular a tela presa sobe até perto do topo: a barra do site
+          some ao rolar para baixo, e os 80px que ela ocupa fazem falta
+          para a tela do sistema caber inteira. */}
+      <div className="palco sticky top-8 lg:top-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <h3 className="flex items-baseline gap-3 text-xl font-bold text-white">
@@ -82,17 +85,8 @@ function TelaPresa({
           </div>
 
           <JanelaViva>
-            <div className="mockup-area">
-              <div className="mockup mockup-interno">{children}</div>
-            </div>
+            <div className="mockup">{children}</div>
           </JanelaViva>
-
-          {/* Numa tela de celular a tela do sistema não cabe inteira, e
-              ela rola de lado dentro da própria moldura. Sem este aviso
-              ninguém descobre que dá para arrastar. */}
-          <p className="mt-3 text-xs text-graf-400 sm:hidden">
-            Arraste a tela para o lado para ver o mês inteiro.
-          </p>
         </div>
       </div>
     </Cena>

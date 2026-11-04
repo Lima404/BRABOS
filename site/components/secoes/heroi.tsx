@@ -79,7 +79,7 @@ export function Heroi() {
       ref={secaoRef}
       id="topo"
       aria-label="BARBOS"
-      className="palco-alto relative h-[170vh]"
+      className="palco-alto relative h-[150vh] lg:h-[170vh]"
     >
       <div
         ref={palcoRef}

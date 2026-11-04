@@ -30,18 +30,8 @@
   --ambar: #f0a93b;
 }
 
-/* Em tela estreita o mockup ganha rolagem própria, senão ele fica com letra
-   de 4px e não se lê nada. A rolagem é DELE, não da página. */
-.mockup-area {
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-graf-700) transparent;
-}
-
-.mockup-interno {
-  min-width: 46rem;
-}
+/* Em tela estreita o mockup não encolhe nem rola de lado: ele vira a versão
+   de celular do sistema (ver "no celular", no fim deste arquivo). */
 
 /* --- a moldura ----------------------------------------------------------- */
 .janela {
@@ -649,4 +639,170 @@
 .barra-rotulo {
   font-size: 0.72em;
   color: var(--fraco);
+}
+
+/* --- no celular -----------------------------------------------------------
+   Abaixo de 40rem de largura a tela vira a versão de celular do sistema, a
+   mesma que o dono vê no telefone: sem a barra lateral, com o menu no topo,
+   e o dia aberto da agenda subindo por baixo como uma gaveta.
+
+   A letra passa a sair da largura do mockup (`cqw`), e não da tela: tudo
+   cabe na largura, sem rolagem de lado. Antes o mockup mantinha os 736px
+   do computador e o celular mostrava só a metade dele. */
+.topo-celular {
+  display: none;
+}
+
+@container (max-width: 40rem) {
+  .janela {
+    font-size: 3.1cqw;
+  }
+
+  .janela-corpo {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .lateral {
+    display: none;
+  }
+
+  .topo-celular {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    border-bottom: 1px solid var(--divisor);
+    background: var(--superficie);
+    padding: 0.6em 1em;
+  }
+
+  .topo-celular-menu {
+    width: 1.3em;
+    height: 1.3em;
+    color: var(--fraco);
+  }
+
+  .conteudo {
+    padding: 1em 0.9em;
+  }
+
+  .barra-ferramentas {
+    gap: 0.4em;
+  }
+
+  .contagem {
+    display: none;
+  }
+
+  /* Os filtros numa linha só, sumindo na borda — como uma fileira que
+     rola de lado no telefone. */
+  .filtros {
+    flex-wrap: nowrap;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, black 78%, transparent);
+  }
+
+  .filtro {
+    flex: none;
+  }
+
+  .semana-cabecalho > div {
+    font-size: 0.6em;
+  }
+
+  .dia {
+    min-height: 3.6em;
+    gap: 0.15em;
+    padding: 0.25em;
+  }
+
+  .dia-numero {
+    font-size: 0.66em;
+  }
+
+  .dia-folga {
+    font-size: 0.5em;
+  }
+
+  /* Sete colunas de 47px: só cabe o horário. O nome aparece na gaveta. */
+  .chip {
+    gap: 0.25em;
+    padding: 0.2em 0.3em;
+    font-size: 0.6em;
+  }
+
+  .chip-nome {
+    display: none;
+  }
+
+  .chip-mais {
+    padding-left: 0.3em;
+    font-size: 0.58em;
+  }
+
+  /* O dia aberto vira gaveta: sobe de baixo por cima do calendário, com a
+     alça no alto. `!important` porque a subida vem escrita no próprio
+     elemento (style), feita para o painel ao lado do computador. */
+  .area-calendario {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    border-radius: 0.5em;
+  }
+
+  .painel-dia {
+    --sobe: 100% !important;
+    position: absolute;
+    inset: auto 0 0 0;
+    width: auto;
+    max-height: 58%;
+    overflow: hidden;
+    border-bottom: 0;
+    border-radius: 0.9em 0.9em 0 0;
+    padding-top: 1.3em;
+    box-shadow: 0 -0.8em 2em rgba(0, 0, 0, 0.55);
+  }
+
+  .painel-dia::before {
+    content: "";
+    position: absolute;
+    top: 0.45em;
+    left: 50%;
+    width: 2.6em;
+    height: 0.25em;
+    margin-left: -1.3em;
+    border-radius: 999px;
+    background: var(--borda);
+  }
+
+  /* --- o dashboard, em uma coluna --- */
+  .cabeca-tela .pilula {
+    display: none;
+  }
+
+  .cartoes-caixa {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .cartoes-caixa > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  /* Um quadro só: o de serviços. O de produtos repetiria o mesmo desenho
+     e a tela passaria da altura do telefone. */
+  .quadros {
+    grid-template-columns: 1fr;
+  }
+
+  .quadros > :nth-child(2) {
+    display: none;
+  }
+
+  .quadro-sub {
+    display: none;
+  }
+
+  .barras {
+    height: 5em;
+  }
 }

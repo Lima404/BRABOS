@@ -21,7 +21,7 @@ export function MockupDashboard({ inicio = 0 }: { inicio?: number }) {
 
         <div className="conteudo">
           <div
-            className="flex items-start gap-[1em] entra"
+            className="cabeca-tela flex items-start gap-[1em] entra"
             style={degrau(inicio + 0.09, 0.05)}
           >
             <div>

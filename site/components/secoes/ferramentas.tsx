@@ -85,6 +85,8 @@ const CHEGADA_FIM = 0.24;
 const PASSEIO = { inicio: 0.26, passo: 0.105 };
 const CONVERGE = { inicio: 0.7, fim: 0.9 };
 
+const LARGO = "(min-width: 1024px)";
+
 /**
  * Capítulo 02 — as ferramentas.
  *
@@ -101,8 +103,21 @@ export function Ferramentas() {
 
 function FerramentasComRolagem() {
   const secaoRef = useRef<HTMLElement>(null);
-  const p = useProgresso(secaoRef);
-  return <Palco secaoRef={secaoRef} p={p} animado />;
+  const largo = useMidia(LARGO);
+  const presa = useProgresso(secaoRef);
+
+  // No celular a chegada não espera a seção encostar no topo: as peças vêm
+  // voando enquanto ela ainda sobe, logo que o herói solta a tela. Esperar
+  // deixava quase uma tela inteira de rolagem sem nada aparecer entre o
+  // capítulo 01 e o 02. Do encaixe em diante, a mesma coreografia de
+  // sempre, só que sem o trecho da chegada — por isso a seção é mais
+  // curta no celular.
+  const subindo = useProgresso(secaoRef, ["start end", "start start"]);
+  const cedo = useTransform([subindo, presa], ([s, q]: number[]) =>
+    q > 0 ? CHEGADA_FIM + q * (1 - CHEGADA_FIM) : s * CHEGADA_FIM,
+  );
+
+  return <Palco secaoRef={secaoRef} p={largo ? presa : cedo} animado />;
 }
 
 /** Para movimento reduzido: as peças já na bancada, sem prender a tela. */
@@ -121,7 +136,7 @@ function Palco({
   p: MotionValue<number>;
   animado: boolean;
 }) {
-  const largo = useMidia("(min-width: 1024px)");
+  const largo = useMidia(LARGO);
 
   // --- qual peça está acesa ------------------------------------------------
   // A rolagem escolhe uma; o mouse pode escolher outra. A escolha do mouse
@@ -195,7 +210,15 @@ function Palco({
     <section
       ref={secaoRef}
       id="ferramentas"
-      className={`relative ${animado ? "h-[300vh] lg:h-[340vh]" : ""}`}
+      // No celular a seção sobe por cima da metade final do herói: as peças
+      // voam sobre a cena escurecendo, sem tela vazia entre os capítulos.
+      // Enquanto ela passa por cima, o toque atravessa para o herói — só o
+      // texto, que só aparece depois, recebe o dedo.
+      className={`relative ${
+        animado
+          ? "h-[250vh] max-lg:pointer-events-none max-lg:-mt-[50vh] lg:h-[340vh]"
+          : ""
+      }`}
       data-cursor-zona
     >
       <div
@@ -272,7 +295,7 @@ function Palco({
           }
         >
           <motion.div
-            className="max-w-md"
+            className="pointer-events-auto max-w-md"
             style={animado ? { opacity: textoEntra } : undefined}
           >
             <Rotulo capitulo="ferramentas">O que ele faz</Rotulo>
