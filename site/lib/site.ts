@@ -26,3 +26,16 @@ export const CADASTRO = `${SISTEMA}/cadastrar`;
 
 /** Onde quem ja tem conta entra. */
 export const ENTRAR = `${SISTEMA}/entrar`;
+
+/**
+ * O WhatsApp do BARBOS. O botao "Abra sua conta!" do topo leva pra ca:
+ * quem quer comecar fala direto com uma pessoa, com a primeira mensagem
+ * ja escrita. Numero no formato internacional, so digitos (55 + DDD 84).
+ */
+const WHATSAPP_NUMERO = "5584996308743";
+const WHATSAPP_MENSAGEM =
+  "Olá! Vim pelo site do BARBOS e quero abrir a conta da minha barbearia.";
+export const WHATSAPP = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(WHATSAPP_MENSAGEM)}`;
+
+/** O Instagram do BARBOS. */
+export const INSTAGRAM = "https://www.instagram.com/barboss.oficial/";

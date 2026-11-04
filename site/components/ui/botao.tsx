@@ -12,11 +12,17 @@ export function Botao({
   children,
   tom = "acao",
   className = "",
+  novaAba = false,
 }: {
   href: string;
   children: ReactNode;
   tom?: "acao" | "contorno";
   className?: string;
+  /**
+   * Abre em outra aba — para o WhatsApp e o Instagram. O site continua
+   * aberto atrás, e quem volta não perde o ponto em que estava.
+   */
+  novaAba?: boolean;
 }) {
   const base =
     "group relative inline-flex h-12 items-center justify-center overflow-hidden rounded-lg px-7 text-base font-semibold transition-[transform,background-color,border-color] duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ambar-300 active:translate-y-px";
@@ -27,7 +33,11 @@ export function Botao({
       : "border border-graf-400 text-white hover:border-graf-300 hover:bg-graf-800";
 
   return (
-    <a href={href} className={`${base} ${pintura} ${className}`}>
+    <a
+      href={href}
+      className={`${base} ${pintura} ${className}`}
+      {...(novaAba ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+    >
       <span className="relative z-10">{children}</span>
       {tom === "acao" && (
         // O brilho que atravessa o botão ao passar o mouse. Decoração pura,
