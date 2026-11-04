@@ -153,12 +153,6 @@ export function Final() {
                 <span className="sr-only"> (abre o WhatsApp)</span>
               </Botao>
             </Magnetico>
-            <Magnetico>
-              <Botao href={WHATSAPP} tom="contorno" novaAba>
-                Já tenho conta
-                <span className="sr-only"> (abre o WhatsApp)</span>
-              </Botao>
-            </Magnetico>
           </div>
         </div>
 
