@@ -16,7 +16,7 @@ import { MENOS_MOVIMENTO, useMidia } from "@/components/ui/midia";
 import { useProgresso } from "@/components/ui/progresso";
 import { Revela } from "@/components/ui/revela";
 import { Rotulo } from "@/components/ui/rotulo";
-import { CADASTRO } from "@/lib/site";
+import { WHATSAPP } from "@/lib/site";
 
 /**
  * Capítulo 01 — a barbearia à noite.
@@ -172,7 +172,10 @@ export function Heroi() {
               style={{ "--atraso": "1.1s" } as CSSProperties}
             >
               <Magnetico>
-                <Botao href={CADASTRO}>Criar minha conta</Botao>
+                <Botao href={WHATSAPP} novaAba>
+                  Criar minha conta
+                  <span className="sr-only"> (abre o WhatsApp)</span>
+                </Botao>
               </Magnetico>
               <Magnetico>
                 <Botao href="#telas" tom="contorno">
