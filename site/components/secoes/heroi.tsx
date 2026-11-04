@@ -163,8 +163,9 @@ export function Heroi() {
               className="entrada mt-7 max-w-md text-base leading-7 text-graf-300 sm:text-lg"
               style={{ "--atraso": "0.95s" } as CSSProperties}
             >
-              O BARBOS põe agenda, serviços, equipe e estoque numa tela só —
-              feita pra ser aberta com o cliente já sentado na cadeira.
+              O BARBOS põe agenda, serviços, equipe e estoque numa tela só.
+              O simples bem feito: fácil pra barbearia e pro cliente dela,
+              sem a burocracia de sistema complicado.
             </p>
 
             <div

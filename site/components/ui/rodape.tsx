@@ -46,7 +46,7 @@ export function Rodape() {
             />
             <p className="mt-5 text-sm leading-6 text-graf-300">
               Agenda, serviços, equipe e estoque da barbearia numa tela só.
-              Feito para ser aberto com o cliente já sentado na cadeira.
+              O simples bem feito, pro barbeiro e pro cliente dele.
             </p>
           </div>
 

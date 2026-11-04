@@ -38,7 +38,7 @@ export const metadata: Metadata = {
   },
   description:
     "Agenda, serviços, equipe e estoque da barbearia numa tela só. " +
-    "Sem caderno, sem planilha, sem perder horário.",
+    "Sem caderno, sem burocracia, sem perder horário.",
   applicationName: "BARBOS",
   alternates: { canonical: "/" },
   icons: {

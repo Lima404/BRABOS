@@ -61,14 +61,15 @@ export function Caderno() {
         <div className="max-w-2xl">
           <Rotulo capitulo="caderno">Por que trocar</Rotulo>
           <Revela
-            texto="O concorrente do BARBOS não é outro aplicativo. É o caderno."
-            destaque="É o caderno."
+            texto="O caderno é o concorrente. A burocracia é o inimigo."
+            destaque="A burocracia é o inimigo."
             className="mt-5 text-[clamp(1.75rem,3.6vw,3rem)] leading-[1.05] font-bold tracking-[-0.025em] text-balance"
           />
           <p className="mt-5 max-w-xl text-base leading-7 text-graf-300">
-            Ele funciona — até o dia em que molha, some, fica na outra loja
-            ou tem o horário escrito com a letra do colega. Role e veja o
-            mesmo mês dos dois jeitos.
+            O caderno funciona — até o dia em que molha, some ou fica na
+            outra loja. E o sistema complicado, cheio de cadastro e de
+            configuração, só troca uma dor de cabeça por outra. O BARBOS fica
+            no simples bem feito. Role e veja o mesmo mês dos dois jeitos.
           </p>
         </div>
       </div>

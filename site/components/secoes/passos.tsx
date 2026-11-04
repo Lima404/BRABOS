@@ -23,7 +23,7 @@ const PASSOS = [
   {
     titulo: "Manda o link pro cliente",
     texto:
-      "A barbearia ganha uma página de agendamento. Quem marca por lá já cai direto na sua agenda.",
+      "A barbearia ganha uma página de agendamento. O cliente marca sem criar conta nem senha, e o horário cai direto na sua agenda.",
   },
 ];
 
@@ -59,6 +59,11 @@ export function Passos() {
             destaque="vira enfeite."
             className="mt-5 text-[clamp(1.75rem,3.6vw,3rem)] leading-[1.05] font-bold tracking-[-0.025em] text-balance"
           />
+          <p className="mt-5 max-w-xl text-base leading-7 text-graf-300">
+            Se o cliente da barbearia usa, a barbearia usa também. Não existe
+            sistema de barbearia que o barbeiro usa e o cliente dele não — por
+            isso o último passo é dele.
+          </p>
         </div>
 
         <ol ref={listaRef} className="relative mt-16 grid gap-6 md:grid-cols-3">
