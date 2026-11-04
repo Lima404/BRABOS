@@ -1,14 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 
+import {
+  buscarClientesDaLoja,
+  buscarProdutosDaLoja,
+} from "@/app/(sistema)/loja/acoes";
 import { DialogoConfirmarCompra } from "@/components/loja/dialogo-confirmar-compra";
 import { Button } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { NOME_DO_TIPO, type TipoProduto } from "@/lib/estoque/tipos";
-import type { ClienteDoDia, ProdutoDaLoja } from "@/lib/loja/repositorio";
+import type { ProdutoDaLoja } from "@/lib/loja/repositorio";
 import { moeda } from "@/lib/formato";
+import { chaves } from "@/lib/query";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,22 +24,31 @@ import { cn } from "@/lib/utils";
  * total — aí confirma e retira no balcão.
  */
 export function Vitrine({
-  produtos,
   nomeDaBarbearia,
   ehDona,
   slug,
-  clientes,
 }: {
-  produtos: ProdutoDaLoja[];
   nomeDaBarbearia: string;
   ehDona: boolean;
   slug: string;
-  /** Agendamentos de hoje, para o seletor "Lançar em" da compra. */
-  clientes: ClienteDoDia[];
 }) {
   /** produtoId → quantidade no pedido. */
   const [carrinho, setCarrinho] = useState<Record<string, number>>({});
   const [modalAberto, setModalAberto] = useState(false);
+
+  // Hidratadas pelo prefetch da página: na primeira pintura as duas já
+  // têm valor, e nenhuma vai à rede. Depois da compra, a invalidação
+  // traz o estoque novo sem remontar a página.
+  const { data: produtos = [] } = useQuery({
+    queryKey: chaves.loja.produtos(slug),
+    queryFn: () => buscarProdutosDaLoja(slug),
+  });
+
+  /** Agendamentos de hoje, para o seletor "Lançar em" da compra. */
+  const { data: clientes = [] } = useQuery({
+    queryKey: chaves.loja.clientes(slug),
+    queryFn: () => buscarClientesDaLoja(slug),
+  });
 
   const mercearia = useMemo(
     () => produtos.filter((p) => p.tipo === "mercearia"),

@@ -80,11 +80,19 @@ export function AgendarPublico({
 
   // O dia muda quando o cliente troca a data; o resto (serviços, equipe,
   // expediente) não muda, então o `inicial` cobre enquanto a busca não volta.
+  //
+  // `staleTime` 30s e não 0. Com 0, o `initialData` nascia VELHO: a tela
+  // pedia o dia de novo no primeiro render, repetindo a consulta que o
+  // servidor acabara de fazer para montar a própria página. Trocar de
+  // data continua buscando (é outra chave, sem dado nenhum), e o que
+  // precisa chegar na hora — o horário que acabou de ser marcado —
+  // continua chegando, porque a confirmação invalida a chave, e
+  // invalidação não espera `staleTime`.
   const { data: dia, isFetching } = useQuery({
     queryKey: chaves.agendarPublico.dia(slug, data),
     queryFn: () => buscarDiaPublico(slug, data),
     initialData: data === hojeNaBarbearia() ? inicial : undefined,
-    staleTime: 0,
+    staleTime: 30 * 1000,
   });
 
   const agenda = dia ?? inicial;

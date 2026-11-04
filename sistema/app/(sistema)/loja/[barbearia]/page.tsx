@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { dehydrate, HydrationBoundary } from "@tanstack/react-query";
 
 import { EnderecoDaLoja } from "@/components/loja/endereco-da-loja";
 import { Vitrine } from "@/components/loja/vitrine";
@@ -10,6 +11,7 @@ import {
   listarProdutosDaLoja,
   obterLojaPorSlug,
 } from "@/lib/loja/repositorio";
+import { chaves, obterQueryClient } from "@/lib/query";
 
 type Props = PageProps<"/loja/[barbearia]">;
 
@@ -47,10 +49,23 @@ export default async function LojaDaBarbeariaPage({ params }: Props) {
   // abre junto com o modal, e buscar depois faria a lista chegar atrasada
   // justamente no toque em que ela é usada. Quem esconde os nomes de quem não
   // é a dona é a função no banco, não esta página.
-  const [produtos, clientes] = await Promise.all([
-    listarProdutosDaLoja(loja.id),
-    listarClientesDoDia(loja.slug),
+  //
+  // As duas entram no cache do React Query em vez de descer como `props`:
+  // assim a compra confirmada invalida as chaves e a vitrine se redesenha
+  // com o estoque novo, sem remontar a página inteira no servidor.
+  const queryClient = obterQueryClient();
+
+  await Promise.all([
+    queryClient.prefetchQuery({
+      queryKey: chaves.loja.produtos(loja.slug),
+      queryFn: () => listarProdutosDaLoja(loja.id),
+    }),
+    queryClient.prefetchQuery({
+      queryKey: chaves.loja.clientes(loja.slug),
+      queryFn: () => listarClientesDoDia(loja.slug),
+    }),
   ]);
+
   const ehDona = sessao.barbearia?.id === loja.id;
 
   return (
@@ -68,13 +83,13 @@ export default async function LojaDaBarbeariaPage({ params }: Props) {
       {/* Só a dona vê: é o endereço que vai virar QR code na parede. */}
       {ehDona ? <EnderecoDaLoja slug={loja.slug} /> : null}
 
-      <Vitrine
-        produtos={produtos}
-        nomeDaBarbearia={loja.nome}
-        ehDona={ehDona}
-        slug={loja.slug}
-        clientes={clientes}
-      />
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Vitrine
+          nomeDaBarbearia={loja.nome}
+          ehDona={ehDona}
+          slug={loja.slug}
+        />
+      </HydrationBoundary>
 
       {ehDona ? (
         <Alerta tom="info" titulo="O que a vitrine mostra">

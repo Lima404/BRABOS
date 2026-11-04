@@ -3,6 +3,13 @@
 import { revalidatePath } from "next/cache";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
+import {
+  listarClientesDoDia,
+  listarProdutosDaLoja,
+  obterLojaPorSlug,
+  type ClienteDoDia,
+  type ProdutoDaLoja,
+} from "@/lib/loja/repositorio";
 
 /**
  * Pedido na loja pública. Roda sem sessão — o cliente do QR não tem conta.
@@ -217,4 +224,33 @@ async function confirmarUmAUm(
     itens: itens.length,
     totalCentavos,
   };
+}
+
+/**
+ * A vitrine relida pelo navegador, depois de uma compra.
+ *
+ * Ação de servidor e não rota `/api/`: o proxy devolve 401 em `/api/` para
+ * quem não tem sessão, e quem leu o QR code do balcão não tem nenhuma. A
+ * ação chega pelo próprio caminho `/loja/...`, que está nas rotas abertas —
+ * é o mesmo arranjo da tela de agendar.
+ *
+ * Quem decide o que cada um pode ver continua sendo o banco: a view
+ * `lojas` e as funções da 0009/0010. Aqui não há filtro novo, porque não
+ * há informação nova — é exatamente o que a página já desenha.
+ */
+export async function buscarProdutosDaLoja(
+  slug: string,
+): Promise<ProdutoDaLoja[]> {
+  const loja = await obterLojaPorSlug(slug);
+  if (!loja) return [];
+  return listarProdutosDaLoja(loja.id);
+}
+
+/** Os agendamentos de hoje, para o seletor "Lançar em". */
+export async function buscarClientesDaLoja(
+  slug: string,
+): Promise<ClienteDoDia[]> {
+  const loja = await obterLojaPorSlug(slug);
+  if (!loja) return [];
+  return listarClientesDoDia(loja.slug);
 }

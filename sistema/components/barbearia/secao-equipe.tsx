@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Pencil, Trash2, UserPlus } from "lucide-react";
 
 import {
@@ -15,6 +14,7 @@ import { Campo } from "@/components/ui/campo";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { buscarBarbeiros } from "@/lib/barbearia/api";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
 import { mascararTelefone, sanitizarNome } from "@/lib/formato";
 import { chaves } from "@/lib/query";
@@ -22,18 +22,28 @@ import { cn } from "@/lib/utils";
 
 /**
  * Equipe: formulário de cadastro/edição + tabela de barbeiros ativos.
+ *
+ * A lista vem do React Query e não de `props`: é a MESMA chave que a
+ * Agenda e o Dashboard usam, então cadastrar um barbeiro aqui já conserta
+ * o seletor das outras duas telas, e chegar aqui vindo delas não pede a
+ * lista de novo. A página faz o prefetch no servidor — na primeira
+ * pintura a tabela já está cheia.
  */
 export function SecaoEquipe({
-  barbeiros,
   disponivel,
 }: {
-  barbeiros: Barbeiro[];
   /** False quando a migração 0014 ainda não rodou. */
   disponivel: boolean;
 }) {
-  const router = useRouter();
   const clienteQuery = useQueryClient();
   const { avisar } = useToast();
+
+  const { data: barbeiros = [] } = useQuery({
+    queryKey: chaves.barbearia.barbeiros,
+    queryFn: buscarBarbeiros,
+    // Sem a migração 0014 não há o que buscar, e a tela já diz isso.
+    enabled: disponivel,
+  });
 
   const [idEdicao, setIdEdicao] = useState<string | null>(null);
   const [nome, setNome] = useState("");
@@ -85,10 +95,13 @@ export function SecaoEquipe({
           : `${nome.trim()} entrou na equipe.`,
       });
       limpar();
+      // Invalidar basta: a lista desta tela, o seletor da Agenda e o
+      // filtro do Dashboard leem todos desta chave. `router.refresh()`
+      // saiu daqui — ele remontava a página inteira no servidor, sessão
+      // e tudo, para atualizar uma tabela que o cache já sabia refazer.
       await clienteQuery.invalidateQueries({
         queryKey: chaves.barbearia.barbeiros,
       });
-      router.refresh();
     } catch (causa) {
       console.error("[BARBOS] salvar barbeiro:", causa);
       setErro("Não consegui salvar. Tente de novo.");
@@ -113,10 +126,13 @@ export function SecaoEquipe({
         titulo: "Barbeiro removido",
         descricao: `${b.nome} saiu da equipe ativa.`,
       });
+      // Invalidar basta: a lista desta tela, o seletor da Agenda e o
+      // filtro do Dashboard leem todos desta chave. `router.refresh()`
+      // saiu daqui — ele remontava a página inteira no servidor, sessão
+      // e tudo, para atualizar uma tabela que o cache já sabia refazer.
       await clienteQuery.invalidateQueries({
         queryKey: chaves.barbearia.barbeiros,
       });
-      router.refresh();
     } catch (causa) {
       console.error("[BARBOS] desativar barbeiro:", causa);
       setErro("Não consegui remover. Tente de novo.");

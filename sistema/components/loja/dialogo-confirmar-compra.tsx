@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Minus, Plus } from "lucide-react";
 
 import { confirmarCompra } from "@/app/(sistema)/loja/acoes";
@@ -20,6 +20,7 @@ import {
 import { useToast } from "@/components/ui/toast";
 import type { ClienteDoDia, ProdutoDaLoja } from "@/lib/loja/repositorio";
 import { moeda } from "@/lib/formato";
+import { chaves } from "@/lib/query";
 
 /** Valor do seletor quando a compra não é de ninguém da agenda. */
 const AVULSA = "avulsa";
@@ -49,7 +50,7 @@ export function DialogoConfirmarCompra({
   /** Agendamentos de hoje. Vazio = seletor não aparece. */
   clientes: ClienteDoDia[];
 }) {
-  const router = useRouter();
+  const clienteQuery = useQueryClient();
   const { avisar } = useToast();
   const [destino, setDestino] = useState<string>(AVULSA);
   const [erro, setErro] = useState<string | null>(null);
@@ -97,7 +98,16 @@ export function DialogoConfirmarCompra({
           escolhido ? `no ${rotuloDoCliente(escolhido)}` : "compra avulsa"
         }. Retire no balcão.`,
       });
-      router.refresh();
+      // A vitrine e o estoque mudaram; a agenda também, quando a compra
+      // foi lançada num atendimento (vira item da comanda). Invalidar as
+      // chaves redesenha as três com o número novo. `router.refresh()`
+      // saiu: ele remontava a loja inteira no servidor para atualizar uma
+      // prateleira que o cache sabe refazer sozinho.
+      await Promise.all([
+        clienteQuery.invalidateQueries({ queryKey: chaves.loja.todas }),
+        clienteQuery.invalidateQueries({ queryKey: chaves.estoque.todas }),
+        clienteQuery.invalidateQueries({ queryKey: chaves.agenda.todas }),
+      ]);
     } catch (causa) {
       console.error("[BARBOS] o pedido não completou:", causa);
       setErro(
