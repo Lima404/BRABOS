@@ -12,7 +12,11 @@ import { sanitizarNome } from "@/lib/formato";
 
 const INICIAL: EstadoCadastro = {};
 
-export function FormularioCadastro() {
+/**
+ * O formulário só aparece com um pedido pago em mãos (ver `page.tsx`). O
+ * pedido viaja escondido e o servidor confere de novo antes de criar a conta.
+ */
+export function FormularioCadastro({ pedido }: { pedido: string }) {
   const [estado, acao, enviando] = useActionState(criarConta, INICIAL);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [nomeBarbearia, setNomeBarbearia] = useState("");
@@ -58,6 +62,7 @@ export function FormularioCadastro() {
 
   return (
     <form action={acao} className="space-y-5" noValidate>
+      <input type="hidden" name="pedido" value={pedido} />
       {estado.erro ? (
         <p
           id={idErro}

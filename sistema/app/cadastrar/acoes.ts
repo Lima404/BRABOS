@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { SENHA_MINIMA } from "@/lib/auth/senha";
+import { pedidoParaCadastro } from "@/lib/pagamento/pedido";
 import { sanitizarNome } from "@/lib/formato";
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 
@@ -74,6 +75,7 @@ export async function criarConta(
     .trim()
     .toLowerCase();
   const senha = String(dados.get("senha") ?? "");
+  const pedido = String(dados.get("pedido") ?? "");
 
   if (!nomeBarbearia || !email || !senha) {
     return { erro: "Preencha nome, e-mail e senha." };
@@ -88,6 +90,20 @@ export async function criarConta(
     return { erro: `A senha precisa de pelo menos ${SENHA_MINIMA} caracteres.` };
   }
 
+  // A tela só mostra o formulário com o pedido pago, mas ação de servidor é
+  // endereço público: confere de novo. Quem cria a conta sem pedido (pela
+  // API do Supabase, por fora daqui) nasce bloqueado de qualquer jeito — o
+  // gatilho ao_criar_usuario só libera com pedido pago (0041).
+  const situacao = await pedidoParaCadastro(pedido);
+  if (situacao !== "pode") {
+    return {
+      erro:
+        situacao === "aguardando"
+          ? "O pagamento ainda está sendo confirmado. Espere alguns segundos e tente de novo."
+          : "Esse pagamento não libera um cadastro novo. Fale com a gente no WhatsApp.",
+    };
+  }
+
   const supabase = await criarClienteServidor();
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -96,7 +112,8 @@ export async function criarConta(
       emailRedirectTo: `${await origemDaRequisicao()}/auth/confirmar`,
       // O trigger ao_criar_usuario lê raw_user_meta_data.barbearia →
       // grava barbearias.nome e gera barbearias.slug (link /loja/<slug>).
-      data: { barbearia: nomeBarbearia },
+      // E raw_user_meta_data.pedido → liga o pagamento à conta e a libera.
+      data: { barbearia: nomeBarbearia, pedido },
     },
   });
 

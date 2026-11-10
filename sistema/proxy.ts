@@ -48,7 +48,24 @@ const ROTAS_ABERTAS = [
   // situações, então exigir sessão aqui seria exigir o impossível.
   "/sw.js",
   "/manifest.webmanifest",
+  // ============================================================
+  // O PAGAMENTO (0041)
+  // ============================================================
+  //
+  // `/assinar` é para onde vão os botões de plano do site: quem clica ainda
+  // não tem conta. `/api/asaas` é o webhook, e quem chama é o Asaas, sem
+  // cookie nenhum — barrado, ele recebia 401 e pausava a fila de avisos.
+  // Os dois se protegem sozinhos (a rota do webhook cobra o segredo).
+  "/assinar",
+  "/api/asaas",
 ];
+
+/**
+ * Onde a conta logada SEM pagamento em dia ainda pode entrar. Fora daqui,
+ * ela é mandada para `/assinatura`. Mandar para uma rota que também
+ * barrasse seria um laço de redirecionamento.
+ */
+const ROTAS_SEM_PAGAMENTO = ["/assinatura"];
 
 function comecaCom(caminho: string, rotas: string[]): boolean {
   return rotas.some(
@@ -166,6 +183,34 @@ export async function proxy(request: NextRequest) {
     destino.pathname = "/agenda";
     destino.search = "";
     return herdarCookies(resposta, NextResponse.redirect(destino));
+  }
+
+  // PAGAMENTO (0041): conta logada, rota privada, pagamento vencido →
+  // tela de assinatura. As rotas abertas (loja, agendar) continuam
+  // abertas: a página pública da barbearia segue funcionando, decisão do
+  // Gabriel em 10/11/2026.
+  //
+  // Só bloqueia com a resposta "false" em mãos. Erro na leitura (banco
+  // fora, coluna que ainda não existe antes da migração) deixa passar,
+  // pelo mesmo motivo do LAÇO 1: falha de transporte não é inadimplência.
+  if (user && !ehAberta && !comecaCom(caminho, ROTAS_SEM_PAGAMENTO)) {
+    const { data, error } = await supabase
+      .from("barbearias")
+      .select("pagamento_ativo")
+      .maybeSingle();
+
+    if (!error && data && data.pagamento_ativo === false) {
+      if (ehApi) {
+        return herdarCookies(
+          resposta,
+          NextResponse.json({ erro: "Assinatura pendente." }, { status: 402 }),
+        );
+      }
+      const destino = request.nextUrl.clone();
+      destino.pathname = "/assinatura";
+      destino.search = "";
+      return herdarCookies(resposta, NextResponse.redirect(destino));
+    }
   }
 
   return resposta;

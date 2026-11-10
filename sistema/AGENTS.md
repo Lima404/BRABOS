@@ -1451,3 +1451,83 @@ de conflito junto.
 
 **Limite conhecido:** não há auto-rolagem ao arrastar até a borda. Para mover
 o bloco além do trecho visível, rola-se a faixa antes.
+
+## Pagamento (Asaas) — migração 0041
+
+**A barbearia só entra no sistema com o pagamento em dia.** Quem diz é
+`barbearias.pagamento_ativo`, e quem escreve nela é SÓ o banco: o webhook
+do Asaas, o agendador diário (pg_cron, 00h15) e as ferramentas de liberar
+na mão. A coluna é um resultado, recalculado dos `pedidos`:
+
+| Plano | Vale até |
+|---|---|
+| mensal (cartão, recorrente) | o próximo vencimento **+ 7 dias** de tolerância |
+| anual no cartão (até 12x) ou no PIX (10% off) | 12 meses do pagamento, sem tolerância |
+| manual (liberada por fora) | alguém bloquear |
+
+Decisões do Gabriel em 10/11/2026: 7 dias para a mensalidade, o anual
+bloqueia sozinho no vencimento, e **a página pública de agendamento
+continua funcionando** com a barbearia bloqueada (o bloqueio é só das rotas
+privadas, no `proxy.ts`).
+
+### O caminho de quem assina
+
+```
+site #planos ─▶ /assinar?plano=…  abre o checkout no Asaas, grava o pedido
+             ─▶ checkout do Asaas (pagina hospedada por eles)
+             ─▶ site.barboss.com.br/obrigado?pedido=…   (regra de dominio)
+             ─▶ /cadastrar?pedido=…  formulario só com o pedido pago
+             ─▶ ao_criar_usuario liga o pedido a conta → pagamento_ativo
+```
+
+**O pedido é a chave de tudo.** Sorteado em `/assinar`, vai para o Asaas
+como `externalReference`, volta no endereço do cadastro e viaja no
+`signUp` (`raw_user_meta_data.pedido`). Cada cobrança do Asaas diz de
+onde veio (`checkoutSession`, `subscription` ou `installment`), e é assim
+que as mensalidades seguintes acham o pedido.
+
+**A volta passa pelo site** porque o Asaas só aceita `successUrl` do
+domínio cadastrado em Minha Conta > Informações — hoje
+`site.barboss.com.br`. A página de obrigado de lá repassa o pedido.
+
+**O `successUrl` não prova pagamento.** Quem prova é o webhook. Por isso o
+cadastro com pedido "aguardando" espera (`ConfirmandoPagamento`) em vez de
+abrir o formulário.
+
+### Sem service_role, com segredo
+
+O webhook não tem sessão e a `service_role` continua proibida. A ponte são
+funções `security definer` (`registrar_pedido`, `asaas_evento`) que exigem
+um segredo guardado na tabela `segredos` — o mesmo `ASAAS_WEBHOOK_TOKEN`
+que o Asaas manda no cabeçalho `asaas-access-token`. Sem ele, a chave anon
+(pública) não libera conta nenhuma. `pedidos`, `eventos_asaas` e
+`segredos` têm RLS ligado e nenhuma política: a API não lê nem escreve.
+
+**A dona não consegue se liberar.** A política "edita a propria barbearia"
+deixa ela mudar a própria linha, então o gatilho `proteger_pagamento_ativo`
+devolve o valor antigo quando quem escreve é `anon`/`authenticated`.
+
+**O mesmo valor em três lugares:** Vercel (`ASAAS_WEBHOOK_TOKEN`), painel
+do Asaas (token do webhook) e tabela `segredos`. Trocar é trocar os três.
+Roteiro em `supabase/manutencao/pagamento.sql`.
+
+### Na mão
+
+Pelo SQL Editor, nunca pela API: `liberar_barbearia(email)`,
+`bloquear_barbearia(email)` e `gerar_convites(n)` — link de cadastro já
+liberado, para quem pagou por fora e ainda não tem conta (as 27 barbearias
+de novembro de 2026 entram assim).
+
+### O preço mora em dois lugares
+
+`lib/pagamento/planos.ts` (o que o Asaas cobra) e `site/lib/planos.ts` (o
+que o site mostra). Dois projetos na Vercel, um não importa o outro. Mudou
+um, muda o outro no mesmo commit.
+
+### A ordem de subir
+
+Migração primeiro: a 0041 é compatível com o código no ar (a coluna nova
+ninguém lê, e o proxy deixa passar quando a leitura falha). Depois o
+deploy do sistema com as duas variáveis, depois o webhook no Asaas
+(apontar para uma rota que ainda não existe faz o Asaas pausar a fila), e
+por último o site.
