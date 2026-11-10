@@ -33,6 +33,10 @@ export type SecaoDoPatch = {
   titulo: string;
   texto: string;
   fotos: FotoDoPatch[];
+  /** O botão da seção (0046): endereço http(s) ou caminho do sistema. */
+  link: string | null;
+  /** O texto do botão. Sem ele, a tela escreve `ROTULO_PADRAO_DO_LINK`. */
+  rotuloDoLink: string | null;
 };
 
 /** Uma atualização inteira, como a tela /patch-notes mostra. */
@@ -74,6 +78,64 @@ export const EXTENSAO_DA_FOTO: Record<string, string> = {
 /** O caminho que a `fotos_validas` do banco aceita. */
 export const CAMINHO_DE_FOTO =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|webp)$/;
+
+// ============================================================
+// LINK DA SEÇÃO (0046)
+// ============================================================
+//
+// O endereço vai parar num `href` na tela de TODA barbearia, então só
+// passa http(s) ou um caminho do próprio sistema. Quem recusa de verdade
+// é o `check` do banco (`secao_link_valido`); estas funções são a mesma
+// regra, para a tela avisar antes e para a página não desenhar um botão
+// com endereço que não passaria.
+
+export const LINK_MAX = 2000;
+export const ROTULO_DO_LINK_MAX = 40;
+export const ROTULO_PADRAO_DO_LINK = "Abrir link";
+
+/** A mesma expressão do `check` da 0046. */
+const LINK_VALIDO = /^(https?:\/\/\S+|\/([^/\\\s]\S*)?)$/;
+
+/** Caminho do sistema ("/dashboard") — abre na mesma aba. */
+export function ehLinkInterno(link: string): boolean {
+  return link.startsWith("/");
+}
+
+/**
+ * O que o admin digitou vira o endereço que o banco aceita, ou `null` se
+ * não der. "youtube.com/x" ganha o `https://`; "/agenda" fica como está;
+ * `javascript:`, `mailto:`, "//outro-site" e "/\outro-site" (os dois
+ * últimos o navegador lê como OUTRO domínio) são recusados.
+ */
+export function normalizarLink(bruto: string): string | null {
+  const s = bruto.trim();
+  if (!s) return null;
+
+  if (s.startsWith("/")) {
+    return LINK_VALIDO.test(s) && s.length <= LINK_MAX ? s : null;
+  }
+
+  // Outro esquema ("javascript:", "mailto:") não é endereço de página.
+  // "site.com:8080" não conta: depois dos dois pontos vem número.
+  const temHttp = /^https?:\/\//i.test(s);
+  if (!temHttp && /^[a-z][a-z0-9+.-]*:(?!\d)/i.test(s)) return null;
+
+  try {
+    const url = new URL(temHttp ? s : `https://${s}`);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    // Sem ponto no domínio é palavra digitada no campo errado, não site.
+    if (!url.hostname.includes(".")) return null;
+    const final = url.href;
+    return LINK_VALIDO.test(final) && final.length <= LINK_MAX ? final : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Para a página: só desenha o botão com endereço que o banco aceitaria. */
+export function linkSeguro(link: string | null | undefined): string | null {
+  return link && LINK_VALIDO.test(link) && link.length <= LINK_MAX ? link : null;
+}
 
 /** Sugestões para o nome da seção. Texto livre: entra o que o admin digitar. */
 export const AREAS_SUGERIDAS = [

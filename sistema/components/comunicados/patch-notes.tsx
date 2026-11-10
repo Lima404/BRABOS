@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, RefreshCw } from "lucide-react";
+import { ArrowRight, ExternalLink, FileText, RefreshCw } from "lucide-react";
 
 import {
   listarPatchNotes,
@@ -14,7 +14,14 @@ import { FotoDoPatch } from "@/components/comunicados/foto-do-patch";
 import { Button } from "@/components/ui/button";
 import { Esqueleto } from "@/components/ui/esqueleto";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
-import { ancoraDaVersao, foiEditado, type PatchNote } from "@/lib/comunicados/tipos";
+import {
+  ancoraDaVersao,
+  ehLinkInterno,
+  foiEditado,
+  linkSeguro,
+  ROTULO_PADRAO_DO_LINK,
+  type PatchNote,
+} from "@/lib/comunicados/tipos";
 import { dadosOuErro } from "@/lib/consulta";
 import { diaDoMomento } from "@/lib/formato";
 import { chaves } from "@/lib/query";
@@ -206,6 +213,8 @@ function Versao({ patch }: { patch: PatchNote }) {
           </h3>
           <p className="whitespace-pre-line text-base text-foreground">{secao.texto}</p>
 
+          {secao.link ? <BotaoDoLink link={secao.link} rotulo={secao.rotuloDoLink} /> : null}
+
           {secao.fotos.length > 0 ? (
             <ul className="grid gap-3 sm:grid-cols-2">
               {secao.fotos.map((foto, n) => (
@@ -232,5 +241,42 @@ function Versao({ patch }: { patch: PatchNote }) {
         </section>
       ))}
     </article>
+  );
+}
+
+/**
+ * O botão de uma seção (0046). Tela do sistema abre na mesma aba, como
+ * qualquer link do menu; site de fora abre noutra, para a barbearia não
+ * perder o BARBOS de vista. `outline`, nunca âmbar: a página é de leitura,
+ * e com vários botões âmbar nenhum seria a ação.
+ */
+function BotaoDoLink({ link, rotulo }: { link: string; rotulo: string | null }) {
+  const endereco = linkSeguro(link);
+  if (!endereco) return null;
+
+  const texto = rotulo?.trim() || ROTULO_PADRAO_DO_LINK;
+  // Rótulo de até 40 letras não cabe numa linha no celular: quebra em vez
+  // de vazar do cartão, sem deixar de ter 44px de altura.
+  const forma = "h-auto min-h-11 max-w-full self-start py-2 text-left whitespace-normal";
+
+  if (ehLinkInterno(endereco)) {
+    return (
+      <Button asChild variant="outline" className={forma}>
+        <Link href={endereco}>
+          {texto}
+          <ArrowRight aria-hidden />
+        </Link>
+      </Button>
+    );
+  }
+
+  return (
+    <Button asChild variant="outline" className={forma}>
+      <a href={endereco} target="_blank" rel="noopener noreferrer">
+        {texto}
+        <ExternalLink aria-hidden />
+        <span className="sr-only">(abre noutra aba)</span>
+      </a>
+    </Button>
   );
 }

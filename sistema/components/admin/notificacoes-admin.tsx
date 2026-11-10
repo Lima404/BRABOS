@@ -15,6 +15,7 @@ import {
 import {
   EditorDeSecoes,
   secaoVazia,
+  type ErrosDaSecao,
   type SecaoEmEdicao,
 } from "@/components/admin/editor-de-secoes";
 import { CartaoDeComunicado } from "@/components/comunicados/cartao-comunicado";
@@ -31,6 +32,7 @@ import { useToast } from "@/components/ui/toast";
 import {
   compararVersoes,
   linkDoPatch,
+  normalizarLink,
   PRIMEIRA_VERSAO,
   proximaVersao,
   TEXTO_MAX,
@@ -200,7 +202,7 @@ type ErrosDoFormulario = {
   versao?: string;
   titulo?: string;
   texto?: string;
-  secoes: Record<string, { titulo?: string; texto?: string }>;
+  secoes: Record<string, ErrosDaSecao>;
 };
 
 function DialogoComunicado({
@@ -224,7 +226,14 @@ function DialogoComunicado({
   const [texto, setTexto] = useState(editando?.texto ?? "");
   const [secoes, setSecoes] = useState<SecaoEmEdicao[]>(() =>
     editando && editando.secoes.length > 0
-      ? editando.secoes.map((s) => ({ chave: crypto.randomUUID(), ...s }))
+      ? editando.secoes.map((s) => ({
+          chave: crypto.randomUUID(),
+          titulo: s.titulo,
+          texto: s.texto,
+          fotos: s.fotos,
+          link: s.link ?? "",
+          rotuloDoLink: s.rotuloDoLink ?? "",
+        }))
       : [secaoVazia()],
   );
   const [erros, setErros] = useState<ErrosDoFormulario>({ secoes: {} });
@@ -269,10 +278,13 @@ function DialogoComunicado({
         novos.versao = `Precisa ser maior que a atual (${versaoDoSistema}).`;
       }
       for (const s of secoes) {
-        const e: { titulo?: string; texto?: string } = {};
+        const e: ErrosDaSecao = {};
         if (!s.titulo.trim()) e.titulo = "Diga que parte do sistema mudou.";
         if (!s.texto.trim()) e.texto = "Escreva o que mudou.";
-        if (e.titulo || e.texto) novos.secoes[s.chave] = e;
+        if (s.link.trim() && !normalizarLink(s.link)) {
+          e.link = "Endereço inválido. Use um site (https://…) ou uma tela do sistema, como /agenda.";
+        }
+        if (e.titulo || e.texto || e.link) novos.secoes[s.chave] = e;
       }
     }
 
@@ -305,6 +317,8 @@ function DialogoComunicado({
               titulo: s.titulo,
               texto: s.texto,
               fotos: s.fotos.map((f) => f.caminho),
+              link: s.link,
+              rotuloDoLink: s.rotuloDoLink,
             })),
           })
         : await salvarAlerta({ id: editando?.id, titulo, texto });

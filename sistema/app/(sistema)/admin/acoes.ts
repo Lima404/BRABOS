@@ -18,6 +18,8 @@ import {
   CAMINHO_DE_FOTO,
   ehTipoDeComunicado,
   FOTOS_POR_SECAO,
+  normalizarLink,
+  ROTULO_DO_LINK_MAX,
   SECOES_MAX,
   TEXTO_MAX,
   TITULO_MAX,
@@ -133,7 +135,13 @@ export async function obterMovimentoDoPainel(
   }
 }
 
-type SecaoCrua = { titulo: unknown; texto: unknown; fotos: unknown };
+type SecaoCrua = {
+  titulo: unknown;
+  texto: unknown;
+  fotos: unknown;
+  link?: unknown;
+  link_rotulo?: unknown;
+};
 
 export async function listarComunicadosDoAdmin(): Promise<
   Consulta<ComunicadoDoAdmin[]>
@@ -272,7 +280,13 @@ export async function salvarAtualizacao(entrada: {
   versao: string;
   titulo: string;
   texto: string;
-  secoes: { titulo: string; texto: string; fotos: string[] }[];
+  secoes: {
+    titulo: string;
+    texto: string;
+    fotos: string[];
+    link?: string;
+    rotuloDoLink?: string;
+  }[];
 }): Promise<Resultado> {
   if (entrada.id !== undefined && !UUID.test(entrada.id)) {
     return { ok: false, erro: "Atualização não encontrada. Recarregue a página." };
@@ -291,7 +305,13 @@ export async function salvarAtualizacao(entrada: {
     return { ok: false, erro: `No máximo ${SECOES_MAX} seções por versão.` };
   }
 
-  const secoes: { titulo: string; texto: string; fotos: string[] }[] = [];
+  const secoes: {
+    titulo: string;
+    texto: string;
+    fotos: string[];
+    link: string | null;
+    link_rotulo: string | null;
+  }[] = [];
   for (const [i, s] of brutas.entries()) {
     const titulo = comoEscrito(s?.titulo);
     const corpo = comoEscrito(s?.texto);
@@ -312,7 +332,26 @@ export async function salvarAtualizacao(entrada: {
     if (!fotos.every((f) => CAMINHO_DE_FOTO.test(f))) {
       return { ok: false, erro: "Uma das fotos não subiu direito. Tire e envie de novo." };
     }
-    secoes.push({ titulo, texto: corpo, fotos });
+
+    // O link é opcional. Digitado, precisa virar um endereço que o banco
+    // aceite; o rótulo sem link não tem botão onde morar e cai junto.
+    const linkDigitado = comoEscrito(s?.link);
+    const link = linkDigitado ? normalizarLink(linkDigitado) : null;
+    if (linkDigitado && !link) {
+      return {
+        ok: false,
+        erro: `O link da seção ${n} não é um endereço válido. Use um site (https://…) ou uma tela do sistema, como /agenda.`,
+      };
+    }
+    const rotulo = link ? comoEscrito(s?.rotuloDoLink) || null : null;
+    if (rotulo && rotulo.length > ROTULO_DO_LINK_MAX) {
+      return {
+        ok: false,
+        erro: `O texto do botão da seção ${n} passa de ${ROTULO_DO_LINK_MAX} letras.`,
+      };
+    }
+
+    secoes.push({ titulo, texto: corpo, fotos, link, link_rotulo: rotulo });
   }
 
   try {

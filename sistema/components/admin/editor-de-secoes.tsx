@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { ArrowDown, ArrowUp, ImagePlus, Plus, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, ImagePlus, Link2, Plus, Trash2, Unlink, X } from "lucide-react";
 
 import { FotoDoPatch } from "@/components/comunicados/foto-do-patch";
 import { Alerta } from "@/components/ui/alerta";
@@ -16,6 +16,9 @@ import {
   EXTENSAO_DA_FOTO,
   FOTO_BYTES_MAX,
   FOTOS_POR_SECAO,
+  LINK_MAX,
+  ROTULO_DO_LINK_MAX,
+  ROTULO_PADRAO_DO_LINK,
   SECOES_MAX,
   TEXTO_MAX,
   type FotoDoPatch as Foto,
@@ -28,15 +31,29 @@ export type SecaoEmEdicao = {
   titulo: string;
   texto: string;
   fotos: Foto[];
+  /** Vazio = seção sem botão. Como foi digitado; quem arruma é o servidor. */
+  link: string;
+  rotuloDoLink: string;
 };
 
+/** O que cada seção pode ter de errado no formulário. */
+export type ErrosDaSecao = { titulo?: string; texto?: string; link?: string };
+
 export function secaoVazia(): SecaoEmEdicao {
-  return { chave: crypto.randomUUID(), titulo: "", texto: "", fotos: [] };
+  return {
+    chave: crypto.randomUUID(),
+    titulo: "",
+    texto: "",
+    fotos: [],
+    link: "",
+    rotuloDoLink: "",
+  };
 }
 
 /**
  * As seções de um patch note: uma por fluxo do sistema ("Agendamento",
- * "Dashboard", "Nova ferramenta"), cada uma com texto e até 6 fotos.
+ * "Dashboard", "Nova ferramenta"), cada uma com texto, até 6 fotos e um
+ * link opcional, que vira botão no patch note.
  *
  * A foto SOBE NA HORA para o bucket, direto do navegador com a sessão do
  * admin (a política do Storage só aceita a conta admin). Assim o "Publicar"
@@ -54,7 +71,7 @@ export function EditorDeSecoes({
   aoMudar: Dispatch<SetStateAction<SecaoEmEdicao[]>>;
   aoEnviarFoto: (caminho: string) => void;
   /** Por `chave`: o que falta em cada seção. */
-  erros: Record<string, { titulo?: string; texto?: string }>;
+  erros: Record<string, ErrosDaSecao>;
 }) {
   function mudar(chave: string, parte: Partial<SecaoEmEdicao>) {
     aoMudar((atual) => atual.map((s) => (s.chave === chave ? { ...s, ...parte } : s)));
@@ -146,7 +163,7 @@ function CartaoDaSecao({
   primeira: boolean;
   ultima: boolean;
   sozinha: boolean;
-  erros: { titulo?: string; texto?: string };
+  erros: ErrosDaSecao;
   aoMudar: (parte: Partial<SecaoEmEdicao>) => void;
   aoAdicionarFoto: (foto: Foto) => void;
   aoEnviarFoto: (caminho: string) => void;
@@ -157,6 +174,9 @@ function CartaoDaSecao({
   const entrada = useRef<HTMLInputElement>(null);
   const [enviando, setEnviando] = useState(0);
   const [erroDasFotos, setErroDasFotos] = useState<string | null>(null);
+  // O link fica escondido atrás de um botão: a maioria das seções não tem.
+  const [comLink, setComLink] = useState(secao.link.trim() !== "");
+  const campoDoLink = useRef<HTMLInputElement>(null);
 
   const vagas = FOTOS_POR_SECAO - secao.fotos.length;
   const nome = secao.titulo.trim() || `Seção ${numero}`;
@@ -210,6 +230,17 @@ function CartaoDaSecao({
 
     if (recusas.length > 0) setErroDasFotos(recusas.join(" "));
     if (entrada.current) entrada.current.value = "";
+  }
+
+  function abrirLink() {
+    setComLink(true);
+    // O campo só existe depois deste clique: o foco vai no quadro seguinte.
+    requestAnimationFrame(() => campoDoLink.current?.focus());
+  }
+
+  function tirarLink() {
+    setComLink(false);
+    aoMudar({ link: "", rotuloDoLink: "" });
   }
 
   function tirarFoto(caminho: string) {
@@ -286,6 +317,69 @@ function CartaoDaSecao({
           onChange={(e) => aoMudar({ texto: e.target.value })}
         />
       </Campo>
+
+      {/* Mesma ordem da página: o botão vem logo depois do texto. */}
+      {comLink ? (
+        <div className="flex flex-col gap-4 rounded-md border border-border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-medium">
+              Link{" "}
+              <span className="font-normal text-muted-foreground">(opcional)</span>
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={tirarLink}
+              className="text-muted-foreground hover:text-faltou"
+            >
+              <Unlink />
+              Tirar link
+            </Button>
+          </div>
+
+          <Campo
+            rotulo="Endereço"
+            ajuda="Um site (https://…) ou uma tela do sistema, como /agenda. Vira um botão no patch note."
+            erro={erros.link}
+          >
+            <Input
+              ref={campoDoLink}
+              value={secao.link}
+              maxLength={LINK_MAX}
+              inputMode="url"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="https://"
+              onChange={(e) => aoMudar({ link: e.target.value })}
+            />
+          </Campo>
+
+          <Campo
+            rotulo="Texto do botão"
+            opcional
+            ajuda={`Ex.: Ver o vídeo, Abrir a agenda. Sem texto, o botão diz "${ROTULO_PADRAO_DO_LINK}".`}
+          >
+            <Input
+              value={secao.rotuloDoLink}
+              maxLength={ROTULO_DO_LINK_MAX}
+              placeholder={ROTULO_PADRAO_DO_LINK}
+              onChange={(e) => aoMudar({ rotuloDoLink: e.target.value })}
+            />
+          </Campo>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm font-medium">
+            Link{" "}
+            <span className="font-normal text-muted-foreground">(opcional)</span>
+          </p>
+          <Button type="button" variant="outline" onClick={abrirLink}>
+            <Link2 />
+            Adicionar link
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">

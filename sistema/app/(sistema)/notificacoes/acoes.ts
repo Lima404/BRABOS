@@ -122,7 +122,7 @@ export async function listarPatchNotes(): Promise<Consulta<PatchNote[]>> {
     const { data, error } = await supabase
       .from("comunicados")
       .select(
-        "id, tipo, versao, titulo, texto, publicado_em, atualizado_em, secoes:comunicado_secoes(ordem, titulo, texto, fotos)",
+        "id, tipo, versao, titulo, texto, publicado_em, atualizado_em, secoes:comunicado_secoes(ordem, titulo, texto, fotos, link, link_rotulo)",
       )
       .eq("tipo", "atualizacao")
       .not("versao", "is", null)
@@ -138,7 +138,16 @@ export async function listarPatchNotes(): Promise<Consulta<PatchNote[]>> {
       texto: string;
       publicado_em: string;
       atualizado_em: string;
-      secoes: { ordem: number; titulo: unknown; texto: unknown; fotos: unknown }[] | null;
+      secoes:
+        | {
+            ordem: number;
+            titulo: unknown;
+            texto: unknown;
+            fotos: unknown;
+            link: unknown;
+            link_rotulo: unknown;
+          }[]
+        | null;
     };
     const linhas = (data ?? []) as unknown as Linha[];
     const ordenadas = linhas.map((l) => ({

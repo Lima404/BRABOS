@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   BUCKET_DAS_FOTOS,
   CAMINHO_DE_FOTO,
+  linkSeguro,
   type FotoDoPatch,
   type SecaoDoPatch,
 } from "@/lib/comunicados/tipos";
@@ -54,16 +55,30 @@ export async function assinarFotos(
 
 /** As seções cruas do banco viram `SecaoDoPatch`, com a foto já assinada. */
 export function secoesComFotos(
-  brutas: { titulo: unknown; texto: unknown; fotos: unknown }[],
+  brutas: {
+    titulo: unknown;
+    texto: unknown;
+    fotos: unknown;
+    link?: unknown;
+    link_rotulo?: unknown;
+  }[],
   assinadas: Map<string, string>,
 ): SecaoDoPatch[] {
-  return brutas.map((s) => ({
-    titulo: String(s.titulo ?? ""),
-    texto: String(s.texto ?? ""),
-    fotos: (Array.isArray(s.fotos) ? s.fotos : [])
-      .filter((c): c is string => typeof c === "string")
-      .map((caminho): FotoDoPatch => ({ caminho, url: assinadas.get(caminho) ?? "" })),
-  }));
+  return brutas.map((s) => {
+    const link = linkSeguro(typeof s.link === "string" ? s.link : null);
+    return {
+      titulo: String(s.titulo ?? ""),
+      texto: String(s.texto ?? ""),
+      fotos: (Array.isArray(s.fotos) ? s.fotos : [])
+        .filter((c): c is string => typeof c === "string")
+        .map((caminho): FotoDoPatch => ({ caminho, url: assinadas.get(caminho) ?? "" })),
+      link,
+      rotuloDoLink:
+        link && typeof s.link_rotulo === "string" && s.link_rotulo.trim()
+          ? s.link_rotulo
+          : null,
+    };
+  });
 }
 
 /** Todos os caminhos de foto de uma lista de seções cruas. */

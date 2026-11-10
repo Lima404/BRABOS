@@ -28,7 +28,7 @@ export function traduzirErro(
     erro.code === "42883" ||
     erro.code === "42P01"
   ) {
-    return "Isto ainda não está ligado no banco. Rode as migrações 0044 e 0045.";
+    return "Isto ainda não está ligado no banco. Rode as migrações 0044, 0045 e 0046.";
   }
   if (erro.code === "42501") {
     return "Isto é só da conta admin.";

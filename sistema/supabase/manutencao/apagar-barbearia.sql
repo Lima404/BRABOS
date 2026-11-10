@@ -68,7 +68,11 @@ declare
   -- semanas protegendo um apelido que nao existia mais.
   -- Se o apelido mudar de novo, MUDE AQUI: uma trava apontando para um
   -- apelido que nao existe nao protege nada, e nao avisa que nao protege.
-  v_protegida constant text := 'BARBOS';
+  --
+  -- Desde 10/11/2026 sao DUAS: a 'barbo' e a segunda conta de teste
+  -- (barbearia comum, sem admin), criada a pedido do Gabriel para ver o
+  -- sistema como uma barbearia qualquer ve.
+  v_protegidas constant text[] := array['BARBOS', 'barbo'];
 
   v_alvo   record;
   v_quant  int := 0;
@@ -76,11 +80,11 @@ begin
   -- Conferência antes de tocar em qualquer linha.
   if exists (
     select 1 from public.barbearias
-    where id = any(v_ids) and slug = v_protegida
+    where id = any(v_ids) and slug = any(v_protegidas)
   ) then
     raise exception
-      'BARBOS: a lista inclui a barbearia de trabalho (%). Tire o id dela e rode de novo.',
-      v_protegida;
+      'BARBOS: a lista inclui uma barbearia de teste (%). Tire o id dela e rode de novo.',
+      array_to_string(v_protegidas, ', ');
   end if;
 
   if not exists (select 1 from public.barbearias where id = any(v_ids)) then

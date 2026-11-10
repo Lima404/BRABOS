@@ -197,6 +197,15 @@ projeto pausado — e o banco foi recriado do zero num projeto novo, pelo
 pelo Gabriel em 10/11/2026) — e a trava do `apagar-barbearia.sql` passou
 semanas protegendo `bicos`, que não existia mais.
 
+**A segunda conta de teste é a BARBO (apelido `barbo`)**, criada em
+10/11/2026 a pedido do Gabriel. É uma barbearia COMUM — sem `admin` —
+para ver o sistema como qualquer barbearia vê (o sino, o patch notes, e o
+Painel Admin respondendo 404). Fica sempre liberada: um pedido `manual`
+pago e sem `acesso_ate`, que não vence (feito com `liberar_barbearia`).
+Ela nasceu num login que já existia para o e-mail, órfão desde outubro
+(sem linha em `barbearias`): a barbearia foi ligada a ele em vez de
+apagar e recriar o login. Também é protegida no `apagar-barbearia.sql`.
+
 Três lugares dependem desse apelido e têm que andar juntos se ele mudar de
 novo: `scripts/conta-de-teste.mjs` (`APELIDO_DA_BARBEARIA`),
 `supabase/manutencao/apagar-barbearia.sql` (`v_protegida`) e este arquivo. Uma
@@ -1047,7 +1056,8 @@ texto, nome e texto das seções do patch note). Pedido do Gabriel em
 10/11/2026, depois de ver "NOTIFICAÇOES" e "evoluÇao" na própria tela. Ali
 nada é sanitizado, nem no campo nem na ação: é texto de LEITURA, escrito
 por uma pessoa só, que não é comparado, buscado nem usado como nome. A
-ação só tira o `` e o caractere nulo e apara as pontas
+ação só tira o `
+` e o caractere nulo e apara as pontas
 (`comoEscrito`, em `app/(sistema)/admin/acoes.ts`). O campo de versão
 também aceita qualquer tecla; quem cobra o formato 1.0 / 1.1 / 1.2.3 é a
 validação e o `check` do banco.
@@ -1744,3 +1754,29 @@ estilo das notas de versão do LoL"). O alerta continua como era.
 **A ordem de subir:** 0045 antes do deploy. Ela só acrescenta (as duas
 funções que mudam de formato só GANHAM colunas), então o código no ar não
 sente. O código novo sem ela responde "Rode as migrações 0044 e 0045".
+
+### Link nas seções — migração 0046
+
+**Cada seção pode levar um link, que vira botão no patch note** (pedido
+do Gabriel em 10/11/2026). No editor, o botão "Adicionar link" do card
+abre dois campos: o endereço e o texto do botão (opcional; sem ele, "Abrir
+link"). Na página o botão vem logo depois do texto da seção, antes das
+fotos, e é `outline` — página de leitura não tem ação âmbar.
+
+- **O endereço vai parar num `href` na tela de toda barbearia**, então
+  só passa `http(s)://…` ou um caminho do sistema (`/agenda`). Quem recusa
+  é o `check` `secao_link_valido`; `normalizarLink` (em
+  `lib/comunicados/tipos.ts`) é a mesma regra para a tela avisar antes, e
+  `linkSeguro` confere de novo antes de desenhar o botão. Fora ficam
+  `javascript:`, `data:`, `mailto:`, e também `//site` e `/\site`, que o
+  navegador lê como OUTRO domínio.
+- **"youtube.com/x" ganha o `https://` sozinho**, no servidor. O campo
+  aceita qualquer tecla, como o resto do modal; quem arruma é a ação.
+- **Tela do sistema abre na mesma aba; site de fora abre noutra**, para a
+  barbearia não perder o BARBOS de vista.
+- Rótulo sem link não existe (`check` `secao_link_rotulo`): tirar o link
+  no editor apaga os dois.
+
+**A ordem de subir:** 0046 antes do deploy. Só acrescenta duas colunas
+anuláveis e duas chaves no jsonb da `admin_comunicados`; o código novo sem
+ela não abre o `/patch-notes` (pede as colunas no embed).
