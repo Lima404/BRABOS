@@ -1011,9 +1011,10 @@ categoria só vira um bloco atravessando a tela: grita e não compara com nada.
 "mais fraco" e "média" seriam o mesmo número três vezes — o que parece defeito
 mesmo estando certo.
 
-**A tela ocupa a largura toda:** sem `max-w`, sem `mx-auto`. É a única em que
-comparar blocos vale mais que a coluna estreita de leitura. O respiro lateral
-vem do `<main>` do layout, que é margem e não caixa.
+**A tela ocupa a largura toda:** sem `max-w`, sem `mx-auto`. Comparar blocos
+vale mais aqui que a coluna estreita de leitura. O respiro lateral vem do
+`<main>` do layout, que é margem e não caixa. (O `/patch-notes` também é
+largura toda desde 10/11/2026 — ver "Patch notes".)
 
 ## Nenhum input do sistema aceita acento
 
@@ -1746,6 +1747,14 @@ estilo das notas de versão do LoL"). O alerta continua como era.
 - **`/patch-notes`** mostra a versão do sistema em destaque, o índice das
   versões e cada versão inteira, pela VERSÃO (não pela data). Abrir a
   página marca as atualizações como lidas.
+- **A página ocupa a largura toda, e cada seção é um cartão** (pedido do
+  Gabriel em 10/11/2026). O cabeçalho da versão (título e resumo) é uma
+  faixa; embaixo, uma grade com um cartão por parte do sistema: 1 coluna
+  no celular, 2 a partir de `lg`, 3 em `2xl`. Cartões da mesma linha têm a
+  mesma altura. O resumo fica limitado a `max-w-3xl`: na tela toda a linha
+  de texto passaria de 150 letras. O cartão tem a faixa âmbar à esquerda,
+  a mesma do cartão de seção no editor. O esqueleto (`FormaDosPatchNotes`)
+  é o mesmo no `loading.tsx` e no carregamento do componente.
 - **O sino abre um painel** (Sheet) com as 15 mais recentes. Atualização
   leva a `/patch-notes#versao-1-1`; alerta, ao texto inteiro em
   `/notificacoes#notificacao-…`. O número some quando o painel FECHA:

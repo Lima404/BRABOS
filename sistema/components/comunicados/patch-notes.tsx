@@ -11,8 +11,8 @@ import {
 } from "@/app/(sistema)/notificacoes/acoes";
 import { useNaoLidos } from "@/components/comunicados/nao-lidos";
 import { FotoDoPatch } from "@/components/comunicados/foto-do-patch";
+import { FormaDosPatchNotes } from "@/components/comunicados/forma-dos-patch-notes";
 import { Button } from "@/components/ui/button";
-import { Esqueleto } from "@/components/ui/esqueleto";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import {
   ancoraDaVersao,
@@ -21,6 +21,7 @@ import {
   linkSeguro,
   ROTULO_PADRAO_DO_LINK,
   type PatchNote,
+  type SecaoDoPatch,
 } from "@/lib/comunicados/tipos";
 import { dadosOuErro } from "@/lib/consulta";
 import { diaDoMomento } from "@/lib/formato";
@@ -30,8 +31,13 @@ import { chaves } from "@/lib/query";
  * Os patch notes do BARBOS — a história das versões, como um blog.
  *
  * No topo, a versão do sistema (a maior publicada) e o índice das versões.
- * Embaixo, cada versão inteira: título, resumo e as seções por parte do
- * sistema, com as fotos. A mais nova em cima.
+ * Embaixo, cada versão: o cabeçalho (título e resumo) numa faixa da largura
+ * toda e, abaixo dele, UM CARTÃO POR SEÇÃO, em grade. A mais nova em cima.
+ *
+ * Largura toda, como o dashboard, a pedido do Gabriel (10/11/2026): com
+ * cada parte do sistema no seu cartão, a barbearia passa o olho e acha a
+ * que interessa, em vez de rolar um texto corrido. O que é texto longo
+ * (o resumo) continua com largura de leitura.
  *
  * Abrir a página conta como ler as atualizações: o sino para de contá-las.
  */
@@ -92,9 +98,8 @@ export function PatchNotes() {
   if (isPending) {
     return (
       <Moldura>
-        <div role="status" aria-label="Carregando os patch notes" className="flex flex-col gap-6">
-          <Esqueleto className="h-32" />
-          <Esqueleto className="h-96" />
+        <div role="status" aria-label="Carregando os patch notes">
+          <FormaDosPatchNotes />
         </div>
       </Moldura>
     );
@@ -124,7 +129,7 @@ export function PatchNotes() {
       {/* A versão do sistema, em destaque: é a primeira coisa que se lê. */}
       <section
         aria-label="Versão atual"
-        className="flex flex-col gap-4 rounded-lg border border-primary/40 bg-primary/5 p-5 sm:p-6"
+        className="flex flex-col gap-4 rounded-lg border border-primary/40 bg-primary/5 p-5 sm:p-6 lg:flex-row lg:items-end lg:justify-between"
       >
         <div>
           <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
@@ -139,9 +144,9 @@ export function PatchNotes() {
         </div>
 
         {data.length > 1 ? (
-          <nav aria-label="Versões" className="flex flex-col gap-2">
+          <nav aria-label="Versões" className="flex flex-col gap-2 lg:items-end">
             <p className="text-sm font-medium">Todas as versões</p>
-            <ul className="flex flex-wrap gap-2">
+            <ul className="flex flex-wrap gap-2 lg:justify-end">
               {data.map((p) => (
                 <li key={p.id}>
                   <Button asChild variant="outline">
@@ -156,9 +161,11 @@ export function PatchNotes() {
         ) : null}
       </section>
 
-      {data.map((p) => (
-        <Versao key={p.id} patch={p} />
-      ))}
+      <div className="flex flex-col gap-10">
+        {data.map((p) => (
+          <Versao key={p.id} patch={p} />
+        ))}
+      </div>
     </Moldura>
   );
 }
@@ -166,7 +173,7 @@ export function PatchNotes() {
 /** Título fixo da página, nos quatro estados. */
 function Moldura({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Patch notes</h1>
         <p className="text-muted-foreground">O que mudou em cada versão do BARBOS.</p>
@@ -178,6 +185,7 @@ function Moldura({ children }: { children: React.ReactNode }) {
 
 function Versao({ patch }: { patch: PatchNote }) {
   const idDoTitulo = `${ancoraDaVersao(patch.versao)}-titulo`;
+  const partes = patch.secoes.length;
 
   return (
     <article
@@ -185,9 +193,9 @@ function Versao({ patch }: { patch: PatchNote }) {
       aria-labelledby={idDoTitulo}
       // scroll-mt: o cabeçalho é fixo, e o link do sino não pode parar com
       // o número da versão escondido atrás dele.
-      className="flex scroll-mt-24 flex-col gap-6 rounded-lg border border-border bg-card p-5 sm:p-6"
+      className="flex scroll-mt-24 flex-col gap-4"
     >
-      <header className="flex flex-col gap-2 border-b border-border pb-5">
+      <header className="flex flex-col gap-2 rounded-lg border border-border bg-card p-5 sm:p-6">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
           <span
             data-numero
@@ -196,51 +204,76 @@ function Versao({ patch }: { patch: PatchNote }) {
             Versão {patch.versao}
           </span>
           <time dateTime={patch.publicadoEm}>{diaDoMomento(patch.publicadoEm)}</time>
+          {partes > 0 ? (
+            <span data-numero>
+              {partes} {partes === 1 ? "parte do sistema" : "partes do sistema"}
+            </span>
+          ) : null}
           {foiEditado(patch) ? <span>editada</span> : null}
         </p>
         <h2 id={idDoTitulo} className="text-2xl font-bold tracking-tight">
           {patch.titulo}
         </h2>
-        <p className="whitespace-pre-line text-base text-foreground">{patch.texto}</p>
+        {/* Largura de leitura: na tela toda a linha passaria de 150 letras. */}
+        <p className="max-w-3xl whitespace-pre-line text-base text-foreground">{patch.texto}</p>
       </header>
 
-      {patch.secoes.map((secao, i) => (
-        <section key={`${patch.id}-${i}`} className="flex flex-col gap-3">
-          {/* A faixa âmbar à esquerda é o "cabeçalho de seção" das notas de
-              versão; o nome em maiúsculas é que diz qual parte mudou. */}
-          <h3 className="border-l-4 border-l-ambar-500 pl-3 text-lg font-bold tracking-wide uppercase">
-            {secao.titulo}
-          </h3>
-          <p className="whitespace-pre-line text-base text-foreground">{secao.texto}</p>
-
-          {secao.link ? <BotaoDoLink link={secao.link} rotulo={secao.rotuloDoLink} /> : null}
-
-          {secao.fotos.length > 0 ? (
-            <ul className="grid gap-3 sm:grid-cols-2">
-              {secao.fotos.map((foto, n) => (
-                <li key={foto.caminho}>
-                  {foto.url ? (
-                    // A foto inteira abre noutra aba: o quadro aqui é pequeno
-                    // para ler um print de tela.
-                    <a
-                      href={foto.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`${secao.titulo}: abrir a foto ${n + 1} em tamanho real`}
-                      className="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                    >
-                      <FotoDoPatch url={foto.url} alt={`${secao.titulo}: foto ${n + 1}`} />
-                    </a>
-                  ) : (
-                    <FotoDoPatch url="" alt="" />
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </section>
-      ))}
+      {partes > 0 ? (
+        <ul
+          aria-label={`O que mudou na versão ${patch.versao}`}
+          className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3"
+        >
+          {patch.secoes.map((secao, i) => (
+            // `flex` no item: os cartões da mesma linha ficam da mesma altura.
+            <li key={`${patch.id}-${i}`} className="flex">
+              <CartaoDaSecao secao={secao} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </article>
+  );
+}
+
+/**
+ * Uma parte do sistema que mudou, no seu cartão. A faixa âmbar à esquerda
+ * é a mesma do cartão de seção no editor do admin: quem escreve vê a forma
+ * que a barbearia vai ler.
+ */
+function CartaoDaSecao({ secao }: { secao: SecaoDoPatch }) {
+  return (
+    <section className="flex min-w-0 flex-1 flex-col gap-3 rounded-lg border border-l-4 border-border border-l-ambar-500 bg-card p-5">
+      <h3 className="text-lg font-bold tracking-wide uppercase">{secao.titulo}</h3>
+      <p className="whitespace-pre-line text-base text-foreground">{secao.texto}</p>
+
+      {secao.link ? <BotaoDoLink link={secao.link} rotulo={secao.rotuloDoLink} /> : null}
+
+      {secao.fotos.length > 0 ? (
+        // Duas por linha a partir do celular deitado; a última sozinha
+        // (ou a única) ocupa a linha inteira em vez de deixar um buraco.
+        <ul className="grid gap-2 sm:grid-cols-2 sm:[&>li:last-child:nth-child(odd)]:col-span-2">
+          {secao.fotos.map((foto, n) => (
+            <li key={foto.caminho}>
+              {foto.url ? (
+                // A foto inteira abre noutra aba: o quadro aqui é pequeno
+                // para ler um print de tela.
+                <a
+                  href={foto.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${secao.titulo}: abrir a foto ${n + 1} em tamanho real`}
+                  className="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                  <FotoDoPatch url={foto.url} alt={`${secao.titulo}: foto ${n + 1}`} />
+                </a>
+              ) : (
+                <FotoDoPatch url="" alt="" />
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }
 

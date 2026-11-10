@@ -139,7 +139,7 @@ export function Sino() {
               className="m-2"
             />
           ) : (
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col gap-2">
               {lista.data.slice(0, NO_SINO).map((c) => (
                 <li key={c.id}>
                   <ItemDoSino comunicado={c} aoAbrir={fechar} />
@@ -182,10 +182,17 @@ function ItemDoSino({
     <Link
       href={destino}
       onClick={aoAbrir}
+      // Borda fina e hover âmbar dizem "dá para tocar". A borda é a mesma do
+      // botão `outline` do rodapé: graf-200 no claro, graf-400 no escuro
+      // (4,4:1 sobre o painel; a `border` comum some ali, 1,2:1). O hover
+      // não pode ser `secondary`: no escuro ela é a MESMA cor do painel.
+      // Os `dark:hover:` repetidos existem porque o `dark:` ganharia do
+      // `hover:` no tema escuro.
       className={cn(
-        "flex gap-3 rounded-lg p-3 transition-colors hover:bg-secondary/60",
+        "flex gap-3 rounded-lg border border-border p-3 transition-colors dark:border-input",
+        "hover:border-primary hover:bg-accent dark:hover:border-primary dark:hover:bg-accent",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        c.nova && "bg-secondary/40",
+        c.nova && "bg-secondary/40 dark:bg-graf-700/40",
       )}
     >
       <Icone
