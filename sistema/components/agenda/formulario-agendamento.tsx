@@ -452,9 +452,10 @@ export function FormularioAgendamento({
               className="border-dashed bg-secondary/30"
             />
           </Campo>
+          {/* Âmbar a pedido do Gabriel (10/11/2026), mesmo com o
+              "Confirmar horário" também âmbar na tela. */}
           <Button
             type="button"
-            variant="ghost"
             className="self-start"
             onClick={() => {
               setParaOutraPessoa(true);
