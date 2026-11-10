@@ -1,5 +1,6 @@
 import { AlertTriangle, Sparkles, type LucideIcon } from "lucide-react";
 
+import { FitaDeNovidade } from "@/components/comunicados/fita-de-novidade";
 import { Badge } from "@/components/ui/badge";
 import {
   foiEditado,
@@ -63,19 +64,20 @@ export function CartaoDeComunicado({
       className={cn(
         // scroll-mt: o cabeçalho é fixo, e o link com #notificacao-… não
         // pode parar com o título escondido atrás dele.
-        "flex scroll-mt-24 flex-col gap-3 rounded-lg border border-l-4 border-border bg-card p-4 sm:p-5",
+        "relative flex scroll-mt-24 flex-col gap-3 overflow-hidden rounded-lg border border-l-4 border-border bg-card p-4 sm:p-5",
         borda,
       )}
     >
-      <div className="flex flex-wrap items-center gap-2">
+      {nova ? <FitaDeNovidade /> : null}
+
+      {/* Com a fita, a primeira linha anda para a direita e sai do canto
+          (ver `FitaDeNovidade`). As de baixo já começam fora dele. */}
+      <div className={cn("flex flex-wrap items-center gap-2", nova && "pl-9")}>
         <SeloDoComunicado tipo={comunicado.tipo} />
         {comunicado.versao ? (
           <Badge variant="outline" className="h-6 px-2.5 text-sm" data-numero>
             Versão {comunicado.versao}
           </Badge>
-        ) : null}
-        {nova ? (
-          <Badge className="h-6 px-2.5 text-sm">Nova</Badge>
         ) : null}
         <p className="text-sm text-muted-foreground">
           <time dateTime={comunicado.publicadoEm}>

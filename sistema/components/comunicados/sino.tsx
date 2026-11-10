@@ -9,6 +9,7 @@ import {
   listarMeusComunicados,
   marcarComunicadosLidos,
 } from "@/app/(sistema)/notificacoes/acoes";
+import { FitaDeNovidade } from "@/components/comunicados/fita-de-novidade";
 import { useNaoLidos } from "@/components/comunicados/nao-lidos";
 import { Button } from "@/components/ui/button";
 import { Esqueleto } from "@/components/ui/esqueleto";
@@ -189,14 +190,22 @@ function ItemDoSino({
       // Os `dark:hover:` repetidos existem porque o `dark:` ganharia do
       // `hover:` no tema escuro.
       className={cn(
-        "flex gap-3 rounded-lg border border-border p-3 transition-colors dark:border-input",
+        "relative flex gap-3 overflow-hidden rounded-lg border border-border p-3 transition-colors dark:border-input",
         "hover:border-primary hover:bg-accent dark:hover:border-primary dark:hover:bg-accent",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-        c.nova && "bg-secondary/40 dark:bg-graf-700/40",
+        // Com a fita, o texto desce um pouco para sair do canto (ver
+        // `FitaDeNovidade`) e o ícone fica invisível, guardando a coluna:
+        // o texto continua alinhado com o dos cartões sem fita.
+        c.nova && "bg-secondary/40 pt-6 dark:bg-graf-700/40",
       )}
     >
+      {c.nova ? <FitaDeNovidade /> : null}
       <Icone
-        className={cn("mt-0.5 size-5 shrink-0", alerta ? "text-atendendo" : "text-agendado")}
+        className={cn(
+          "mt-0.5 size-5 shrink-0",
+          alerta ? "text-atendendo" : "text-agendado",
+          c.nova && "invisible",
+        )}
         aria-hidden="true"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -205,13 +214,6 @@ function ItemDoSino({
             {alerta ? "Alerta" : `Versão ${c.versao ?? ""}`}
           </span>
           <time dateTime={c.publicadoEm}>{diaDoMomento(c.publicadoEm)}</time>
-          {/* "Nova" escrito, não só a bolinha: estado nunca só por cor. */}
-          {c.nova ? (
-            <span className="inline-flex items-center gap-1 font-semibold text-foreground">
-              <span aria-hidden="true" className="size-2 rounded-full bg-primary" />
-              Nova
-            </span>
-          ) : null}
         </p>
         <p className="font-semibold leading-snug text-foreground">{c.titulo}</p>
         <p className="line-clamp-2 text-sm text-muted-foreground">{c.texto}</p>

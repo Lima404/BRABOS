@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, ExternalLink, FileText, RefreshCw } from "lucide-react";
@@ -12,6 +12,7 @@ import {
 import { useNaoLidos } from "@/components/comunicados/nao-lidos";
 import { FotoDoPatch } from "@/components/comunicados/foto-do-patch";
 import { FormaDosPatchNotes } from "@/components/comunicados/forma-dos-patch-notes";
+import { VisorDeFotos } from "@/components/comunicados/visor-de-fotos";
 import { Button } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import {
@@ -241,6 +242,9 @@ function Versao({ patch }: { patch: PatchNote }) {
  * que a barbearia vai ler.
  */
 function CartaoDaSecao({ secao }: { secao: SecaoDoPatch }) {
+  const [visorAberto, setVisorAberto] = useState(false);
+  const [fotoAberta, setFotoAberta] = useState(0);
+
   return (
     <section className="flex min-w-0 flex-1 flex-col gap-3 rounded-lg border border-l-4 border-border border-l-ambar-500 bg-card p-5">
       <h3 className="text-lg font-bold tracking-wide uppercase">{secao.titulo}</h3>
@@ -255,23 +259,36 @@ function CartaoDaSecao({ secao }: { secao: SecaoDoPatch }) {
           {secao.fotos.map((foto, n) => (
             <li key={foto.caminho}>
               {foto.url ? (
-                // A foto inteira abre noutra aba: o quadro aqui é pequeno
-                // para ler um print de tela.
-                <a
-                  href={foto.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${secao.titulo}: abrir a foto ${n + 1} em tamanho real`}
-                  className="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                // O quadro aqui é pequeno para ler um print de tela: tocar
+                // amplia num modal, sem sair do BARBOS.
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFotoAberta(n);
+                    setVisorAberto(true);
+                  }}
+                  aria-label={`${secao.titulo}: ampliar a foto ${n + 1}`}
+                  className="block w-full cursor-zoom-in rounded-lg transition-shadow hover:ring-2 hover:ring-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   <FotoDoPatch url={foto.url} alt={`${secao.titulo}: foto ${n + 1}`} />
-                </a>
+                </button>
               ) : (
                 <FotoDoPatch url="" alt="" />
               )}
             </li>
           ))}
         </ul>
+      ) : null}
+
+      {secao.fotos.length > 0 ? (
+        <VisorDeFotos
+          titulo={secao.titulo}
+          fotos={secao.fotos}
+          aberto={visorAberto}
+          indice={fotoAberta}
+          aoFechar={() => setVisorAberto(false)}
+          aoMudarIndice={setFotoAberta}
+        />
       ) : null}
     </section>
   );

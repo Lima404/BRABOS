@@ -1754,7 +1754,19 @@ estilo das notas de versão do LoL"). O alerta continua como era.
   mesma altura. O resumo fica limitado a `max-w-3xl`: na tela toda a linha
   de texto passaria de 150 letras. O cartão tem a faixa âmbar à esquerda,
   a mesma do cartão de seção no editor. O esqueleto (`FormaDosPatchNotes`)
-  é o mesmo no `loading.tsx` e no carregamento do componente.
+  é o mesmo no `loading.tsx` e no carregamento do componente — e mora num
+  arquivo SEM `"use client"`: importado de dentro de `patch-notes.tsx`, o
+  `loading.tsx` quebrava em desenvolvimento ("Element type is invalid").
+- **Tocar numa foto amplia num modal** (`VisorDeFotos`, o `Modal` padrão
+  em `cheio`), não abre outra aba — pedido do Gabriel em 10/11/2026. Com
+  mais de uma foto: "Anterior"/"Próxima" e as setas do teclado, sem dar a
+  volta.
+- **Notificação não lida leva a fita "NOVA"** na diagonal do canto
+  superior esquerdo (`FitaDeNovidade`), no sino e em `/notificacoes`. O
+  cartão precisa de `relative overflow-hidden` e do canto livre; o sino
+  desce o texto (`pt-6`) e esconde o ícone guardando a coluna, o cartão da
+  página empurra a primeira linha (`pl-9`). A geometria está no comentário
+  do componente.
 - **O sino abre um painel** (Sheet) com as 15 mais recentes. Atualização
   leva a `/patch-notes#versao-1-1`; alerta, ao texto inteiro em
   `/notificacoes#notificacao-…`. O número some quando o painel FECHA:
