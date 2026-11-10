@@ -75,11 +75,7 @@ export const EXTENSAO_DA_FOTO: Record<string, string> = {
 export const CAMINHO_DE_FOTO =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|webp)$/;
 
-/**
- * Sugestões para o nome da seção. Texto livre: entra o que o admin digitar.
- * Sem acento e sem ç, porque o campo tira o acento e transforma ç em Ç: a
- * sugestão escolhida tem que ficar igual ao que aparece na lista.
- */
+/** Sugestões para o nome da seção. Texto livre: entra o que o admin digitar. */
 export const AREAS_SUGERIDAS = [
   "Agenda",
   "Agendamento online",
@@ -89,7 +85,7 @@ export const AREAS_SUGERIDAS = [
   "Barbearia",
   "Clientes",
   "Nova ferramenta",
-  "Ajustes",
+  "Correções",
 ];
 
 // ============================================================

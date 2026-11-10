@@ -1042,6 +1042,16 @@ campo é conveniência de quem digita, a barreira é lá. O vazio é conferido
 DEPOIS de sanitizar — quem mandou só "###" enviou três caracteres e não sobrou
 nenhum.
 
+**A exceção: o modal de notificações do Painel Admin** (título, resumo,
+texto, nome e texto das seções do patch note). Pedido do Gabriel em
+10/11/2026, depois de ver "NOTIFICAÇOES" e "evoluÇao" na própria tela. Ali
+nada é sanitizado, nem no campo nem na ação: é texto de LEITURA, escrito
+por uma pessoa só, que não é comparado, buscado nem usado como nome. A
+ação só tira o `` e o caractere nulo e apara as pontas
+(`comoEscrito`, em `app/(sistema)/admin/acoes.ts`). O campo de versão
+também aceita qualquer tecla; quem cobra o formato 1.0 / 1.1 / 1.2.3 é a
+validação e o `check` do banco.
+
 ## Navegação: toda tela é dinâmica, então toda tela tem `loading.tsx`
 
 `/agenda`, `/estoque`, `/dashboard` e `/barbearia` são todas `ƒ` no build.
@@ -1674,8 +1684,8 @@ visita.** A lista é marcada como velha para a próxima vez, não refeita na
 hora: tirar o selo no instante em que a pessoa chega apagaria a pista de
 onde começar a ler.
 
-**O texto segue a regra do sistema: sem acento.** As quebras de linha
-ficam (são os parágrafos).
+**O texto vai como foi escrito — com acento.** É a exceção à regra
+"nenhum input aceita acento" (ver lá). As quebras de linha ficam.
 
 **Ação de servidor que LÊ devolve `Consulta<T>`** (`lib/consulta.ts`) e a
 tela usa `dadosOuErro()` no `queryFn`. Se ela lançasse, o Next trocaria a

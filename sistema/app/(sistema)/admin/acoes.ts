@@ -26,7 +26,6 @@ import {
   type TipoDeComunicado,
 } from "@/lib/comunicados/tipos";
 import type { Consulta } from "@/lib/consulta";
-import { textoLivreParaBanco } from "@/lib/formato";
 
 /**
  * O Painel Admin (0044).
@@ -179,17 +178,21 @@ export async function listarComunicadosDoAdmin(): Promise<
 }
 
 /**
- * Texto livre para gravar: sem acento, espaço repetido colapsado, e as
- * quebras de linha ficam — são os parágrafos. O vazio é conferido DEPOIS
- * disto: quem mandou só espaços não mandou nada.
+ * O texto das notificações vai como o admin escreveu: com acento, ç,
+ * maiúscula, pontuação e espaços. É a EXCEÇÃO à regra "nenhum input
+ * aceita acento", pedida pelo Gabriel em 10/11/2026 — é texto de leitura,
+ * escrito por uma pessoa só, e "evoluÇao" no patch note não se lê.
+ *
+ * Só sai o que não é texto: o `\r` do Windows (a quebra de linha é `\n`)
+ * e o caractere nulo, que o Postgres recusa. As pontas são aparadas para
+ * o vazio poder ser conferido: quem mandou só espaços não mandou nada.
+ * A tela mostra o texto como texto (o React escapa), então nada aqui
+ * vira HTML.
  */
-function paragrafos(bruto: unknown): string {
+function comoEscrito(bruto: unknown): string {
   return String(bruto ?? "")
     .replace(/\r/g, "")
-    .split("\n")
-    .map((linha) => textoLivreParaBanco(linha))
-    .join("\n")
-    .replace(/\n{3,}/g, "\n\n")
+    .replace(/\u0000/g, "")
     .trim();
 }
 
@@ -198,8 +201,8 @@ function validarTituloETexto(
   tituloBruto: unknown,
   textoBruto: unknown,
 ): { ok: true; titulo: string; texto: string } | { ok: false; erro: string } {
-  const titulo = textoLivreParaBanco(String(tituloBruto ?? ""));
-  const corpo = paragrafos(textoBruto);
+  const titulo = comoEscrito(tituloBruto);
+  const corpo = comoEscrito(textoBruto);
 
   if (!titulo) return { ok: false, erro: "Escreva o título." };
   if (titulo.length > TITULO_MAX) {
@@ -290,8 +293,8 @@ export async function salvarAtualizacao(entrada: {
 
   const secoes: { titulo: string; texto: string; fotos: string[] }[] = [];
   for (const [i, s] of brutas.entries()) {
-    const titulo = textoLivreParaBanco(String(s?.titulo ?? ""));
-    const corpo = paragrafos(s?.texto);
+    const titulo = comoEscrito(s?.titulo);
+    const corpo = comoEscrito(s?.texto);
     const fotos = Array.isArray(s?.fotos) ? s.fotos.map(String) : [];
     const n = i + 1;
 

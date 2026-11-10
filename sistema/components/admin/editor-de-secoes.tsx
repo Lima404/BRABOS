@@ -20,7 +20,6 @@ import {
   TEXTO_MAX,
   type FotoDoPatch as Foto,
 } from "@/lib/comunicados/tipos";
-import { sanitizarTextoLivre } from "@/lib/formato";
 import { criarClienteNavegador } from "@/lib/supabase/cliente";
 
 /** Uma seção no formulário. `chave` só existe para o React. */
@@ -271,7 +270,7 @@ function CartaoDaSecao({
           list="areas-sugeridas"
           value={secao.titulo}
           maxLength={AREA_MAX}
-          onChange={(e) => aoMudar({ titulo: sanitizarTextoLivre(e.target.value) })}
+          onChange={(e) => aoMudar({ titulo: e.target.value })}
         />
       </Campo>
 
@@ -284,7 +283,7 @@ function CartaoDaSecao({
           value={secao.texto}
           maxLength={TEXTO_MAX}
           rows={4}
-          onChange={(e) => aoMudar({ texto: sanitizarTextoLivre(e.target.value) })}
+          onChange={(e) => aoMudar({ texto: e.target.value })}
         />
       </Campo>
 

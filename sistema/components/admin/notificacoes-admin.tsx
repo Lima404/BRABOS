@@ -42,7 +42,7 @@ import {
   type TipoDeComunicado,
 } from "@/lib/comunicados/tipos";
 import { dadosOuErro } from "@/lib/consulta";
-import { numero, sanitizarTextoLivre } from "@/lib/formato";
+import { numero } from "@/lib/formato";
 import { chaves } from "@/lib/query";
 
 /**
@@ -408,7 +408,7 @@ function DialogoComunicado({
               inputMode="decimal"
               maxLength={11}
               placeholder={proximaVersao(versaoDoSistema)}
-              onChange={(e) => setVersao(e.target.value.replace(/[^0-9.]/g, ""))}
+              onChange={(e) => setVersao(e.target.value)}
               className="max-w-40"
             />
           </Campo>
@@ -422,7 +422,7 @@ function DialogoComunicado({
           <Input
             value={titulo}
             maxLength={TITULO_MAX}
-            onChange={(e) => setTitulo(sanitizarTextoLivre(e.target.value))}
+            onChange={(e) => setTitulo(e.target.value)}
           />
         </Campo>
 
@@ -439,7 +439,7 @@ function DialogoComunicado({
             value={texto}
             maxLength={TEXTO_MAX}
             rows={ehAtualizacao ? 3 : 8}
-            onChange={(e) => setTexto(sanitizarTextoLivre(e.target.value))}
+            onChange={(e) => setTexto(e.target.value)}
           />
         </Campo>
 
