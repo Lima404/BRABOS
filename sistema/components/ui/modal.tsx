@@ -55,7 +55,7 @@ import { cn } from "@/lib/utils";
  * Largura de `sm` pra cima. Escolher pelo CONTEÚDO, não pela vontade de
  * caber mais coisa: modal largo com formulário de um campo fica vazio.
  */
-export type TamanhoModal = "pequeno" | "medio" | "grande" | "cheio";
+export type TamanhoModal = "pequeno" | "medio" | "grande" | "cheio" | "imagem";
 
 const LARGURAS: Record<TamanhoModal, string> = {
   /** Confirmar, avisar, uma pergunta só. */
@@ -66,7 +66,18 @@ const LARGURAS: Record<TamanhoModal, string> = {
   grande: "sm:max-w-2xl",
   /** Tabela, lista longa, comparação lado a lado. */
   cheio: "sm:max-w-4xl",
+  /**
+   * Uma foto e nada mais (pedido do Gabriel em 10/11/2026): sem padding,
+   * sem borda e sem cabeçalho visível — o modal tem o tamanho da imagem,
+   * até o limite da tela. O título continua lá para o leitor de tela.
+   * Quem desenha a foto e os controles por cima dela é `VisorDeFotos`.
+   */
+  imagem: "w-auto max-w-[calc(100vw-1.5rem)] border-0 bg-graf-950",
 };
+
+/** O "X" sobre a foto: fundo escuro translúcido, que aparece em qualquer imagem. */
+const FECHAR_SOBRE_FOTO =
+  "rounded-full bg-graf-950/75 text-graf-50 hover:bg-graf-950/90 hover:text-graf-50 dark:hover:bg-graf-950/90";
 
 export function Modal({
   aberto,
@@ -93,11 +104,22 @@ export function Modal({
   className?: string;
   classNameCorpo?: string;
 }) {
+  const soImagem = tamanho === "imagem";
+
   return (
     <Dialog open={aberto} onOpenChange={aoMudarAberto}>
-      <DialogContent className={cn(LARGURAS[tamanho], className)}>
+      <DialogContent
+        className={cn(LARGURAS[tamanho], className)}
+        classNameFechar={soImagem ? FECHAR_SOBRE_FOTO : undefined}
+      >
         <DialogHeader
-          className={aoVoltar ? "flex-row items-start gap-2 pl-2" : undefined}
+          className={
+            soImagem
+              ? "sr-only"
+              : aoVoltar
+                ? "flex-row items-start gap-2 pl-2"
+                : undefined
+          }
         >
           {aoVoltar ? (
             <Button
@@ -120,7 +142,9 @@ export function Modal({
           </div>
         </DialogHeader>
 
-        <DialogBody className={classNameCorpo}>{children}</DialogBody>
+        <DialogBody className={cn(soImagem && "overflow-hidden p-0", classNameCorpo)}>
+          {children}
+        </DialogBody>
 
         {rodape ? <DialogFooter>{rodape}</DialogFooter> : null}
       </DialogContent>

@@ -375,7 +375,7 @@ export function Amostruario() {
 
       <Secao
         titulo="Modal"
-        nota="Quatro larguras: pequeno, medio, grande, cheio. No celular todas ocupam quase a tela inteira."
+        nota="Quatro larguras: pequeno, medio, grande, cheio. No celular todas ocupam quase a tela inteira. E um modo à parte, imagem: sem padding nem borda, do tamanho da foto (ver as fotos do /patch-notes)."
       >
         <Amostra rotulo="Abrir">
           <Button variant="outline" onClick={() => setModalAberto(true)}>

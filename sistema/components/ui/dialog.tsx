@@ -56,9 +56,12 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  classNameFechar,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  /** Para o "X" sobre uma foto, onde o fantasma comum some. */
+  classNameFechar?: string;
 }) {
   return (
     <DialogPrimitive.Portal data-slot="dialog-portal">
@@ -78,7 +81,7 @@ function DialogContent({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2"
+              className={cn("absolute top-2 right-2", classNameFechar)}
             >
               <XIcon />
               <span className="sr-only">Fechar</span>

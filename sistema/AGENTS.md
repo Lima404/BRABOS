@@ -50,7 +50,9 @@ contrastes lá foram medidos, não estimados.
   `DialogContent` na mão: largura, rolagem, rodapé fixo e comportamento no
   celular são decididos lá, uma vez só. `dialog.tsx` é o primitivo e só o
   `Modal` fala com ele. Tamanhos: `pequeno` (confirmação), `medio` (padrão),
-  `grande` (formulário com seções), `cheio` (lista longa). Fluxo de mais de um
+  `grande` (formulário com seções), `cheio` (lista longa), e o modo
+  `imagem` (uma foto sozinha: sem padding, sem borda, com o tamanho da
+  foto até o limite da tela; o título fica só para o leitor de tela). Fluxo de mais de um
   passo usa `aoVoltar` e TROCA o conteúdo — modal por cima de modal, nunca.
 - **Ação principal na metade inferior no celular.** A mão que segura o telefone
   alcança o rodapé, não o topo. Ver a barra fixa em `app/agenda/page.tsx`.
@@ -1758,9 +1760,12 @@ estilo das notas de versão do LoL"). O alerta continua como era.
   arquivo SEM `"use client"`: importado de dentro de `patch-notes.tsx`, o
   `loading.tsx` quebrava em desenvolvimento ("Element type is invalid").
 - **Tocar numa foto amplia num modal** (`VisorDeFotos`, o `Modal` padrão
-  em `cheio`), não abre outra aba — pedido do Gabriel em 10/11/2026. Com
-  mais de uma foto: "Anterior"/"Próxima" e as setas do teclado, sem dar a
-  volta.
+  no modo `imagem`), não abre outra aba — pedido do Gabriel em 10/11/2026.
+  O modal não tem padding nem margem: ele tem o tamanho da foto, que só
+  encolhe se passar da tela (nunca estica nem corta). Setas, contador e o
+  "X" ficam POR CIMA da foto, em grafite translúcido (7:1 até sobre foto
+  branca). Com mais de uma foto, as setas do teclado também passam, sem
+  dar a volta. Enquanto a foto baixa, um quadro "Carregando a foto…".
 - **Notificação não lida leva a fita "NOVA"** na diagonal do canto
   superior esquerdo (`FitaDeNovidade`), no sino e em `/notificacoes`. O
   cartão precisa de `relative overflow-hidden` e do canto livre; o sino
