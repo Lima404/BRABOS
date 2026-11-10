@@ -11,6 +11,11 @@ export type Barbearia = {
   telefone?: string;
   /** Apelido público da loja. Endereço: /loja/<slug>. */
   slug: string;
+  /**
+   * Abre o Painel Admin (0044). Só a BARBOS. Isto decide o que a TELA
+   * mostra; quem barra o dado são as funções `admin_*` do banco.
+   */
+  admin: boolean;
 };
 
 export type Sessao = {
@@ -60,9 +65,13 @@ export const obterSessao = cache(async function obterSessao(): Promise<Sessao> {
   } = await supabase.auth.getUser();
   if (!user) return { logado: false, barbearia: null };
 
+  // `*` e não a lista de colunas: sem a 0044 no banco, pedir `admin` pelo
+  // nome derrubaria a leitura e, com ela, a navegação de TODAS as contas.
+  // Com `*` a coluna que falta vira `undefined`, e `undefined` é "não é
+  // admin".
   const { data, error } = await supabase
     .from("barbearias")
-    .select("id, nome, telefone, slug")
+    .select("*")
     .single();
 
   if (error) {
@@ -77,6 +86,7 @@ export const obterSessao = cache(async function obterSessao(): Promise<Sessao> {
       nome: data.nome,
       telefone: data.telefone ?? undefined,
       slug: data.slug,
+      admin: data.admin === true,
     },
   };
 });

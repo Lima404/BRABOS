@@ -6,11 +6,11 @@ import { Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Campo, Opcao } from "@/components/ui/campo";
+import { Opcao } from "@/components/ui/campo";
 import { ListaDeAtributos } from "@/components/dashboard/lista-de-atributos";
-import { Input, InputDeTempo } from "@/components/ui/input";
+import { PainelPeriodo } from "@/components/dashboard/painel-periodo";
+import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
-import { RadioGrupo, RadioItem } from "@/components/ui/radio";
 import { buscarConfiguracao } from "@/lib/agenda/api";
 import { buscarBarbeiros } from "@/lib/barbearia/api";
 import {
@@ -21,7 +21,6 @@ import {
   type AtributoDoFiltro,
   type FiltroDashboard,
   type NomesDoFiltro,
-  type PeriodoFiltro,
   type SecaoFiltro,
 } from "@/lib/dashboard/filtros";
 import { buscarProdutos } from "@/lib/estoque/api";
@@ -349,130 +348,6 @@ function PainelTodos() {
         Escolher esta seção e aplicar limpa período, serviços, barbeiros e
         loja.
       </p>
-    </div>
-  );
-}
-
-function PainelPeriodo({
-  valor,
-  aoMudar,
-}: {
-  valor: FiltroDashboard;
-  aoMudar: (f: FiltroDashboard) => void;
-}) {
-  function setPeriodo(periodo: PeriodoFiltro) {
-    aoMudar({ ...valor, periodo });
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h3 className="font-semibold">Período</h3>
-        <p className="text-sm text-muted-foreground">
-          Dia, semana, mês, ano ou um intervalo entre duas datas.
-        </p>
-      </div>
-
-      <RadioGrupo
-        value={valor.periodo}
-        onValueChange={(v) => setPeriodo(v as PeriodoFiltro)}
-        className="grid grid-cols-2 gap-1 sm:grid-cols-3"
-      >
-        <Opcao
-          htmlFor="filtro-periodo-dia"
-          rotulo="Dia"
-          controle={<RadioItem id="filtro-periodo-dia" value="dia" />}
-        />
-        <Opcao
-          htmlFor="filtro-periodo-semana"
-          rotulo="Semana"
-          controle={<RadioItem id="filtro-periodo-semana" value="semana" />}
-        />
-        <Opcao
-          htmlFor="filtro-periodo-mes"
-          rotulo="Mês"
-          controle={<RadioItem id="filtro-periodo-mes" value="mes" />}
-        />
-        <Opcao
-          htmlFor="filtro-periodo-ano"
-          rotulo="Ano"
-          controle={<RadioItem id="filtro-periodo-ano" value="ano" />}
-        />
-        <Opcao
-          htmlFor="filtro-periodo-intervalo"
-          rotulo="Início e fim"
-          className="sm:col-span-2"
-          controle={
-            <RadioItem id="filtro-periodo-intervalo" value="intervalo" />
-          }
-        />
-      </RadioGrupo>
-
-      {valor.periodo === "dia" ? (
-        <Campo rotulo="Data">
-          <InputDeTempo
-            type="date"
-            value={valor.dataInicio}
-            onChange={(e) =>
-              aoMudar({ ...valor, dataInicio: e.target.value, dataFim: "" })
-            }
-          />
-        </Campo>
-      ) : null}
-
-      {valor.periodo === "semana" ? (
-        <Campo rotulo="Semana" ajuda="Escolha qualquer dia da semana desejada.">
-          <InputDeTempo
-            type="week"
-            value={valor.semana}
-            onChange={(e) => aoMudar({ ...valor, semana: e.target.value })}
-          />
-        </Campo>
-      ) : null}
-
-      {valor.periodo === "mes" ? (
-        <Campo rotulo="Mês">
-          <InputDeTempo
-            type="month"
-            value={valor.mes}
-            onChange={(e) => aoMudar({ ...valor, mes: e.target.value })}
-          />
-        </Campo>
-      ) : null}
-
-      {valor.periodo === "ano" ? (
-        <Campo rotulo="Ano">
-          <Input
-            type="number"
-            inputMode="numeric"
-            min={2020}
-            max={2100}
-            value={valor.ano}
-            onChange={(e) => aoMudar({ ...valor, ano: e.target.value })}
-          />
-        </Campo>
-      ) : null}
-
-      {valor.periodo === "intervalo" ? (
-        <div className="grid gap-3 sm:grid-cols-2">
-          <Campo rotulo="Data início">
-            <InputDeTempo
-              type="date"
-              value={valor.dataInicio}
-              onChange={(e) =>
-                aoMudar({ ...valor, dataInicio: e.target.value })
-              }
-            />
-          </Campo>
-          <Campo rotulo="Data fim">
-            <InputDeTempo
-              type="date"
-              value={valor.dataFim}
-              onChange={(e) => aoMudar({ ...valor, dataFim: e.target.value })}
-            />
-          </Campo>
-        </div>
-      ) : null}
     </div>
   );
 }

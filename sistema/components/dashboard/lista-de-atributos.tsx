@@ -3,8 +3,13 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { X } from "lucide-react";
 
-import type { AtributoDoFiltro } from "@/lib/dashboard/filtros";
 import { cn } from "@/lib/utils";
+
+/**
+ * O que uma ficha precisa saber. O dashboard passa `AtributoDoFiltro`, o
+ * Painel Admin passa os dele — a lista só lê estes três campos.
+ */
+export type FichaDoFiltro = { chave: string; rotulo: string; grupo: string };
 
 /**
  * A lista de atributos do filtro — as fichas do rodapé do diálogo.
@@ -18,14 +23,14 @@ import { cn } from "@/lib/utils";
  * Clicar numa ficha tira aquele atributo. É a mesma ação do checkbox lá
  * dentro, só que alcançável sem procurar a seção.
  */
-export function ListaDeAtributos({
+export function ListaDeAtributos<A extends FichaDoFiltro>({
   atributos,
   aoRemover,
   visiveis = 3,
   className,
 }: {
-  atributos: AtributoDoFiltro[];
-  aoRemover: (atributo: AtributoDoFiltro) => void;
+  atributos: A[];
+  aoRemover: (atributo: A) => void;
   /** Quantas fichas aparecem antes do "+N". */
   visiveis?: number;
   className?: string;
@@ -63,12 +68,12 @@ export function ListaDeAtributos({
   );
 }
 
-function Ficha({
+function Ficha<A extends FichaDoFiltro>({
   atributo,
   aoRemover,
 }: {
-  atributo: AtributoDoFiltro;
-  aoRemover: (atributo: AtributoDoFiltro) => void;
+  atributo: A;
+  aoRemover: (atributo: A) => void;
 }) {
   const inteiro = `${atributo.grupo}: ${atributo.rotulo}`;
 
@@ -104,12 +109,12 @@ function Ficha({
  * clique também FIXA, senão tirar uma ficha de dentro do painel fecharia
  * tudo no primeiro movimento do mouse para fora.
  */
-function Excedentes({
+function Excedentes<A extends FichaDoFiltro>({
   atributos,
   aoRemover,
 }: {
-  atributos: AtributoDoFiltro[];
-  aoRemover: (atributo: AtributoDoFiltro) => void;
+  atributos: A[];
+  aoRemover: (atributo: A) => void;
 }) {
   const [aberto, setAberto] = useState(false);
   const [fixado, setFixado] = useState(false);

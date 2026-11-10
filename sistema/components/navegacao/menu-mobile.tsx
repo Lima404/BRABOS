@@ -24,9 +24,11 @@ import {
  */
 export function MenuMobile({
   logado,
+  admin = false,
   nomeBarbearia,
 }: {
   logado: boolean;
+  admin?: boolean;
   nomeBarbearia?: string;
 }) {
   const [aberto, setAberto] = useState(false);
@@ -47,7 +49,7 @@ export function MenuMobile({
         </Button>
       </SheetTrigger>
 
-      <SheetContent side="left" className="w-[17rem] p-0">
+      <SheetContent side="left" className="w-[17rem] overflow-y-auto p-0">
         <SheetHeader className="border-b border-border p-4 text-left">
           <SheetTitle asChild>
             <span className="flex items-center">
@@ -64,6 +66,7 @@ export function MenuMobile({
         <ListaRotas
           className="p-3"
           logado={logado}
+          admin={admin}
           aoNavegar={() => setAberto(false)}
         />
       </SheetContent>

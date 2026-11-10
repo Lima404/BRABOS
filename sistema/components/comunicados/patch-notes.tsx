@@ -1,0 +1,236 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import Link from "next/link";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { FileText, RefreshCw } from "lucide-react";
+
+import {
+  listarPatchNotes,
+  marcarComunicadosLidos,
+} from "@/app/(sistema)/notificacoes/acoes";
+import { useNaoLidos } from "@/components/comunicados/nao-lidos";
+import { FotoDoPatch } from "@/components/comunicados/foto-do-patch";
+import { Button } from "@/components/ui/button";
+import { Esqueleto } from "@/components/ui/esqueleto";
+import { EstadoVazio } from "@/components/ui/estado-vazio";
+import { ancoraDaVersao, foiEditado, type PatchNote } from "@/lib/comunicados/tipos";
+import { dadosOuErro } from "@/lib/consulta";
+import { diaDoMomento } from "@/lib/formato";
+import { chaves } from "@/lib/query";
+
+/**
+ * Os patch notes do BARBOS — a história das versões, como um blog.
+ *
+ * No topo, a versão do sistema (a maior publicada) e o índice das versões.
+ * Embaixo, cada versão inteira: título, resumo e as seções por parte do
+ * sistema, com as fotos. A mais nova em cima.
+ *
+ * Abrir a página conta como ler as atualizações: o sino para de contá-las.
+ */
+export function PatchNotes() {
+  const clienteQuery = useQueryClient();
+  const { data: naoLidos } = useNaoLidos();
+  const marcou = useRef(false);
+
+  const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
+    queryKey: chaves.comunicados.patchNotes,
+    queryFn: () => dadosOuErro(listarPatchNotes()),
+  });
+
+  const temNova = (naoLidos?.quantidade ?? 0) > 0;
+  const ids = data?.map((p) => p.id) ?? [];
+  const chaveDosIds = ids.join(",");
+
+  useEffect(() => {
+    if (!temNova || marcou.current || chaveDosIds === "") return;
+    marcou.current = true;
+
+    marcarComunicadosLidos(chaveDosIds.split(","))
+      .then(async (resultado) => {
+        if (!resultado.ok) return;
+        await Promise.all([
+          clienteQuery.invalidateQueries({ queryKey: chaves.comunicados.naoLidos }),
+          clienteQuery.invalidateQueries({
+            queryKey: chaves.comunicados.lista,
+            refetchType: "none",
+          }),
+        ]);
+      })
+      .catch((causa) => console.error("[BARBOS] marcar patch notes:", causa));
+  }, [temNova, chaveDosIds, clienteQuery]);
+
+  if (isError) {
+    return (
+      <Moldura>
+        <div className="rounded-lg border border-border bg-card p-6 text-center">
+          <p className="font-semibold">Os patch notes não carregaram</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            {error instanceof Error ? error.message : "Verifique a conexão e tente de novo."}
+          </p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => refetch()}
+            disabled={isRefetching}
+          >
+            <RefreshCw className={isRefetching ? "animate-spin" : undefined} />
+            Tentar de novo
+          </Button>
+        </div>
+      </Moldura>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <Moldura>
+        <div role="status" aria-label="Carregando os patch notes" className="flex flex-col gap-6">
+          <Esqueleto className="h-32" />
+          <Esqueleto className="h-96" />
+        </div>
+      </Moldura>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <Moldura>
+        <EstadoVazio
+          icone={FileText}
+          titulo="Nenhuma versão publicada ainda"
+          descricao="Quando o BARBOS ganhar uma versão nova, o que mudou aparece aqui."
+          acao={
+            <Button asChild variant="outline">
+              <Link href="/agenda">Voltar para a agenda</Link>
+            </Button>
+          }
+        />
+      </Moldura>
+    );
+  }
+
+  const [atual] = data;
+
+  return (
+    <Moldura>
+      {/* A versão do sistema, em destaque: é a primeira coisa que se lê. */}
+      <section
+        aria-label="Versão atual"
+        className="flex flex-col gap-4 rounded-lg border border-primary/40 bg-primary/5 p-5 sm:p-6"
+      >
+        <div>
+          <p className="text-xs font-semibold tracking-widest text-muted-foreground uppercase">
+            Versão atual do BARBOS
+          </p>
+          <p data-numero className="text-4xl font-bold tracking-tight sm:text-5xl">
+            {atual.versao}
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Publicada em <time dateTime={atual.publicadoEm}>{diaDoMomento(atual.publicadoEm)}</time>
+          </p>
+        </div>
+
+        {data.length > 1 ? (
+          <nav aria-label="Versões" className="flex flex-col gap-2">
+            <p className="text-sm font-medium">Todas as versões</p>
+            <ul className="flex flex-wrap gap-2">
+              {data.map((p) => (
+                <li key={p.id}>
+                  <Button asChild variant="outline">
+                    <a href={`#${ancoraDaVersao(p.versao)}`} data-numero>
+                      {p.versao}
+                    </a>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
+      </section>
+
+      {data.map((p) => (
+        <Versao key={p.id} patch={p} />
+      ))}
+    </Moldura>
+  );
+}
+
+/** Título fixo da página, nos quatro estados. */
+function Moldura({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Patch notes</h1>
+        <p className="text-muted-foreground">O que mudou em cada versão do BARBOS.</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Versao({ patch }: { patch: PatchNote }) {
+  const idDoTitulo = `${ancoraDaVersao(patch.versao)}-titulo`;
+
+  return (
+    <article
+      id={ancoraDaVersao(patch.versao)}
+      aria-labelledby={idDoTitulo}
+      // scroll-mt: o cabeçalho é fixo, e o link do sino não pode parar com
+      // o número da versão escondido atrás dele.
+      className="flex scroll-mt-24 flex-col gap-6 rounded-lg border border-border bg-card p-5 sm:p-6"
+    >
+      <header className="flex flex-col gap-2 border-b border-border pb-5">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+          <span
+            data-numero
+            className="rounded-md bg-secondary px-2 py-0.5 text-base font-bold text-foreground"
+          >
+            Versão {patch.versao}
+          </span>
+          <time dateTime={patch.publicadoEm}>{diaDoMomento(patch.publicadoEm)}</time>
+          {foiEditado(patch) ? <span>editada</span> : null}
+        </p>
+        <h2 id={idDoTitulo} className="text-2xl font-bold tracking-tight">
+          {patch.titulo}
+        </h2>
+        <p className="whitespace-pre-line text-base text-foreground">{patch.texto}</p>
+      </header>
+
+      {patch.secoes.map((secao, i) => (
+        <section key={`${patch.id}-${i}`} className="flex flex-col gap-3">
+          {/* A faixa âmbar à esquerda é o "cabeçalho de seção" das notas de
+              versão; o nome em maiúsculas é que diz qual parte mudou. */}
+          <h3 className="border-l-4 border-l-ambar-500 pl-3 text-lg font-bold tracking-wide uppercase">
+            {secao.titulo}
+          </h3>
+          <p className="whitespace-pre-line text-base text-foreground">{secao.texto}</p>
+
+          {secao.fotos.length > 0 ? (
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {secao.fotos.map((foto, n) => (
+                <li key={foto.caminho}>
+                  {foto.url ? (
+                    // A foto inteira abre noutra aba: o quadro aqui é pequeno
+                    // para ler um print de tela.
+                    <a
+                      href={foto.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${secao.titulo}: abrir a foto ${n + 1} em tamanho real`}
+                      className="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    >
+                      <FotoDoPatch url={foto.url} alt={`${secao.titulo}: foto ${n + 1}`} />
+                    </a>
+                  ) : (
+                    <FotoDoPatch url="" alt="" />
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ))}
+    </article>
+  );
+}

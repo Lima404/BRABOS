@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LogOut } from "lucide-react";
 
 import { sair } from "@/app/entrar/acoes";
+import { Sino } from "@/components/comunicados/sino";
 import { MenuMobile } from "@/components/navegacao/menu-mobile";
 import { Logo } from "@/components/marca/logo";
 import { TemaToggle } from "@/components/tema-toggle";
@@ -21,16 +22,22 @@ import { supabaseConfigurado } from "@/lib/supabase/config";
  */
 export function Cabecalho({
   logado,
+  admin = false,
   nomeBarbearia,
 }: {
   logado: boolean;
+  admin?: boolean;
   nomeBarbearia?: string;
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-card">
       <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-2 py-2 sm:px-4 sm:py-3 lg:max-w-none">
         <div className="flex min-w-0 items-center gap-1 sm:gap-2">
-          <MenuMobile logado={logado} nomeBarbearia={nomeBarbearia} />
+          <MenuMobile
+            logado={logado}
+            admin={admin}
+            nomeBarbearia={nomeBarbearia}
+          />
 
           {/* Logado, a logo do topo some no desktop: ela ja esta na sidebar.
               Deslogado nao ha sidebar, entao ela fica em toda largura. */}
@@ -56,6 +63,9 @@ export function Cabecalho({
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
+          {/* As notificações do BARBOS (0044). Só com conta: quem abriu a
+              loja pelo QR code é cliente da barbearia, não dono dela. */}
+          {logado && supabaseConfigurado ? <Sino /> : null}
           <TemaToggle />
 
           {!supabaseConfigurado ? null : logado ? (

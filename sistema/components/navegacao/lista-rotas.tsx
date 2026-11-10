@@ -1,10 +1,15 @@
 "use client";
 
+import { useId } from "react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 
-import { rotasVisiveis } from "@/components/navegacao/rotas";
+import {
+  ROTAS_ADMIN,
+  rotasVisiveis,
+  type Rota,
+} from "@/components/navegacao/rotas";
 import { cn } from "@/lib/utils";
 
 /**
@@ -21,15 +26,21 @@ import { cn } from "@/lib/utils";
  */
 export function ListaRotas({
   logado,
+  admin = false,
   aoNavegar,
   className,
 }: {
   logado: boolean;
+  /** Conta admin (0044): ganha o grupo "Painel Admin" no fim da lista. */
+  admin?: boolean;
   /** Chamado ao clicar — o menu do celular usa pra se fechar. */
   aoNavegar?: () => void;
   className?: string;
 }) {
   const caminho = usePathname();
+  // A sidebar e o menu do celular montam esta lista ao mesmo tempo: id fixo
+  // repetiria na página.
+  const idDoGrupo = useId();
 
   // As rotas sao resolvidas AQUI, do lado do cliente, e nao recebidas prontas
   // de um componente de servidor. Cada rota carrega `icone`, que e uma funcao
@@ -43,31 +54,74 @@ export function ListaRotas({
       aria-label="Navegação principal"
       className={cn("flex flex-col gap-1", className)}
     >
-      {rotas.map(({ href, rotulo, icone: Icone }) => {
-        const ativo = caminho === href || caminho.startsWith(`${href}/`);
+      {rotas.map((rota) => (
+        <ItemDaRota
+          key={rota.href}
+          rota={rota}
+          caminho={caminho}
+          aoNavegar={aoNavegar}
+        />
+      ))}
 
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={aoNavegar}
-            aria-current={ativo ? "page" : undefined}
-            className={cn(
-              // min-h-11 = 44px, o alvo de toque minimo do design-guide.
-              "flex min-h-11 items-center gap-3 rounded-lg border-l-[3px] border-transparent px-3 text-base transition-colors",
-              "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-              ativo
-                ? "border-l-ambar-500 bg-secondary font-semibold text-foreground"
-                : "font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
-            )}
+      {/* O grupo do admin. O título NÃO é link: as três telas são irmãs e
+          nenhuma é "a" tela do painel — um título clicável seria um quarto
+          link levando para uma delas. */}
+      {logado && admin ? (
+        <div
+          role="group"
+          aria-labelledby={idDoGrupo}
+          className="mt-4 flex flex-col gap-1 border-t border-border pt-4"
+        >
+          <p
+            id={idDoGrupo}
+            className="flex items-center gap-2 px-3 pb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase"
           >
-            <Icone className="size-5 shrink-0" aria-hidden="true" />
-            {rotulo}
-            <Indo />
-          </Link>
-        );
-      })}
+            <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
+            Painel Admin
+          </p>
+          {ROTAS_ADMIN.map((rota) => (
+            <ItemDaRota
+              key={rota.href}
+              rota={rota}
+              caminho={caminho}
+              aoNavegar={aoNavegar}
+            />
+          ))}
+        </div>
+      ) : null}
     </nav>
+  );
+}
+
+function ItemDaRota({
+  rota: { href, rotulo, icone: Icone },
+  caminho,
+  aoNavegar,
+}: {
+  rota: Rota;
+  caminho: string;
+  aoNavegar?: () => void;
+}) {
+  const ativo = caminho === href || caminho.startsWith(`${href}/`);
+
+  return (
+    <Link
+      href={href}
+      onClick={aoNavegar}
+      aria-current={ativo ? "page" : undefined}
+      className={cn(
+        // min-h-11 = 44px, o alvo de toque minimo do design-guide.
+        "flex min-h-11 items-center gap-3 rounded-lg border-l-[3px] border-transparent px-3 text-base transition-colors",
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        ativo
+          ? "border-l-ambar-500 bg-secondary font-semibold text-foreground"
+          : "font-medium text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+      )}
+    >
+      <Icone className="size-5 shrink-0" aria-hidden="true" />
+      {rotulo}
+      <Indo />
+    </Link>
   );
 }
 

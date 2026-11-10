@@ -10,11 +10,17 @@ import { Logo } from "@/components/marca/logo";
  * Sem sessao ela nao aparece: quem chega pela loja e cliente da barbearia, e
  * uma coluna de links que so levam a tela de login nao serve pra nada.
  */
-export function Sidebar({ logado }: { logado: boolean }) {
+export function Sidebar({
+  logado,
+  admin = false,
+}: {
+  logado: boolean;
+  admin?: boolean;
+}) {
   if (!logado) return null;
 
   return (
-    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-card lg:flex">
+    <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col overflow-y-auto border-r border-border bg-card lg:flex">
       <div className="border-b border-border p-4">
         <Link
           href="/agenda"
@@ -25,7 +31,7 @@ export function Sidebar({ logado }: { logado: boolean }) {
         </Link>
       </div>
 
-      <ListaRotas className="p-3" logado={logado} />
+      <ListaRotas className="p-3" logado={logado} admin={admin} />
     </aside>
   );
 }

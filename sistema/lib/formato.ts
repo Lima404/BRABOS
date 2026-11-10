@@ -7,6 +7,11 @@ export function moeda(centavos: number): string {
   });
 }
 
+/** 1234 → "1.234". Contagem (agendamentos, vendas), nunca dinheiro. */
+export function numero(n: number): string {
+  return n.toLocaleString("pt-BR");
+}
+
 export function hora(iso: string): string {
   return new Date(iso).toLocaleTimeString("pt-BR", {
     hour: "2-digit",
@@ -75,6 +80,36 @@ export function dataISO(d: Date): string {
   const mes = String(d.getMonth() + 1).padStart(2, "0");
   const dia = String(d.getDate()).padStart(2, "0");
   return `${d.getFullYear()}-${mes}-${dia}`;
+}
+
+/** "10/11/2026" a partir de AAAA-MM-DD. Data de calendário: sem fuso. */
+export function dataCurta(data: string): string {
+  return data.split("-").reverse().join("/");
+}
+
+/**
+ * "10/11/2026" a partir de um instante (`timestamptz`), no relógio da
+ * barbearia. Fuso explícito pelo mesmo motivo do `ehHoje`: servidor e
+ * navegador precisam escrever o mesmo texto, senão a hidratação acusa.
+ */
+export function diaDoMomento(iso: string): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: FUSO_DA_BARBEARIA,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
+/** "10/11/2026 às 14:32" a partir de um instante, no relógio da barbearia. */
+export function momentoPorExtenso(iso: string): string {
+  const horario = new Intl.DateTimeFormat("pt-BR", {
+    timeZone: FUSO_DA_BARBEARIA,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(iso));
+  return `${diaDoMomento(iso)} às ${horario}`;
 }
 
 /** "Setembro 2026" a partir de AAAA-MM. */

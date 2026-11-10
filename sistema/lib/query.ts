@@ -117,6 +117,27 @@ export const chaves = {
     aparelhos: ["barbearia", "aparelhos"] as const,
   },
   /**
+   * Painel Admin (0044). Só a conta admin chega a pedir — para as outras o
+   * banco recusa e a tela nem existe.
+   */
+  admin: {
+    todas: ["admin"] as const,
+    barbearias: ["admin", "barbearias"] as const,
+    /** Somas por barbearia num intervalo (`fim` exclusivo). */
+    movimento: (inicio: string, fim: string) =>
+      ["admin", "movimento", inicio, fim] as const,
+    comunicados: ["admin", "comunicados"] as const,
+  },
+  /** As notificações do sistema, do lado da barbearia (0044). */
+  comunicados: {
+    todas: ["comunicados"] as const,
+    lista: ["comunicados", "lista"] as const,
+    /** O sino e a faixa de alerta leem a MESMA chave. */
+    naoLidos: ["comunicados", "nao-lidos"] as const,
+    /** As atualizações inteiras, com seções e fotos (0045). */
+    patchNotes: ["comunicados", "patch-notes"] as const,
+  },
+  /**
    * A vitrine. Por apelido, e não uma chave só: a dona abre a loja dela,
    * mas a tela é pública e a mesma aba pode ter aberto a loja de outra
    * barbearia antes.

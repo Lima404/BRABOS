@@ -31,6 +31,16 @@ export type FiltroDashboard = {
   soLoja: boolean;
 };
 
+/**
+ * Só a parte de datas do filtro. O Painel Admin usa o mesmo período do
+ * dashboard (mesmo seletor, mesma URL, mesmo cálculo de intervalo) sem os
+ * serviços, barbeiros e produtos, que são de uma barbearia só.
+ */
+export type PeriodoDoFiltro = Pick<
+  FiltroDashboard,
+  "periodo" | "dataInicio" | "dataFim" | "semana" | "mes" | "ano"
+>;
+
 /** O que a API / RPC recebe. `fim` é exclusivo. */
 export type IntervaloDashboard = {
   inicio: string;
@@ -145,6 +155,20 @@ export function intervaloDoFiltro(
   f: FiltroDashboard,
   mesAtual: string,
 ): IntervaloDashboard {
+  return {
+    ...intervaloDoPeriodo(f, mesAtual),
+    servicoIds: f.servicoIds,
+    barbeiroIds: f.barbeiroIds,
+    produtoIds: f.produtoIds,
+    soLoja: f.soLoja,
+  };
+}
+
+/** As duas datas do período. `fim` é exclusivo. */
+export function intervaloDoPeriodo(
+  f: PeriodoDoFiltro,
+  mesAtual: string,
+): { inicio: string; fim: string } {
   let inicio: string;
   let fim: string;
 
@@ -188,14 +212,7 @@ export function intervaloDoFiltro(
     }
   }
 
-  return {
-    inicio,
-    fim,
-    servicoIds: f.servicoIds,
-    barbeiroIds: f.barbeiroIds,
-    produtoIds: f.produtoIds,
-    soLoja: f.soLoja,
-  };
+  return { inicio, fim };
 }
 
 /** Chave estável pro React Query. */
@@ -348,7 +365,7 @@ function seCasar(bruto: string | null, padrao: RegExp): string | null {
  * a mesma escolha escrita de dois jeitos daria dois caches e duas idas ao
  * banco para o mesmo número.
  */
-function idsDaBusca(bruto: string | null): string[] {
+export function idsDaBusca(bruto: string | null): string[] {
   if (!bruto) return [];
 
   const vistos = new Set<string>();
@@ -369,6 +386,20 @@ export function filtroDaBusca(
   busca: LeitorDeBusca,
   mesAtual: string,
 ): FiltroDashboard {
+  return {
+    ...periodoDaBusca(busca, mesAtual),
+    servicoIds: idsDaBusca(busca.get("servicos")),
+    barbeiroIds: idsDaBusca(busca.get("barbeiros")),
+    produtoIds: idsDaBusca(busca.get("produtos")),
+    soLoja: busca.get("loja") === "1",
+  };
+}
+
+/** Só as datas, com a mesma peneira. O Painel Admin lê por aqui. */
+export function periodoDaBusca(
+  busca: LeitorDeBusca,
+  mesAtual: string,
+): PeriodoDoFiltro {
   const padrao = filtroPadrao(mesAtual);
 
   const pedido = busca.get("periodo");
@@ -390,10 +421,6 @@ export function filtroDaBusca(
     semana: seCasar(busca.get("semana"), PADRAO_SEMANA) ?? "",
     mes,
     ano: seCasar(busca.get("ano"), PADRAO_ANO) ?? mes.slice(0, 4),
-    servicoIds: idsDaBusca(busca.get("servicos")),
-    barbeiroIds: idsDaBusca(busca.get("barbeiros")),
-    produtoIds: idsDaBusca(busca.get("produtos")),
-    soLoja: busca.get("loja") === "1",
   };
 }
 
@@ -411,6 +438,21 @@ export function filtroDaBusca(
  */
 export function filtroParaBusca(
   f: FiltroDashboard,
+  mesAtual: string,
+): URLSearchParams {
+  const busca = periodoParaBusca(f, mesAtual);
+
+  if (f.servicoIds.length > 0) busca.set("servicos", f.servicoIds.join(","));
+  if (f.barbeiroIds.length > 0) busca.set("barbeiros", f.barbeiroIds.join(","));
+  if (f.produtoIds.length > 0) busca.set("produtos", f.produtoIds.join(","));
+  if (f.soLoja) busca.set("loja", "1");
+
+  return busca;
+}
+
+/** Só as datas, e só o que saiu do padrão. */
+export function periodoParaBusca(
+  f: PeriodoDoFiltro,
   mesAtual: string,
 ): URLSearchParams {
   const busca = new URLSearchParams();
@@ -434,11 +476,6 @@ export function filtroParaBusca(
     default:
       if (f.mes && f.mes !== mesAtual) busca.set("mes", f.mes);
   }
-
-  if (f.servicoIds.length > 0) busca.set("servicos", f.servicoIds.join(","));
-  if (f.barbeiroIds.length > 0) busca.set("barbeiros", f.barbeiroIds.join(","));
-  if (f.produtoIds.length > 0) busca.set("produtos", f.produtoIds.join(","));
-  if (f.soLoja) busca.set("loja", "1");
 
   return busca;
 }
@@ -478,7 +515,10 @@ function porExtensoCurto(iso: string): string {
  * quando alguém o mexeu — e aí tirá-la devolve ao mês corrente, que é uma
  * mudança de verdade.
  */
-function rotuloDoPeriodo(f: FiltroDashboard, mesAtual: string): string | null {
+export function rotuloDoPeriodo(
+  f: PeriodoDoFiltro,
+  mesAtual: string,
+): string | null {
   switch (f.periodo) {
     case "dia":
       return f.dataInicio ? `Dia ${porExtensoCurto(f.dataInicio)}` : "Dia";

@@ -1,4 +1,5 @@
 import { Cabecalho } from "@/components/cabecalho";
+import { FaixaDeAlerta } from "@/components/comunicados/faixa-de-alerta";
 import { Sidebar } from "@/components/navegacao/sidebar";
 import { CacheDaConta } from "@/components/sessao/cache-da-conta";
 import { obterSessao } from "@/lib/conta";
@@ -17,26 +18,29 @@ import { obterSessao } from "@/lib/conta";
 export default async function LayoutSistema({ children }: LayoutProps<"/">) {
   const { logado, barbearia } = await obterSessao();
   const nome = barbearia?.nome;
+  const admin = barbearia?.admin === true;
 
   return (
-    <div className="flex flex-1">
-      <Sidebar logado={logado} />
+    // O cache da CONTA embrulha a tela inteira, e não só o conteúdo: o sino
+    // do cabeçalho e a faixa de alerta também leem dele. Ver o comentário
+    // em `cache-da-conta.tsx` — sem isto, sair e entrar com outra conta no
+    // mesmo navegador mostrava os dados da anterior.
+    <CacheDaConta contaId={barbearia?.id ?? null}>
+      <div className="flex flex-1">
+        <Sidebar logado={logado} admin={admin} />
 
-      {/* min-w-0 impede que conteudo largo (tabela, nome comprido) empurre
-          a coluna e estoure a largura da pagina. */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Cabecalho logado={logado} nomeBarbearia={nome} />
-        {/* Sem max-width: a agenda ocupa a tela inteira. Páginas de leitura
-            põem o próprio limite de largura internamente. */}
-        <main className="w-full flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pb-10">
-          {/* O cache das telas pertence à CONTA, não à aba — ver o comentário
-              em `cache-da-conta.tsx`. Sem isto, sair e entrar com outra conta
-              no mesmo navegador mostrava os dados da anterior. */}
-          <CacheDaConta contaId={barbearia?.id ?? null}>
+        {/* min-w-0 impede que conteudo largo (tabela, nome comprido) empurre
+            a coluna e estoure a largura da pagina. */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Cabecalho logado={logado} admin={admin} nomeBarbearia={nome} />
+          {/* Sem max-width: a agenda ocupa a tela inteira. Páginas de leitura
+              põem o próprio limite de largura internamente. */}
+          <main className="w-full flex-1 px-4 pb-28 pt-6 sm:px-6 sm:pb-10">
+            {logado ? <FaixaDeAlerta /> : null}
             {children}
-          </CacheDaConta>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </CacheDaConta>
   );
 }

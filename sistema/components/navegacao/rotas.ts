@@ -1,6 +1,9 @@
 import {
+  Building2,
   CalendarDays,
+  ChartColumn,
   LayoutDashboard,
+  Megaphone,
   Package,
   ShoppingBag,
   Store,
@@ -59,6 +62,32 @@ export const ROTAS: Rota[] = [
 ];
 
 /**
+ * Os submenus do Painel Admin (0044). Só aparecem para a conta admin — e
+ * isso é conveniência de tela: quem não é admin e digita o endereço cai no
+ * 404 do layout de `/admin`, e as funções `admin_*` do banco recusam.
+ */
+export const ROTAS_ADMIN: Rota[] = [
+  {
+    href: "/admin/barbearias",
+    rotulo: "Barbearias",
+    icone: Building2,
+    descricao: "Todas as contas e o pagamento de cada uma",
+  },
+  {
+    href: "/admin/movimento",
+    rotulo: "Movimento",
+    icone: ChartColumn,
+    descricao: "Agendamentos, serviços e loja de cada barbearia",
+  },
+  {
+    href: "/admin/notificacoes",
+    rotulo: "Notificações",
+    icone: Megaphone,
+    descricao: "Atualizações e alertas para todas as barbearias",
+  },
+];
+
+/**
  * O que aparece na navegação.
  *
  * Sem sessão, nada de sistema: quem chega pelo QR code da parede é cliente da
@@ -74,7 +103,7 @@ export function rotasVisiveis(logado: boolean): Rota[] {
 
 /** A rota que casa com o caminho atual — usada para marcar o item ativo. */
 export function rotaAtiva(caminho: string): Rota | undefined {
-  return ROTAS.find(
+  return [...ROTAS, ...ROTAS_ADMIN].find(
     (r) => caminho === r.href || caminho.startsWith(`${r.href}/`),
   );
 }

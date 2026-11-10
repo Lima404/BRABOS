@@ -1600,3 +1600,137 @@ ninguém lê, e o proxy deixa passar quando a leitura falha). Depois o
 deploy do sistema com as duas variáveis, depois o webhook no Asaas
 (apontar para uma rota que ainda não existe faz o Asaas pausar a fila), e
 por último o site.
+
+## Painel Admin e notificações — migração 0044
+
+**Uma conta só é admin: a BARBOS.** Pedido do Gabriel em 10/11/2026.
+`barbearias.admin` abre o grupo "Painel Admin" no menu (Barbearias,
+Movimento, Notificações). Três travas, nenhuma na tela:
+
+- índice único parcial `barbearias_um_admin`: no máximo UMA linha com
+  `admin = true` no banco inteiro;
+- gatilho `proteger_admin`: a API (`anon`/`authenticated`) nunca liga nem
+  desliga a coluna — mesma ideia do `proteger_pagamento_ativo`, porque a
+  política "edita a propria barbearia" deixa a dona mudar a própria linha;
+- trocar quem é admin só pelo SQL Editor (postgres).
+
+**Quem barra o dado é o banco, não a tela.** O layout de `/admin` devolve
+404 para quem não é admin (dizer "acesso negado" já contaria que a tela
+existe), mas a barreira de verdade são as funções `admin_barbearias`,
+`admin_movimento` e `admin_comunicados`: todas `security definer`, todas
+começam por `sou_admin()` e respondem 42501 — nunca uma lista vazia. As
+ações de servidor de `app/(sistema)/admin/acoes.ts` não conferem "é
+admin?" por conta própria, de propósito: a checagem na aplicação é a que
+alguém esquece de copiar para a próxima ação. Ensaio de 10/11/2026: 41
+testes, inclusive outra barbearia tentando se promover, publicar,
+editar e apagar notificação, e a chave anon chamando tudo (401).
+
+**O painel vê SOMAS, nunca linhas.** `admin_movimento(inicio, fim)` lê as
+MESMAS views do dashboard (`servicos_no_caixa`, `vendas_no_caixa`), então o
+número de uma barbearia no painel é o número que ela vê no dashboard dela
+sem filtro — o ensaio comparou as três barbearias em três períodos.
+"Agendamentos" é a única conta própria: marcados no período, sem os
+cancelados. Barbearia sem movimento aparece zerada: parada é informação.
+
+**A situação do pagamento vem pronta** (`admin_barbearias.situacao`):
+`em_dia`, `liberada` (manual), `tolerancia` (mensalidade vencida, dentro
+dos 7 dias) e `bloqueada`. "Adimplente" no filtro = em dia ou liberada;
+tolerância conta como inadimplente — entra no sistema, mas não pagou.
+
+**O filtro do Movimento é o do dashboard.** O período saiu de
+`lib/dashboard/filtros.ts` em funções próprias (`periodoDaBusca`,
+`periodoParaBusca`, `intervaloDoPeriodo`, `rotuloDoPeriodo`) e o seletor
+virou `components/dashboard/painel-periodo.tsx`, usado pelos dois
+diálogos. No lugar de serviço/barbeiro/produto entram barbearias e
+pagamento (`lib/admin/filtros.ts`). Mora na URL, aplica com `pushState`.
+
+### Notificações do sistema
+
+**Na tela é "Notificações"; no banco é `comunicados`.** `lib/notificacoes/`
+e o "aviso de agendamento" (0035) já são outra coisa — o push no celular
+quando um cliente marca horário. Dois nomes iguais para coisas
+diferentes confundiriam quem mexe no código.
+
+O admin publica em Painel Admin → Notificações; toda barbearia lê no sino
+do cabeçalho (`/notificacoes`). Dois tipos: **atualização** (fica no
+sino) e **alerta** (vira faixa no topo de TODAS as telas até a barbearia
+ler ou dispensar). Publicar é imediato, sem rascunho; editar mostra
+"editada" para quem já leu.
+
+**"Nova" é decidido no banco** (`meus_comunicados`): não lida E publicada
+depois que a conta foi criada. Sem a segunda parte, quem assina hoje
+entraria com o sino marcando as notas de versão do ano inteiro. O admin
+não recebe as próprias.
+
+**O sino não atrasa navegação nenhuma.** A contagem é pedida pelo
+navegador (`useNaoLidos`, a mesma consulta para sino e faixa) e não pelo
+layout, que roda a cada clique. Ela se refaz a cada 5 minutos para o
+alerta chegar a quem deixa a agenda aberta no balcão o dia todo. Por
+isso o `CacheDaConta` passou a embrulhar a tela inteira, cabeçalho
+junto — antes ele cobria só o `<main>`.
+
+**Abrir a tela marca tudo como lido, mas o selo "Nova" fica nesta
+visita.** A lista é marcada como velha para a próxima vez, não refeita na
+hora: tirar o selo no instante em que a pessoa chega apagaria a pista de
+onde começar a ler.
+
+**O texto segue a regra do sistema: sem acento.** As quebras de linha
+ficam (são os parágrafos).
+
+**Ação de servidor que LÊ devolve `Consulta<T>`** (`lib/consulta.ts`) e a
+tela usa `dadosOuErro()` no `queryFn`. Se ela lançasse, o Next trocaria a
+mensagem por um texto genérico em produção. E o `catch` chama
+`unstable_rethrow` antes de traduzir (`lib/admin/erros.ts`): `cookies()`
+lança um erro interno de propósito no build, e engolido ele fazia o build
+registrar "exceção" em toda tela do painel.
+
+**A ordem de subir:** a 0044 só acrescenta e foi aplicada antes do deploy
+(10/11/2026). A sessão lê `barbearias` com `select("*")` justamente para
+o código novo não derrubar a navegação de todo mundo num banco sem a
+coluna `admin`.
+
+### Patch notes — migração 0045
+
+**A atualização virou patch note** (pedido do Gabriel em 10/11/2026, "no
+estilo das notas de versão do LoL"). O alerta continua como era.
+
+- **Versão.** Toda atualização tem `versao` (1.0, 1.1, 1.2.3); alerta não
+  tem (`check`). A versão do sistema é a MAIOR publicada, e atualização
+  nova precisa passar dela — o gatilho `versao_nova_e_maior` recusa com
+  22023 e devolve a atual em `detail`. A primeira é a 1.0 (o formulário
+  já nasce com ela). Comparação POR NÚMERO (`versao_em_numeros`, e
+  `compararVersoes` no TypeScript): 1.10 vem depois de 1.9, e 1.0 = 1.0.0
+  — o índice único recusa a segunda. Editar uma versão velha não passa
+  pelo gatilho: corrigir o número de uma versão publicada não é lançar
+  uma nova.
+- **O texto da notificação é o RESUMO** — é ele que aparece no sino. O
+  detalhe mora em `comunicado_secoes`: uma seção por parte do sistema
+  ("Agenda", "Dashboard", "Nova ferramenta"), cada uma com texto e até 6
+  fotos, na ordem em que o admin arrumou.
+- **Patch note e seções mudam JUNTOS** (`salvar_atualizacao`, tudo ou
+  nada). Ninguém escreve na tabela de seções direto: duas chamadas
+  soltas deixariam uma versão publicada com metade das seções se a
+  segunda falhasse. Corrigir uma versão TROCA as seções inteiras.
+- **Fotos no bucket `patch-notes`, PRIVADO.** Print do sistema pode
+  mostrar nome e telefone de cliente da barbearia de teste, e bucket
+  público entregaria a foto a qualquer um com o endereço. Toda conta
+  logada lê; só o admin envia e apaga (políticas em `storage.objects`).
+  A tela recebe endereço ASSINADO de 6 horas (`lib/comunicados/fotos.ts`).
+- **A foto sobe na hora, direto do navegador** com a sessão do admin, e o
+  "Publicar" leva só os caminhos — uma ação de servidor tem limite de
+  tamanho de corpo, e cinco prints passariam dele. Caminho = `<uuid>.<ext>`
+  (`fotos_validas` no banco). Foto que subiu e não foi usada (formulário
+  cancelado, ou tirada antes de salvar) sai por `descartarFotos`, que só
+  apaga o que NENHUMA seção usa. Foto que saiu de uma versão corrigida, e
+  as de uma versão apagada, saem do bucket DEPOIS que o banco gravou.
+- **`/patch-notes`** mostra a versão do sistema em destaque, o índice das
+  versões e cada versão inteira, pela VERSÃO (não pela data). Abrir a
+  página marca as atualizações como lidas.
+- **O sino abre um painel** (Sheet) com as 15 mais recentes. Atualização
+  leva a `/patch-notes#versao-1-1`; alerta, ao texto inteiro em
+  `/notificacoes#notificacao-…`. O número some quando o painel FECHA:
+  marcar na abertura apagaria a pista de quais eram as novas.
+
+**A ordem de subir:** 0045 antes do deploy. Ela só acrescenta (as duas
+funções que mudam de formato só GANHAM colunas), então o código no ar não
+sente. O código novo sem ela responde "Rode as migrações 0044 e 0045".
