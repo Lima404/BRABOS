@@ -21,6 +21,8 @@ export const CAPITULOS: readonly Capitulo[] = [
   { id: "caderno", nome: "Por que trocar", noMenu: true },
   { id: "celular", nome: "No celular", noMenu: true },
   { id: "passos", nome: "Como começa", noMenu: false },
+  { id: "impacto", nome: "Impacto", noMenu: false },
+  { id: "planos", nome: "Planos", noMenu: true },
   { id: "comecar", nome: "Começar", noMenu: false },
 ];
 

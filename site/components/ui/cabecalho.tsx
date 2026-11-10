@@ -58,7 +58,9 @@ export function Cabecalho() {
           />
         </a>
 
-        <nav aria-label="Seções" className="hidden items-center gap-1 md:flex">
+        {/* Só a partir de 1024px: abaixo disso os cinco itens e o botão não
+            cabem numa linha, e o texto quebrava em duas. */}
+        <nav aria-label="Seções" className="hidden items-center gap-1 lg:flex">
           {ATALHOS.map((atalho) => {
             const eAtivo = atalho.id === ativo;
             return (
@@ -66,7 +68,7 @@ export function Cabecalho() {
                 key={atalho.id}
                 href={`#${atalho.id}`}
                 aria-current={eAtivo ? "true" : undefined}
-                className={`relative flex h-11 items-center px-3 text-sm font-medium transition-colors ${
+                className={`relative flex h-11 items-center px-3 text-sm font-medium whitespace-nowrap transition-colors ${
                   eAtivo ? "text-white" : "text-graf-300 hover:text-white"
                 }`}
               >
@@ -88,7 +90,7 @@ export function Cabecalho() {
             WhatsApp com a primeira mensagem já escrita. */}
         <div className="ml-auto flex items-center">
           <Magnetico>
-            <Botao href={WHATSAPP} novaAba>
+            <Botao href={WHATSAPP} novaAba className="whitespace-nowrap">
               Abra sua conta!
               <span className="sr-only"> (abre o WhatsApp)</span>
             </Botao>

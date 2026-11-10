@@ -528,6 +528,114 @@ body {
   opacity: 1;
 }
 
+/* --- Planos: a luz que dá a volta na borda do cartão ---------------------- */
+/* Um degradê cônico girando, recortado para sobrar só a moldura de 1px: a
+   máscara pinta a caixa inteira e tira o miolo (content-box). */
+@property --giro-borda {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.borda-viva::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--giro-borda),
+    transparent 0 62%,
+    color-mix(in srgb, var(--color-ambar-500) 85%, transparent) 80%,
+    transparent 96%
+  );
+  -webkit-mask:
+    linear-gradient(black 0 0) content-box,
+    linear-gradient(black 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(black 0 0) content-box exclude,
+    linear-gradient(black 0 0);
+  animation: giro-borda 6s linear infinite;
+}
+
+@keyframes giro-borda {
+  to {
+    --giro-borda: 360deg;
+  }
+}
+
+/* --- Impacto: o mapa do RN ------------------------------------------------ */
+/* As divisas dos municípios entram como MÁSCARA, e não como imagem: o SVG
+   só diz onde pintar, e a cor vem do fundo da camada, que sai dos tokens.
+   As três camadas usam a mesma máscara, então caem uma em cima da outra. */
+.rn-camada {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-image: url(/rn/municipios.svg);
+  mask-image: url(/rn/municipios.svg);
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.rn-municipios {
+  background: var(--color-graf-700);
+}
+
+/* A faixa de luz que atravessa o estado de oeste a leste. A segunda
+   máscara é a faixa, e só aparece onde as duas se cruzam. */
+.rn-varredura {
+  background: var(--color-ambar-500);
+  -webkit-mask-image:
+    url(/rn/municipios.svg),
+    linear-gradient(90deg, transparent, black 50%, transparent);
+  mask-image:
+    url(/rn/municipios.svg),
+    linear-gradient(90deg, transparent, black 50%, transparent);
+  -webkit-mask-size: 100% 100%, 35% 100%;
+  mask-size: 100% 100%, 35% 100%;
+  -webkit-mask-position: 0 0, -60% 0;
+  mask-position: 0 0, -60% 0;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  animation: rn-varrer 7s cubic-bezier(0.45, 0, 0.3, 1) 1.2s infinite;
+}
+
+/* Com a faixa em 35% da largura, -60% e 160% a deixam inteira fora do
+   mapa. Atravessa em 45% do ciclo e descansa no resto. */
+@keyframes rn-varrer {
+  0% {
+    -webkit-mask-position: 0 0, -60% 0;
+    mask-position: 0 0, -60% 0;
+  }
+  45%,
+  100% {
+    -webkit-mask-position: 0 0, 160% 0;
+    mask-position: 0 0, 160% 0;
+  }
+}
+
+/* O holofote: um círculo que acende as divisas embaixo do cursor. A
+   posição vem do JavaScript, em --hx e --hy. */
+.rn-holofote {
+  background: var(--color-ambar-300);
+  -webkit-mask-image:
+    url(/rn/municipios.svg),
+    radial-gradient(circle 9rem at var(--hx, 60%) var(--hy, 45%), black, transparent);
+  mask-image:
+    url(/rn/municipios.svg),
+    radial-gradient(circle 9rem at var(--hx, 60%) var(--hy, 45%), black, transparent);
+  -webkit-mask-size: 100% 100%, 100% 100%;
+  mask-size: 100% 100%, 100% 100%;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
 /* --- Final: os anéis que giram sozinhos ----------------------------------- */
 .gira-lento-contra {
   animation: girar 70s linear infinite reverse;
@@ -591,6 +699,15 @@ body {
     opacity: 1;
     filter: none;
     transform: none;
+  }
+
+  .rn-varredura {
+    animation: none;
+    opacity: 0;
+  }
+
+  .borda-viva::before {
+    animation: none;
   }
 
   .comparacao .risco {

@@ -28,7 +28,7 @@ const QUADROS_DA_CADEIRA = Array.from(
 );
 
 /**
- * Capítulo 07 — a cadeira volta, e o convite.
+ * Capítulo 09 — a cadeira volta, e o convite.
  *
  * A página abre com uma cadeira numa barbearia à noite e fecha com ela de
  * novo, agora sozinha dentro de um anel de luz — o fecho da referência.

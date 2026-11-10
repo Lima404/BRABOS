@@ -18,6 +18,8 @@ import { useEffect, useRef } from "react";
  */
 const FORMATOS = {
   numero: (n: number) => String(Math.round(n)),
+  /** Com o ponto do milhar: 10.000, e não 10000. */
+  milhar: (n: number) => Math.round(n).toLocaleString("pt-BR"),
   reais: (n: number) =>
     n.toLocaleString("pt-BR", {
       style: "currency",

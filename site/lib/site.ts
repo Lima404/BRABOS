@@ -35,7 +35,12 @@ export const ENTRAR = `${SISTEMA}/entrar`;
 const WHATSAPP_NUMERO = "5584996308743";
 const WHATSAPP_MENSAGEM =
   "Olá! Vim pelo site do BARBOS e quero abrir a conta da minha barbearia.";
-export const WHATSAPP = `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(WHATSAPP_MENSAGEM)}`;
+export const WHATSAPP = whatsapp(WHATSAPP_MENSAGEM);
+
+/** Uma conversa no WhatsApp do BARBOS com a primeira mensagem já escrita. */
+export function whatsapp(mensagem: string): string {
+  return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensagem)}`;
+}
 
 /** O Instagram do BARBOS. */
 export const INSTAGRAM = "https://www.instagram.com/barboss.oficial/";
