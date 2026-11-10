@@ -268,7 +268,18 @@ export const ESTADOS: Record<
 
 export type Agendamento = {
   id: string;
+  /**
+   * Quem senta na cadeira — é o nome que a agenda mostra. Na maioria das
+   * vezes é o próprio cliente; quando não é (o filho, o avulso no número
+   * do barbeiro), é o `nome_atendido` do agendamento (0042).
+   */
   clienteNome: string;
+  /**
+   * O nome no cadastro do dono do telefone. Ausente no agendamento antigo
+   * sem telefone. Quando difere de `clienteNome`, o horário é de outra
+   * pessoa — e o formulário usa isso para oferecer "corrigir o cadastro".
+   */
+  nomeNoCadastro?: string;
   /**
    * Telefone de quem marcou, com DDD (migração 0037).
    *

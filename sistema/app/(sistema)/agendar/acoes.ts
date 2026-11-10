@@ -8,6 +8,11 @@ import { obterAgendaPublica } from "@/lib/agendamento-online/repositorio";
 import { avisarAgendamento } from "@/lib/notificacoes/servidor";
 import type { AgendaPublica } from "@/lib/agendamento-online/tipos";
 import {
+  telefoneCompleto,
+  temNomeESobrenome,
+  type ClienteDoTelefone,
+} from "@/lib/clientes/tipos";
+import {
   digitosDoTelefone,
   sanitizarNome,
   textoLivreParaBanco,
@@ -31,6 +36,12 @@ const FALHA_DE_TRANSPORTE =
 
 export async function agendarPeloLink(entrada: {
   slug: string;
+  /**
+   * Vazio quando o telefone já é cliente desta barbearia e é ele mesmo
+   * quem vai ser atendido. Preenchido (nome e sobrenome) para cliente
+   * novo, ou para quem marca para outra pessoa — aí o banco guarda esse
+   * nome como quem é atendido, sem trocar o do cadastro (0042).
+   */
   clienteNome: string;
   /** Com DDD. Obrigatório desde a migração 0037. */
   clienteTelefone: string;
@@ -49,8 +60,10 @@ export async function agendarPeloLink(entrada: {
     const digitos = digitosDoTelefone(telefone);
 
     if (!slug) return { ok: false, erro: "Link inválido." };
-    if (nome.length < 2) {
-      return { ok: false, erro: "Informe seu nome." };
+    // Nome vazio é o cliente que já tem cadastro marcando para si: quem
+    // decide se ele existe é a RPC. Nome escrito tem que ser completo.
+    if (nome.length > 0 && !temNomeESobrenome(nome)) {
+      return { ok: false, erro: "Informe nome e sobrenome." };
     }
     // Cobrado aqui e não só na tela: esta função é um endereço HTTP
     // público, e é ela que decide se o telefone é obrigatório enquanto a
@@ -85,7 +98,7 @@ export async function agendarPeloLink(entrada: {
       "criar_agendamento_publico_por_chave",
       {
       p_chave: slug,
-      p_cliente_nome: nome,
+      p_cliente_nome: nome || null,
       p_cliente_telefone: telefone,
       p_barbeiro_id: entrada.barbeiroId,
       p_servico_id: entrada.servicoId,
@@ -172,6 +185,45 @@ export async function agendarPeloLink(entrada: {
       ok: false,
       erro: "Algo deu errado. Se continuar, recarregue a página.",
     };
+  }
+}
+
+/**
+ * O telefone digitado já é cliente desta barbearia?
+ *
+ * Responde com o nome RESUMIDO ("GABRIEL L."), nunca o inteiro: esta tela
+ * abre sem sessão e dá para testar números nela (decisão 2 da 0042).
+ *
+ * Nunca estoura. Se a busca falhar — rede, ou a 0042 ainda não rodou —, a
+ * tela recebe "falhou" e volta a pedir o nome, que é o comportamento de
+ * antes. Marcar continua funcionando do mesmo jeito.
+ */
+export async function buscarClientePublico(
+  slug: string,
+  telefone: string,
+): Promise<ClienteDoTelefone> {
+  try {
+    const digitos = digitosDoTelefone(telefone ?? "");
+    if (!slug || !telefoneCompleto(digitos)) return { estado: "novo" };
+
+    const supabase = await criarClienteServidor();
+    const { data, error } = await supabase.rpc("cliente_publico", {
+      p_chave: slug.trim(),
+      p_telefone: digitos,
+    });
+
+    if (error) {
+      console.error("[BARBOS] busca de cliente (pública):", error.code ?? "", error.message);
+      return { estado: "falhou" };
+    }
+
+    const resposta = data as { encontrado?: boolean; nome?: string } | null;
+    return resposta?.encontrado && resposta.nome
+      ? { estado: "achou", nome: resposta.nome }
+      : { estado: "novo" };
+  } catch (erro) {
+    console.error("[BARBOS] busca de cliente (pública) lançou exceção:", erro);
+    return { estado: "falhou" };
   }
 }
 

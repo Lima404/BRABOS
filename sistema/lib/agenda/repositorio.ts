@@ -13,6 +13,7 @@ import {
   type ItemDaComanda,
   type Servico,
 } from "@/lib/agenda/tipos";
+import { mascararTelefone } from "@/lib/formato";
 
 /**
  * Camada de dados da agenda — tabelas `agendamentos`, `servicos` e
@@ -196,9 +197,15 @@ export async function listarFolgas(): Promise<Folga[]> {
 
 type LinhaAgendamento = {
   id: string;
-  cliente_nome: string;
-  /** Null em linha gravada antes da migração 0037. */
-  cliente_telefone: string | null;
+  /**
+   * Só no agendamento antigo, de antes da 0037, que não tem telefone e por
+   * isso não tem cliente. Os outros leem o nome do cadastro (0042).
+   */
+  cliente_nome: string | null;
+  /** O cadastro do cliente. Null no agendamento antigo sem telefone. */
+  cliente: { nome: string; telefone: string } | null;
+  /** Quem é atendido, quando não é o dono do telefone (0042). */
+  nome_atendido: string | null;
   data: string;
   horario: string;
   estado: EstadoAgendamento;
@@ -231,8 +238,8 @@ export async function listarAgendamentosDoMes(
   const { data, error } = await supabase
     .from("agendamentos")
     .select(
-      "id, cliente_nome, cliente_telefone, data, horario, estado, observacao," +
-        " preco_centavos, duracao_min, barbeiro_id," +
+      "id, cliente_nome, nome_atendido, cliente:clientes(nome, telefone)," +
+        " data, horario, estado, observacao, preco_centavos, duracao_min, barbeiro_id," +
         " servico:servicos(id, nome, cor, duracao_min, preco_centavos)",
     )
     .gte("data", `${mes}-01`)
@@ -268,8 +275,13 @@ export async function listarAgendamentosDoMes(
     )
     .map((l) => ({
       id: l.id,
-      clienteNome: l.cliente_nome,
-      clienteTelefone: l.cliente_telefone ?? undefined,
+      // Quem senta na cadeira: o atendido, se for outra pessoa; senão o
+      // cadastro; e o nome antigo no agendamento sem telefone.
+      clienteNome: l.nome_atendido ?? l.cliente?.nome ?? l.cliente_nome ?? "",
+      nomeNoCadastro: l.cliente?.nome,
+      // O banco guarda só os números (0042); a tela continua recebendo com
+      // máscara, que é como a dona lê e como os campos já esperam.
+      clienteTelefone: l.cliente ? mascararTelefone(l.cliente.telefone) : undefined,
       servico: {
         id: l.servico.id,
         nome: l.servico.nome,
@@ -296,8 +308,10 @@ async function listarAgendamentosDoMesSemBarbeiro(
 ): Promise<Agendamento[]> {
   const { data, error } = await supabase
     .from("agendamentos")
+    // Banco de antes da 0015 também não tem a 0042: aqui o nome ainda mora
+    // no agendamento, e não há cadastro de cliente para ler.
     .select(
-      "id, cliente_nome, cliente_telefone, data, horario, estado, observacao," +
+      "id, cliente_nome, data, horario, estado, observacao," +
         " preco_centavos, duracao_min," +
         " servico:servicos(id, nome, cor, duracao_min, preco_centavos)",
     )
@@ -311,7 +325,10 @@ async function listarAgendamentosDoMesSemBarbeiro(
     throw new Error("Não foi possível carregar a agenda.");
   }
 
-  const linhas = data as unknown as Omit<LinhaAgendamento, "barbeiro_id">[];
+  const linhas = data as unknown as Omit<
+    LinhaAgendamento,
+    "barbeiro_id" | "cliente" | "nome_atendido"
+  >[];
 
   return linhas
     .filter((l): l is typeof l & { servico: NonNullable<typeof l.servico> } =>
@@ -319,8 +336,7 @@ async function listarAgendamentosDoMesSemBarbeiro(
     )
     .map((l) => ({
       id: l.id,
-      clienteNome: l.cliente_nome,
-      clienteTelefone: l.cliente_telefone ?? undefined,
+      clienteNome: l.cliente_nome ?? "",
       servico: {
         id: l.servico.id,
         nome: l.servico.nome,

@@ -6,6 +6,7 @@ import { CalendarCheck, CalendarPlus, Loader2, MessageCircle } from "lucide-reac
 
 import {
   agendarPeloLink,
+  buscarClientePublico,
   buscarDiaPublico,
 } from "@/app/(sistema)/agendar/acoes";
 import {
@@ -23,6 +24,7 @@ import {
   recadoDoAgendamento,
   type AgendaPublica,
 } from "@/lib/agendamento-online/tipos";
+import { temNomeESobrenome } from "@/lib/clientes/tipos";
 import { chaves } from "@/lib/query";
 import {
   agoraNaBarbearia,
@@ -77,6 +79,12 @@ export function AgendarPublico({
   const [pronto, setPronto] = useState<{ data: string; horario: string } | null>(
     null,
   );
+  /**
+   * Remonta o formulário em "Marcar outro horário". Ele guarda por dentro
+   * a resposta da busca do telefone; sem remontar, a tela voltaria limpa
+   * por fora e ainda dizendo "você já marcou aqui" por dentro.
+   */
+  const [rodada, setRodada] = useState(0);
 
   // O dia muda quando o cliente troca a data; o resto (serviços, equipe,
   // expediente) não muda, então o `inicial` cobre enquanto a busca não volta.
@@ -120,12 +128,17 @@ export function AgendarPublico({
   async function enviar(dados: DadosAgendamento) {
     setErro(null);
 
-    if (dados.clienteNome.trim().length < 2) {
-      setErro("Informe seu nome.");
-      return;
-    }
+    // O telefone primeiro, na mesma ordem dos campos.
     if (digitosDoTelefone(dados.clienteTelefone).length < 10) {
       setErro("Informe seu telefone com DDD — é por ele que a barbearia fala com você.");
+      return;
+    }
+    // Nome vazio só vale para quem já tem cadastro e marca para si. Quem
+    // digita — cliente novo, ou para outra pessoa — escreve nome e
+    // sobrenome (pedido do Gabriel, 10/11/2026).
+    const nomeVazio = dados.clienteNome.trim().length === 0;
+    if (nomeVazio ? !dados.clienteCadastrado : !temNomeESobrenome(dados.clienteNome)) {
+      setErro("Informe nome e sobrenome.");
       return;
     }
     if (!dados.barbeiroId) {
@@ -337,6 +350,7 @@ export function AgendarPublico({
             setClienteNome("");
             setClienteTelefone("");
             setObservacao("");
+            setRodada((r) => r + 1);
 
             // O campo ainda aponta para o horário que ele mesmo acabou de
             // ocupar. Deixá-lo ali faria a tela voltar já com uma escolha
@@ -368,6 +382,9 @@ export function AgendarPublico({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-start">
       <div className="min-w-0">
         <FormularioAgendamento
+          key={rodada}
+          publico
+          buscarCliente={(telefone) => buscarClientePublico(slug, telefone)}
           clienteNome={clienteNome}
           aoMudarClienteNome={setClienteNome}
           clienteTelefone={clienteTelefone}

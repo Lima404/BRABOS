@@ -117,6 +117,7 @@ const TABELAS = [
   "itens_venda", // 0007
   "barbeiros", // 0014
   "folgas", // 0020
+  "clientes", // 0042 (fechada para anon: responde 401, não 404)
 ];
 const faltando = [];
 

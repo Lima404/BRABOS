@@ -3,12 +3,17 @@
  *
  *   npm run teste:conta
  *
- * Regra do projeto: **todo teste acontece na barbearia "BICOS"**, a do
- * Gabriel. Nunca criar conta na hora — cada conta criada por conveniência
- * vira lixo permanente no Supabase.
+ * Regra do projeto: **todo teste acontece na barbearia de apelido
+ * `BARBOS`**, a do Gabriel. Nunca criar conta na hora — cada conta criada
+ * por conveniência vira lixo permanente no Supabase.
  *
- * O nome era "Gabriel Teste" até 18/09/2026, quando o projeto Supabase foi
- * apagado e o banco teve de ser recriado do zero (ver AGENTS.md).
+ * O apelido era `gabriel-teste` até 18/09/2026 (o projeto Supabase foi
+ * apagado e o banco recriado do zero, ver AGENTS.md), depois `bicos`, e
+ * desde novembro de 2026 é `BARBOS`.
+ *
+ * Confere pelo APELIDO, não pelo nome: o nome já mudou três vezes ("Gabriel
+ * Teste", "BICOS", "BARBERIA MENEZES FC") e cada troca quebrava este
+ * script. O apelido só muda se alguém mudar de propósito.
  *
  * As credenciais moram em `.env.local` (fora do git):
  *
@@ -24,7 +29,7 @@
  */
 import { readFileSync } from "node:fs";
 
-export const NOME_DA_BARBEARIA = "BICOS";
+export const APELIDO_DA_BARBEARIA = "BARBOS";
 
 function lerEnvLocal() {
   try {
@@ -60,7 +65,7 @@ if (!email || !senha) {
   console.error("");
   console.error("  Acrescente as duas linhas (o arquivo não vai pro git):");
   console.error("");
-  console.error(`    BARBOS_EMAIL_TESTE=e-mail da conta "${NOME_DA_BARBEARIA}"`);
+  console.error(`    BARBOS_EMAIL_TESTE=e-mail da barbearia de apelido "${APELIDO_DA_BARBEARIA}"`);
   console.error("    BARBOS_SENHA_TESTE=a senha dela");
   process.exit(1);
 }
@@ -99,11 +104,11 @@ console.log(`✓ Entrei em "${barbearia.nome}"`);
 console.log(`  e-mail: ${email}`);
 console.log(`  loja:   /loja/${barbearia.slug}`);
 
-if (barbearia.nome !== NOME_DA_BARBEARIA) {
+if (barbearia.slug !== APELIDO_DA_BARBEARIA) {
   console.error("");
-  console.error(`✗ Mas o nome deveria ser "${NOME_DA_BARBEARIA}".`);
-  console.error("  Ou a credencial aponta pra conta errada, ou a barbearia foi");
-  console.error("  renomeada. Não sigo o teste numa conta que não é a de teste.");
+  console.error(`✗ Mas o apelido deveria ser "${APELIDO_DA_BARBEARIA}".`);
+  console.error("  Ou a credencial aponta pra conta errada, ou o apelido foi");
+  console.error("  trocado. Não sigo o teste numa conta que não é a de teste.");
   process.exit(1);
 }
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 
 import type { DadosAgendamento } from "@/app/(sistema)/agenda/acoes";
 import { Alerta } from "@/components/ui/alerta";
-import { Campo } from "@/components/ui/campo";
+import { Button } from "@/components/ui/button";
+import { Campo, Opcao } from "@/components/ui/campo";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input, InputDeTempo } from "@/components/ui/input";
 import {
   Select,
@@ -30,7 +32,14 @@ import {
 } from "@/lib/agenda/tipos";
 import type { Barbeiro } from "@/lib/barbearia/tipos";
 import {
+  mesmoNome,
+  telefoneCompleto,
+  temNomeESobrenome,
+  type ClienteDoTelefone,
+} from "@/lib/clientes/tipos";
+import {
   agoraNaBarbearia,
+  digitosDoTelefone,
   duracaoPorExtenso,
   ehHoje,
   mascararTelefone,
@@ -80,6 +89,9 @@ function useRelogioDaBarbearia(): string | null {
   );
 }
 
+/** Onde está a busca do cliente pelo telefone. */
+type EstadoDoCadastro = { estado: "ocioso" } | { estado: "buscando" } | ClienteDoTelefone;
+
 function minutosDe(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + (m || 0);
@@ -103,6 +115,9 @@ export function FormularioAgendamento({
   clienteTelefone,
   aoMudarClienteTelefone,
   telefoneObrigatorio = true,
+  buscarCliente,
+  nomeDoCadastro,
+  publico = false,
   barbeiroId,
   aoMudarBarbeiroId,
   barbeiros,
@@ -137,6 +152,25 @@ export function FormularioAgendamento({
    * que informar.
    */
   telefoneObrigatorio?: boolean;
+  /**
+   * Procura o cliente assim que o telefone fica completo (0042). Achou: o
+   * nome aparece sozinho. Sem esta função o formulário pede o nome como
+   * antes.
+   */
+  buscarCliente?: (telefone: string) => Promise<ClienteDoTelefone>;
+  /**
+   * Agenda interna, ao EDITAR: o nome no cadastro do dono do telefone.
+   * É com ele que o formulário compara o nome digitado para oferecer
+   * "corrigir o cadastro" — sem precisar buscar de novo o que já veio.
+   */
+  nomeDoCadastro?: string;
+  /**
+   * A tela do link (`/agendar`), aberta sem sessão. Muda três coisas:
+   * o nome achado vem resumido e fica só para leitura (quem digita pode
+   * ser qualquer um, e o cadastro não muda por aqui); dá para marcar para
+   * outra pessoa; e quem digita o nome escreve nome e sobrenome.
+   */
+  publico?: boolean;
   barbeiroId: string;
   aoMudarBarbeiroId: (v: string) => void;
   barbeiros: Barbeiro[];
@@ -232,11 +266,131 @@ export function FormularioAgendamento({
           ? "· ocupado"
           : "· não cabe no dia";
 
+  // ============================================================
+  // O CLIENTE PELO TELEFONE (0042)
+  // ============================================================
+  //
+  // O telefone é o primeiro campo: é ele que identifica o cliente. Quando
+  // fica completo, o formulário pergunta ao banco e, achando, preenche o
+  // nome sozinho.
+  //
+  // A busca sai do EVENTO de digitar, não de um efeito: é a resposta a um
+  // gesto, e um efeito que escreve no estado do pai a cada render é a
+  // origem dos laços que este projeto já teve. `ultimaBusca` descarta a
+  // resposta de um número que a pessoa já trocou enquanto esperava.
+  // Ao editar, o cadastro já veio com o agendamento: nasce "achou".
+  const [cadastro, setCadastro] = useState<EstadoDoCadastro>(() =>
+    nomeDoCadastro ? { estado: "achou", nome: nomeDoCadastro } : { estado: "ocioso" },
+  );
+  const [paraOutraPessoa, setParaOutraPessoa] = useState(false);
+  const [tocouNoNome, setTocouNoNome] = useState(false);
+  const [corrigirCadastro, setCorrigirCadastro] = useState(false);
+  const ultimaBusca = useRef("");
+  /** O nome que a BUSCA escreveu — e que some se o telefone mudar. */
+  const nomeAutomatico = useRef<string | null>(null);
+
+  const achou = cadastro.estado === "achou";
+  /** Tela pública com o cliente achado, marcando para ele mesmo. */
+  const nomeTravado = publico && achou && !paraOutraPessoa;
+
+  /**
+   * Agenda interna: o nome digitado não é o do cadastro. Pode ser outra
+   * pessoa (o filho, o avulso no número do barbeiro) ou um nome errado no
+   * cadastro — e só a barbearia sabe qual. A caixa pergunta; desmarcada é
+   * outra pessoa, porque é o que não estraga o cadastro de ninguém.
+   */
+  const nomeDiferente =
+    !publico &&
+    cadastro.estado === "achou" &&
+    clienteNome.trim().length > 0 &&
+    !mesmoNome(clienteNome, cadastro.nome);
+
+  function esquecerCadastro() {
+    setCadastro({ estado: "ocioso" });
+    setParaOutraPessoa(false);
+    setCorrigirCadastro(false);
+    // Só apaga o que a busca escreveu. O que a pessoa digitou é dela.
+    if (nomeAutomatico.current !== null && clienteNome === nomeAutomatico.current) {
+      aoMudarClienteNome("");
+    }
+    nomeAutomatico.current = null;
+  }
+
+  async function mudarTelefone(bruto: string) {
+    const mascarado = mascararTelefone(bruto);
+    aoMudarClienteTelefone(mascarado);
+    if (!buscarCliente) return;
+
+    const digitos = digitosDoTelefone(mascarado);
+    if (!telefoneCompleto(digitos)) {
+      if (ultimaBusca.current) {
+        ultimaBusca.current = "";
+        esquecerCadastro();
+      }
+      return;
+    }
+    if (digitos === ultimaBusca.current) return;
+
+    ultimaBusca.current = digitos;
+    esquecerCadastro();
+    setCadastro({ estado: "buscando" });
+
+    let resposta: ClienteDoTelefone;
+    try {
+      resposta = await buscarCliente(digitos);
+    } catch (causa) {
+      console.error("[BARBOS] a busca do cliente não completou:", causa);
+      resposta = { estado: "falhou" };
+    }
+    if (ultimaBusca.current !== digitos) return;
+
+    setCadastro(resposta);
+    if (resposta.estado === "achou") {
+      nomeAutomatico.current = resposta.nome;
+      aoMudarClienteNome(resposta.nome);
+    }
+  }
+
+  /** Quem digita o nome na tela pública escreve nome e sobrenome. */
+  const pedeSobrenome = publico && !nomeTravado;
+  const erroDoNome =
+    pedeSobrenome && tocouNoNome && clienteNome.trim() && !temNomeESobrenome(clienteNome)
+      ? "Escreva nome e sobrenome."
+      : undefined;
+
+  /** O que a busca está dizendo, para quem vê e para o leitor de tela. */
+  const recadoDaBusca =
+    cadastro.estado === "buscando"
+      ? publico
+        ? "Procurando seu cadastro…"
+        : "Procurando o cliente pelo telefone…"
+      : cadastro.estado === "achou"
+        ? publico
+          ? "Você já marcou aqui antes. Se o horário for para outra pessoa, toque no botão abaixo."
+          : nomeDiferente
+            ? corrigirCadastro
+              ? `O cadastro deixa de se chamar ${cadastro.nome} e passa a usar este nome.`
+              : `Outra pessoa neste horário. O cadastro continua como ${cadastro.nome}.`
+            : "Cliente já cadastrado."
+        : cadastro.estado === "novo"
+          ? publico
+            ? "Primeira vez aqui? Escreva nome e sobrenome."
+            : "Cliente novo: ele fica cadastrado com este telefone."
+          : publico
+            ? buscarCliente && cadastro.estado === "ocioso"
+              ? "Digite o telefone primeiro: se você já marcou aqui, o nome aparece sozinho."
+              : "Escreva nome e sobrenome."
+            : undefined;
+
   function enviar(evento: React.FormEvent) {
     evento.preventDefault();
     aoSalvar({
-      clienteNome,
+      // Cliente achado marcando para si: o nome vai vazio e o banco usa o
+      // do cadastro. Na tela pública o que aparece é só o resumo.
+      clienteNome: nomeTravado ? "" : clienteNome,
       clienteTelefone,
+      clienteCadastrado: achou,
+      corrigirCadastro: nomeDiferente && corrigirCadastro,
       barbeiroId,
       servicoId,
       data,
@@ -251,18 +405,8 @@ export function FormularioAgendamento({
       onSubmit={enviar}
       className="flex flex-col gap-5"
     >
-      <Campo id="agendamento-cliente" rotulo="Cliente">
-        <Input
-          value={clienteNome}
-          onChange={(e) => aoMudarClienteNome(sanitizarNome(e.target.value))}
-          placeholder="Nome do cliente"
-          maxLength={80}
-          required
-          autoFocus
-        />
-      </Campo>
-
-      {/* Obrigatório, e por isso sem a etiqueta "opcional": sem número a
+      {/* O telefone vem PRIMEIRO: é ele que identifica o cliente (0042).
+          Obrigatório, e por isso sem a etiqueta "opcional": sem número a
           barbearia não tem como avisar atraso nem falar com quem não
           apareceu. A ajuda diz PARA QUÊ — pedir telefone sem dizer o
           motivo é o jeito mais rápido de receber um número inventado. */}
@@ -271,9 +415,11 @@ export function FormularioAgendamento({
         rotulo="Telefone"
         opcional={!telefoneObrigatorio}
         ajuda={
-          telefoneObrigatorio
-            ? "Com DDD. É por aqui que a barbearia fala com o cliente."
-            : "Este agendamento é de antes do campo existir. Se você souber o número, aproveite para guardá-lo."
+          !telefoneObrigatorio
+            ? "Este agendamento é de antes do campo existir. Se você souber o número, aproveite para guardá-lo."
+            : publico
+              ? "Com DDD. É por ele que a barbearia fala com você."
+              : "Com DDD. É por aqui que a barbearia fala com o cliente."
         }
       >
         <Input
@@ -281,14 +427,107 @@ export function FormularioAgendamento({
           inputMode="tel"
           autoComplete="tel"
           value={clienteTelefone}
-          onChange={(e) =>
-            aoMudarClienteTelefone(mascararTelefone(e.target.value))
-          }
+          onChange={(e) => void mudarTelefone(e.target.value)}
           placeholder="(11) 98765-4321"
           maxLength={15}
           required={telefoneObrigatorio}
+          autoFocus
         />
       </Campo>
+
+      {/* O leitor de tela ouve a resposta da busca; quem vê lê na ajuda
+          do nome, logo abaixo. */}
+      <p role="status" className="sr-only">
+        {cadastro.estado === "ocioso" ? "" : recadoDaBusca}
+      </p>
+
+      {nomeTravado && cadastro.estado === "achou" ? (
+        <div className="flex flex-col gap-2">
+          {/* Só leitura, e resumido: a tela pública não troca o nome de
+              ninguém, e não entrega o nome inteiro a quem testa números. */}
+          <Campo id="agendamento-cliente" rotulo="Nome" ajuda={recadoDaBusca}>
+            <Input
+              value={cadastro.nome}
+              readOnly
+              className="border-dashed bg-secondary/30"
+            />
+          </Campo>
+          <Button
+            type="button"
+            variant="ghost"
+            className="self-start"
+            onClick={() => {
+              setParaOutraPessoa(true);
+              setTocouNoNome(false);
+              aoMudarClienteNome("");
+            }}
+          >
+            Marcar para outra pessoa
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <Campo
+            id="agendamento-cliente"
+            rotulo={
+              publico
+                ? paraOutraPessoa
+                  ? "Nome de quem vai ser atendido"
+                  : "Nome e sobrenome"
+                : "Cliente"
+            }
+            // Com o erro na tela, a ajuda sai: as duas diriam a mesma coisa.
+            ajuda={
+              erroDoNome
+                ? undefined
+                : paraOutraPessoa
+                  ? "Nome e sobrenome. O horário fica no seu telefone."
+                  : recadoDaBusca
+            }
+            erro={erroDoNome}
+          >
+            <Input
+              value={clienteNome}
+              onChange={(e) => aoMudarClienteNome(sanitizarNome(e.target.value))}
+              onBlur={() => setTocouNoNome(true)}
+              placeholder={publico ? "Ex.: JOAO SILVA" : "Nome do cliente"}
+              maxLength={publico ? 60 : 80}
+              autoComplete={publico ? "name" : "off"}
+              required
+              autoFocus={paraOutraPessoa}
+            />
+          </Campo>
+          {nomeDiferente && cadastro.estado === "achou" ? (
+            /* Checkbox e não chave: a escolha vale no "Salvar", não na
+               hora do toque (regra do projeto). */
+            <Opcao
+              htmlFor="agendamento-corrigir-cadastro"
+              rotulo="Corrigir o nome no cadastro"
+              ajuda={`Marque só se ${cadastro.nome} estava escrito errado: o nome muda em todos os horários dele.`}
+              controle={
+                <Checkbox
+                  id="agendamento-corrigir-cadastro"
+                  checked={corrigirCadastro}
+                  onCheckedChange={(marcado) => setCorrigirCadastro(marcado === true)}
+                />
+              }
+            />
+          ) : null}
+          {paraOutraPessoa ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="self-start"
+              onClick={() => {
+                setParaOutraPessoa(false);
+                aoMudarClienteNome(nomeAutomatico.current ?? "");
+              }}
+            >
+              O horário é para mim
+            </Button>
+          ) : null}
+        </div>
+      )}
 
       <Campo id="agendamento-barbeiro" rotulo="Barbeiro">
         {barbeiros.length === 0 ? (

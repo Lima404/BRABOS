@@ -10,6 +10,7 @@ import {
   LIMITES_VALIDOS,
   type Convite,
 } from "@/lib/convites/tipos";
+import { telefoneCompleto, type ClienteDoTelefone } from "@/lib/clientes/tipos";
 import {
   digitosDoTelefone,
   nomeDeItemParaBanco,
@@ -523,6 +524,19 @@ export type DadosAgendamento = {
    * anterior à migração 0037 — ver `validarAgendamento`.
    */
   clienteTelefone: string;
+  /**
+   * O telefone já é cliente da barbearia (a busca do formulário achou).
+   * Só a tela pública usa: lá, com o cliente achado e marcando para si,
+   * `clienteNome` vai vazio e o banco usa o nome do cadastro.
+   */
+  clienteCadastrado?: boolean;
+  /**
+   * Agenda interna: o nome digitado é diferente do cadastro e a barbearia
+   * marcou "Corrigir o nome no cadastro". Sem a marca, o nome diferente
+   * vira quem é atendido NESTE horário, e o cadastro fica como está — o
+   * avulso no número do barbeiro não pode renomear o barbeiro.
+   */
+  corrigirCadastro?: boolean;
   servicoId: string;
   /** Barbeiro que atende. */
   barbeiroId: string;
@@ -534,6 +548,81 @@ export type DadosAgendamento = {
 };
 
 /**
+ * O cliente deste telefone, com o nome inteiro — a agenda é da própria
+ * barbearia, e o RLS garante que a busca só alcança os clientes dela.
+ *
+ * Nunca estoura: "falhou" faz o formulário seguir como antes, pedindo o
+ * nome. Quem barra de verdade é o salvar.
+ */
+export async function buscarClienteDaAgenda(
+  telefone: string,
+): Promise<ClienteDoTelefone> {
+  try {
+    const digitos = digitosDoTelefone(telefone ?? "");
+    if (!telefoneCompleto(digitos)) return { estado: "novo" };
+
+    const supabase = await criarClienteServidor();
+    const { data, error } = await supabase.rpc("buscar_cliente", {
+      p_telefone: digitos,
+    });
+
+    if (error) {
+      console.error("[BARBOS] busca de cliente:", error.code ?? "", error.message);
+      return { estado: "falhou" };
+    }
+
+    const cliente = data as { nome?: string } | null;
+    return cliente?.nome
+      ? { estado: "achou", nome: cliente.nome }
+      : { estado: "novo" };
+  } catch (erro) {
+    console.error("[BARBOS] busca de cliente lançou exceção:", erro);
+    return { estado: "falhou" };
+  }
+}
+
+/**
+ * Acha ou cria o cliente pelo telefone e diz quem é atendido (0042).
+ *
+ * Quem decide "é o mesmo nome?" é o banco (`salvar_cliente`), com a mesma
+ * regra da tela pública. Nome diferente do cadastro vira `nomeAtendido` —
+ * a menos que a barbearia tenha marcado "corrigir o cadastro", e aí o
+ * cadastro é renomeado.
+ */
+async function salvarCliente(
+  supabase: Awaited<ReturnType<typeof criarClienteServidor>>,
+  telefone: string,
+  nome: string,
+  corrigir: boolean,
+): Promise<
+  { ok: true; id: string; nomeAtendido: string | null } | { ok: false; erro: string }
+> {
+  const { data, error } = await supabase.rpc("salvar_cliente", {
+    p_telefone: telefone,
+    p_nome: nome,
+    p_corrigir: corrigir,
+  });
+
+  if (error) {
+    if (error.code === "PGRST202" || error.message?.includes("salvar_cliente")) {
+      console.error("[BARBOS] salvar cliente:", error.code ?? "", error.message);
+      return {
+        ok: false,
+        erro: "O cadastro de clientes ainda não está ligado no banco. Rode a migração 0042.",
+      };
+    }
+    const traduzido = traduzir("salvar cliente", error);
+    return { ok: false, erro: traduzido.ok ? "Não consegui salvar." : traduzido.erro };
+  }
+
+  const resposta = data as { id?: string; nomeAtendido?: string | null } | null;
+  if (!resposta?.id) {
+    return { ok: false, erro: "Informe o telefone do cliente com DDD (10 ou 11 dígitos)." };
+  }
+  return { ok: true, id: resposta.id, nomeAtendido: resposta.nomeAtendido ?? null };
+}
+
+/**
  * `exigeTelefone` é falso só ao EDITAR.
  *
  * Marcar exige o número. Editar não pode exigir, porque os agendamentos
@@ -541,10 +630,12 @@ export type DadosAgendamento = {
  * para lançar consumo viraria um formulário que não salva. O formato
  * continua cobrado nos dois casos: se veio algo, tem que ser telefone.
  *
- * A consequência é que uma edição pode apagar um telefone que existia.
- * Fica assim de propósito: conferir isso custaria ler o agendamento antes
- * de validar, e é a própria barbearia mexendo nos dados dela — o RLS já
- * garante que é na dela.
+ * A consequência é que uma edição sem telefone solta o agendamento do
+ * cliente (vira "antigo", só com o nome). O formulário não deixa isso
+ * acontecer — para quem tem cadastro, o telefone vem preenchido e é
+ * obrigatório —, e conferir aqui custaria ler o agendamento antes de
+ * validar. É a própria barbearia mexendo nos dados dela; o RLS já garante
+ * que é na dela.
  */
 function validarAgendamento(
   d: DadosAgendamento,
@@ -673,13 +764,23 @@ export async function criarAgendamento(
 
     const observacao = textoLivreParaBanco(d.observacao ?? "");
 
+    // O cliente primeiro: o agendamento aponta para ele (0042). Se o
+    // horário for recusado logo abaixo, o cadastro fica — ele vale para a
+    // próxima marcação, e é a barbearia mexendo nos dados dela.
+    const cliente = await salvarCliente(
+      supabase,
+      d.clienteTelefone,
+      nomeParaBanco(d.clienteNome),
+      Boolean(d.corrigirCadastro),
+    );
+    if (!cliente.ok) return cliente;
+
     const { error } = await supabase.from("agendamentos").insert({
       barbearia_id: user.id,
-      cliente_nome: nomeParaBanco(d.clienteNome),
-      // Guardado COM máscara, igual ao telefone da barbearia e ao do
-      // barbeiro: é o formato que a dona lê, e quem precisa só dos
-      // dígitos (o link do WhatsApp) os extrai na hora.
-      cliente_telefone: d.clienteTelefone.trim(),
+      // Nome e telefone moram no cadastro do cliente, guardados uma vez.
+      cliente_id: cliente.id,
+      // Só quando quem senta na cadeira não é o dono do telefone.
+      nome_atendido: cliente.nomeAtendido,
       servico_id: d.servicoId,
       barbeiro_id: d.barbeiroId,
       data: d.data,
@@ -694,11 +795,11 @@ export async function criarAgendamento(
 
     if (error) {
       // Antes do `42703` genérico: coluna que falta é SEMPRE 42703, e a
-      // mensagem de baixo mandaria rodar a 0015 por causa da 0037.
-      if (error.message?.includes("cliente_telefone")) {
+      // mensagem de baixo mandaria rodar a 0015 por causa da 0042.
+      if (error.message?.includes("cliente_id")) {
         return {
           ok: false,
-          erro: "O telefone do cliente ainda não existe no banco. Rode a migração 0037.",
+          erro: "O cadastro de clientes ainda não está ligado no banco. Rode a migração 0042.",
         };
       }
       if (
@@ -782,12 +883,39 @@ export async function atualizarAgendamento(
 
     const observacao = textoLivreParaBanco(d.observacao ?? "");
 
+    // Com telefone, o agendamento aponta para o cliente (acha, cria ou
+    // renomeia). Sem telefone só chega o agendamento ANTIGO, de antes da
+    // 0037: ele continua sem cliente, com o nome guardado nele mesmo — é
+    // o "um ou outro" que a 0043 cobra no banco.
+    let quem:
+      | { cliente_id: string; cliente_nome: null; nome_atendido: string | null }
+      | { cliente_id: null; cliente_nome: string; nome_atendido: null };
+    if (digitosDoTelefone(d.clienteTelefone ?? "").length > 0) {
+      const cliente = await salvarCliente(
+        supabase,
+        d.clienteTelefone,
+        nomeParaBanco(d.clienteNome),
+        Boolean(d.corrigirCadastro),
+      );
+      if (!cliente.ok) return cliente;
+      quem = {
+        cliente_id: cliente.id,
+        cliente_nome: null,
+        nome_atendido: cliente.nomeAtendido,
+      };
+    } else {
+      quem = {
+        cliente_id: null,
+        cliente_nome: nomeParaBanco(d.clienteNome),
+        nome_atendido: null,
+      };
+    }
+
     // Sem filtro de dono: o RLS já recusa a linha de outra barbearia.
     const { error } = await supabase
       .from("agendamentos")
       .update({
-        cliente_nome: nomeParaBanco(d.clienteNome),
-        cliente_telefone: d.clienteTelefone.trim() || null,
+        ...quem,
         servico_id: d.servicoId,
         barbeiro_id: d.barbeiroId,
         data: d.data,
@@ -800,11 +928,11 @@ export async function atualizarAgendamento(
 
     if (error) {
       // Antes do `42703` genérico: coluna que falta é SEMPRE 42703, e a
-      // mensagem de baixo mandaria rodar a 0015 por causa da 0037.
-      if (error.message?.includes("cliente_telefone")) {
+      // mensagem de baixo mandaria rodar a 0015 por causa da 0042.
+      if (error.message?.includes("cliente_id")) {
         return {
           ok: false,
-          erro: "O telefone do cliente ainda não existe no banco. Rode a migração 0037.",
+          erro: "O cadastro de clientes ainda não está ligado no banco. Rode a migração 0042.",
         };
       }
       if (

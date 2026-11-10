@@ -186,20 +186,23 @@ SERIALIZA o que recebe.
 Agenda de hoje → novo agendamento → cliente → serviços → estoque → relatório.
 A agenda primeiro porque é a única tela aberta todo dia.
 
-## Testar: sempre na barbearia do dono (hoje "BICOS")
+## Testar: sempre na barbearia do dono (apelido `BARBOS`)
 
-**O nome mudou em 18/09/2026.** Até ali a barbearia de trabalho se chamava
-"Gabriel Teste" (slug `gabriel-teste`). O projeto Supabase foi apagado — o
+**O apelido já mudou duas vezes.** Até 18/09/2026 a barbearia de trabalho
+era "Gabriel Teste" (slug `gabriel-teste`). O projeto Supabase foi apagado — o
 host parou de resolver, que é o que acontece com projeto apagado e não com
 projeto pausado — e o banco foi recriado do zero num projeto novo, pelo
 `supabase/manutencao/recriar-banco.sql`. A conta renasceu como **BICOS**
-(slug `bicos`).
+(slug `bicos`). Em novembro de 2026 o apelido virou **`BARBOS`** (confirmado
+pelo Gabriel em 10/11/2026) — e a trava do `apagar-barbearia.sql` passou
+semanas protegendo `bicos`, que não existia mais.
 
 Três lugares dependem desse apelido e têm que andar juntos se ele mudar de
-novo: `scripts/conta-de-teste.mjs` (`NOME_DA_BARBEARIA`),
+novo: `scripts/conta-de-teste.mjs` (`APELIDO_DA_BARBEARIA`),
 `supabase/manutencao/apagar-barbearia.sql` (`v_protegida`) e este arquivo. Uma
 trava apontando para um apelido que não existe não protege nada — **e não
-avisa que não protege.**
+avisa que não protege.** As duas comparam pelo APELIDO, nunca pelo nome: o
+nome já mudou três vezes e cada troca quebrava quem comparava por ele.
 
 **Nunca criar conta pra testar.** Já sobraram várias `@mailinator.com` órfãs
 assim — e uma delas chegou a virar uma SEGUNDA barbearia chamada "Gabriel
@@ -224,8 +227,8 @@ As credenciais moram em `.env.local` (fora do git), em `BARBOS_EMAIL_TESTE` e
 npm run teste:conta
 ```
 
-Ele entra, confere que a barbearia se chama "BICOS" e **recusa seguir**
-se não for. Se as variáveis estiverem vazias, ele diz o que preencher — peça
+Ele entra, confere que o apelido da barbearia é `BARBOS` e **recusa
+seguir** se não for. Se as variáveis estiverem vazias, ele diz o que preencher — peça
 ao dono que preencha o arquivo, nunca a senha no chat.
 
 ## Comandos
@@ -235,7 +238,7 @@ npm run dev        desenvolvimento
 npm run build      build de produção (roda o TypeScript)
 npm run lint       eslint
 npm run typecheck  tsc --noEmit (precisa de um build antes, pelos tipos gerados)
-npm run teste:conta      confere a conta de teste ("BICOS")
+npm run teste:conta      confere a conta de teste (apelido BARBOS)
 npm run supabase:verificar  quais migracoes ainda faltam
 ```
 
@@ -1082,8 +1085,11 @@ nome obriga a compartilhar a **grafia** (quem cadastra primeiro decide se é
 exigiria reescrever sete funções do banco mais a camada TypeScript — em troca
 de economizar alguns bytes de texto.
 
-`normalizar_nome()` sobreviveu à 0025. É função pura de texto (sem acento,
-minúsculo, espaços colapsados) e serve pra qualquer comparação de nome.
+`normalizar_nome()` é função pura de texto (sem acento, minúsculo, espaços
+colapsados) e serve pra qualquer comparação de nome. Este arquivo dizia que
+ela sobreviveu à 0025, mas em 10/11/2026 ela **não existia** no banco de
+produção (provavelmente sumiu na recriação do banco). A **0042** a recria
+com o mesmo corpo, porque o `nome_atendido` dos agendamentos depende dela.
 
 ## Barbearia nova nasce com o cardápio vazio
 
@@ -1155,7 +1161,7 @@ de Estoque não pode continuar escondendo a unidade que acabou de voltar.
 
 São dois, e a diferença é o ponto.
 
-**O link do apelido** (`/agendar/bicos`) não é gerado nem expira. Ele existe
+**O link do apelido** (`/agendar/BARBOS`) não é gerado nem expira. Ele existe
 desde que a barbearia tem apelido, e é o que vai no QR code colado na parede.
 **Continua aberto para sempre**, aconteça o que acontecer com os convites —
 papel impresso não se atualiza, e quebrar o que está na parede para fazer
@@ -1275,6 +1281,10 @@ precisa saber de quem é o horário.
 começo.** `55` também é o DDD de Santa Maria: um celular de lá tem 11
 dígitos começando em 55 e AINDA precisa do país na frente. Só com 12 ou
 13 dígitos é que o país já veio.
+
+**Desde a 0042 o telefone do cliente mora em `clientes`, não mais no
+agendamento — ver "Clientes", mais abaixo.** O parágrafo seguinte é a
+história de como ele chegou lá.
 
 **O telefone do cliente é obrigatório, e a coluna aceita null (0037).**
 Não é contradição: existem agendamentos gravados antes do campo existir,
@@ -1451,6 +1461,65 @@ de conflito junto.
 
 **Limite conhecido:** não há auto-rolagem ao arrastar até a borda. Para mover
 o bloco além do trecho visível, rola-se a faixa antes.
+
+## Clientes — migrações 0042 e 0043
+
+**O cliente é um cadastro, e o agendamento aponta para ele.** Até a 0041 o
+nome e o telefone eram copiados em cada agendamento, cada cópia do jeito
+que foi digitada (238 telefones com máscara, 238 sem). Agora `clientes`
+guarda nome e telefone uma vez, e `agendamentos.cliente_id` aponta para
+lá. O agendamento guarda só o que é dele: serviço, barbeiro, data, hora,
+observação, estado — e preço e duração, copiados de propósito (ver acima).
+
+As decisões do Gabriel em 10/11/2026, que o cabeçalho da 0042 detalha:
+
+1. **Cliente é da barbearia**, não um cadastro único do BARBOS. O mesmo
+   telefone em duas barbearias são duas linhas, e nenhuma vê a lista da
+   outra. A chave estrangeira é COMPOSTA — `(barbearia_id, cliente_id)` →
+   `clientes (barbearia_id, id)` —, então o banco recusa um agendamento da
+   barbearia A apontando para um cliente da B.
+2. **A tela pública devolve o nome resumido** ("GABRIEL L."), por
+   `cliente_publico`. Ela abre sem sessão e dá para testar telefones nela.
+3. **Um telefone, um cliente — e o agendamento diz quem é atendido.**
+   `agendamentos.nome_atendido` guarda quem senta na cadeira quando não é
+   o dono do telefone: o filho, ou o avulso que chega sem telefone e o
+   barbeiro põe o PRÓPRIO número (eram 108 agendamentos na Olliverr, com 59
+   nomes, e 10 na BARBOS). A agenda mostra `nome_atendido` quando existe.
+   O telefone de um barbeiro ou da barbearia vira cliente com o nome da
+   casa. Não é repetição: o cadastro é o contato, `nome_atendido` é a
+   pessoa, e só existe quando difere.
+
+   A tela pública nunca renomeia o cadastro. Na agenda interna, nome
+   diferente do cadastro abre a escolha "Corrigir o nome no cadastro"
+   (desmarcada = outra pessoa neste horário, que é o que não estraga o
+   cadastro do barbeiro). Quem decide "é o mesmo nome?" é o banco
+   (`salvar_cliente`, `normalizar_nome`), uma regra só para as duas telas.
+   No começo isto era um "Para: FULANO" na observação; saiu porque a
+   agenda passaria a mostrar o nome do dono do telefone para todo avulso.
+4. **Agendamento antigo sem telefone fica sem cliente**, com o nome em
+   `agendamentos.cliente_nome`, como histórico. Eram 321, todos passados.
+   A 0043 cobra "um ou outro": cliente OU nome antigo, nunca os dois — e
+   `nome_atendido` só com cliente.
+5. **Na tela pública, quem digita o nome escreve nome e sobrenome**
+   (`temNomeESobrenome`, e a RPC cobra de cliente novo). Quem já tem
+   cadastro não digita nada. A agenda interna não cobra: ali o barbeiro
+   escreve o apelido que usa no balcão.
+
+**O telefone é guardado só com números**, e a regra mora num lugar só:
+`normalizar_telefone` (tira máscara, o 55 do país e põe o 9 do celular
+antigo). O gatilho de `clientes` aplica sempre. A máscara é da tela — o
+repositório devolve `clienteTelefone` mascarado, como sempre foi.
+
+**O telefone vem primeiro no formulário.** Assim que fica completo
+(`telefoneCompleto`: 11 dígitos, ou 10 de fixo), o formulário pergunta
+ao banco e preenche o nome. A busca sai do evento de digitar, não de um
+efeito, e `ultimaBusca` descarta a resposta de um número que já mudou.
+
+**A ordem de subir é a da 0037/0038:** 0042 (frouxa, compatível com o
+código no ar — o gatilho de transição `agendamento_com_cliente` traduz o
+código antigo), deploy, e só depois a 0043, que apaga o gatilho e a
+coluna `cliente_telefone`. Rodar a 0043 com o código antigo no ar quebra
+a agenda: ele grava na coluna que ela apaga.
 
 ## Pagamento (Asaas) — migração 0041
 

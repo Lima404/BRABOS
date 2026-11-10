@@ -7,6 +7,7 @@ import { CalendarPlus, Loader2, Trash2 } from "lucide-react";
 import {
   ajustarComanda,
   atualizarAgendamento,
+  buscarClienteDaAgenda,
   criarAgendamento,
   excluirAgendamento,
   type DadosAgendamento,
@@ -352,12 +353,8 @@ function Conteudo({
   });
 
   function tentarSalvar(dados: DadosAgendamento) {
-    if (dados.clienteNome.trim().length === 0) {
-      setErro("Informe o nome do cliente.");
-      return;
-    }
-    // Só depois do nome: quem esqueceu os dois lê o recado de cima
-    // primeiro, e o campo de cima é o que ele já estava preenchendo.
+    // Na ordem dos campos: o telefone é o primeiro (0042), e quem
+    // esqueceu os dois lê primeiro o recado do campo de cima.
     const digitos = digitosDoTelefone(dados.clienteTelefone);
     if (telefoneObrigatorio && digitos.length === 0) {
       setErro("Informe o telefone do cliente.");
@@ -367,6 +364,10 @@ function Conteudo({
     // antigo, onde o campo é opcional mas não pode virar lixo.
     if (digitos.length > 0 && (digitos.length < 10 || digitos.length > 11)) {
       setErro("Informe o telefone do cliente com DDD (10 ou 11 dígitos).");
+      return;
+    }
+    if (dados.clienteNome.trim().length === 0) {
+      setErro("Informe o nome do cliente.");
       return;
     }
     if (!dados.barbeiroId) {
@@ -536,6 +537,8 @@ function Conteudo({
             clienteTelefone={clienteTelefone}
             aoMudarClienteTelefone={setClienteTelefone}
             telefoneObrigatorio={telefoneObrigatorio}
+            buscarCliente={(telefone) => buscarClienteDaAgenda(telefone)}
+            nomeDoCadastro={emEdicao?.nomeNoCadastro}
             barbeiroId={barbeiroId}
             aoMudarBarbeiroId={setBarbeiroId}
             barbeiros={barbeiros}

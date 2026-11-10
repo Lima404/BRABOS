@@ -3,7 +3,7 @@ import "server-only";
 import webpush from "web-push";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
-import { diaComSemana } from "@/lib/formato";
+import { diaComSemana, mascararTelefone } from "@/lib/formato";
 
 /**
  * O aviso de agendamento, do lado do servidor.
@@ -86,8 +86,9 @@ function chaves(): { publica: string; privada: string; contato: string } | null 
  * a linha volta a ser só o nome.
  */
 function corpoDoAviso(d: DadosDoAviso): string {
+  // O banco guarda o telefone só com números (0042); a máscara é da tela.
   const quem = d.clienteTelefone
-    ? `${d.clienteNome} · ${d.clienteTelefone}`
+    ? `${d.clienteNome} · ${mascararTelefone(d.clienteTelefone)}`
     : d.clienteNome;
   const quando = `${diaComSemana(d.data)} às ${d.horario}`;
   const comQuem = d.barbeiro ? ` com ${d.barbeiro}` : "";
