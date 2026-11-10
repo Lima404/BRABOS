@@ -4,6 +4,7 @@ import { Info } from "lucide-react";
 
 import { FormularioLogin } from "@/app/entrar/formulario-login";
 import { Logo } from "@/components/marca/logo";
+import { PLANOS_NO_SITE } from "@/lib/pagamento/planos";
 import { supabaseConfigurado } from "@/lib/supabase/config";
 
 export const metadata: Metadata = { title: "Entrar" };
@@ -81,12 +82,14 @@ export default async function EntrarPage({
           </p>
           <p>
             Ainda não tem conta?{" "}
-            <Link
-              href="/cadastrar"
+            {/* A conta só nasce depois do pagamento: o caminho começa pelos
+                planos, no site. */}
+            <a
+              href={PLANOS_NO_SITE}
               className="font-semibold text-accent-foreground underline-offset-4 hover:underline"
             >
               Cadastrar barbearia
-            </Link>
+            </a>
           </p>
         </div>
       </div>

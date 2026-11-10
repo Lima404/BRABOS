@@ -15,22 +15,26 @@
 export const SITE = "https://site.barboss.com.br";
 
 /**
- * Onde o sistema mora. Todo botao de "entrar" e "criar conta" aponta
- * pra ca — com `www`, que e o endereco de casa do sistema. Sem o `www`
- * o Next do sistema devolve um 308 e o visitante paga um salto a toa.
+ * Onde o sistema mora. O botao de "entrar" aponta pra ca — com `www`,
+ * que e o endereco de casa do sistema. Sem o `www` o Next do sistema
+ * devolve um 308 e o visitante paga um salto a toa.
  */
 export const SISTEMA = "https://www.barboss.com.br";
 
-/** Onde o dono da barbearia cria a conta. */
-export const CADASTRO = `${SISTEMA}/cadastrar`;
+/**
+ * Para onde vai todo botao de "abrir conta" e "criar conta": a secao de
+ * planos, nesta mesma pagina. A conta so nasce depois do pagamento, entao
+ * o caminho comeca sempre pela escolha do plano.
+ */
+export const PLANOS = "#planos";
 
 /** Onde quem ja tem conta entra. */
 export const ENTRAR = `${SISTEMA}/entrar`;
 
 /**
- * O WhatsApp do BARBOS. O botao "Abra sua conta!" do topo leva pra ca:
- * quem quer comecar fala direto com uma pessoa, com a primeira mensagem
- * ja escrita. Numero no formato internacional, so digitos (55 + DDD 84).
+ * O WhatsApp do BARBOS, o contato do rodape: fala direto com uma pessoa,
+ * com a primeira mensagem ja escrita. Numero no formato internacional, so
+ * digitos (55 + DDD 84).
  */
 const WHATSAPP_NUMERO = "5584996308743";
 const WHATSAPP_MENSAGEM =

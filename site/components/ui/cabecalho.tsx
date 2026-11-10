@@ -8,7 +8,7 @@ import { Botao } from "@/components/ui/botao";
 import { useCapituloAtivo } from "@/components/ui/capitulo-ativo";
 import { Magnetico } from "@/components/ui/magnetico";
 import { CAPITULOS } from "@/lib/capitulos";
-import { WHATSAPP } from "@/lib/site";
+import { PLANOS } from "@/lib/site";
 
 const ATALHOS = CAPITULOS.filter((capitulo) => capitulo.noMenu);
 
@@ -86,13 +86,12 @@ export function Cabecalho() {
           })}
         </nav>
 
-        {/* O botão padrão do BARBOS, em âmbar, que abre uma conversa no
-            WhatsApp com a primeira mensagem já escrita. */}
+        {/* O botão padrão do BARBOS, em âmbar, que desliza até os planos:
+            a conta só nasce depois do pagamento. */}
         <div className="ml-auto flex items-center">
           <Magnetico>
-            <Botao href={WHATSAPP} novaAba className="whitespace-nowrap">
+            <Botao href={PLANOS} className="whitespace-nowrap">
               Abra sua conta!
-              <span className="sr-only"> (abre o WhatsApp)</span>
             </Botao>
           </Magnetico>
         </div>

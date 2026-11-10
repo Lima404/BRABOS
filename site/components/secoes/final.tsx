@@ -16,7 +16,7 @@ import { useProgresso } from "@/components/ui/progresso";
 import { Revela } from "@/components/ui/revela";
 import { Rotulo } from "@/components/ui/rotulo";
 import { useSequencia } from "@/components/ui/sequencia";
-import { WHATSAPP } from "@/lib/site";
+import { PLANOS } from "@/lib/site";
 
 /**
  * Os 61 quadros da cadeira girando de três-quartos até de frente. Saíram de
@@ -148,10 +148,7 @@ export function Final() {
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             <Magnetico>
-              <Botao href={WHATSAPP} novaAba>
-                Criar minha conta
-                <span className="sr-only"> (abre o WhatsApp)</span>
-              </Botao>
+              <Botao href={PLANOS}>Criar minha conta</Botao>
             </Magnetico>
           </div>
         </div>

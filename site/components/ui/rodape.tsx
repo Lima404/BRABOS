@@ -7,7 +7,7 @@ import { useRef } from "react";
 import { MENOS_MOVIMENTO, useMidia } from "@/components/ui/midia";
 import { useProgresso } from "@/components/ui/progresso";
 import { CAPITULOS } from "@/lib/capitulos";
-import { CADASTRO, ENTRAR, INSTAGRAM, SISTEMA, WHATSAPP } from "@/lib/site";
+import { ENTRAR, INSTAGRAM, PLANOS, SISTEMA, WHATSAPP } from "@/lib/site";
 
 const NO_SITE = CAPITULOS.filter((capitulo) => capitulo.noMenu);
 
@@ -62,7 +62,7 @@ export function Rodape() {
                   </a>
                 </li>
                 <li>
-                  <a href={CADASTRO} className="inline-flex min-h-11 items-center text-graf-300 hover:text-white">
+                  <a href={PLANOS} className="inline-flex min-h-11 items-center text-graf-300 hover:text-white">
                     Criar conta
                   </a>
                 </li>
