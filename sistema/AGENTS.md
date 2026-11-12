@@ -1309,6 +1309,10 @@ dígitos começando em 55 e AINDA precisa do país na frente. Só com 12 ou
 agendamento — ver "Clientes", mais abaixo.** O parágrafo seguinte é a
 história de como ele chegou lá.
 
+**Desde a 0047 (12/11/2026), o telefone é obrigatório só na PÁGINA
+PÚBLICA. Na agenda da barbearia ele é opcional** — ver "Clientes",
+mais abaixo. O parágrafo seguinte é a história de antes.
+
 **O telefone do cliente é obrigatório, e a coluna aceita null (0037).**
 Não é contradição: existem agendamentos gravados antes do campo existir,
 e `not null` recusaria a própria migração. O obrigatório vale para o que
@@ -1543,6 +1547,34 @@ código no ar — o gatilho de transição `agendamento_com_cliente` traduz o
 código antigo), deploy, e só depois a 0043, que apaga o gatilho e a
 coluna `cliente_telefone`. Rodar a 0043 com o código antigo no ar quebra
 a agenda: ele grava na coluna que ela apaga.
+
+### Telefone opcional na agenda da barbearia — migração 0047
+
+**No link de agendamento o telefone continua obrigatório; na agenda da
+barbearia, não** (pedido do Gabriel em 12/11/2026). O barbeiro marca o
+avulso que chegou na porta ou ligou, e nem sempre tem o número.
+
+- **Sem telefone, não há cadastro de cliente.** O agendamento guarda só o
+  nome em `cliente_nome` — o mesmo formato dos antigos da decisão 4 — e o
+  `check` da 0043 (cliente OU nome) segue igual. Quem decide é
+  `quemSentaNaCadeira`, em `app/(sistema)/agenda/acoes.ts`, a mesma para
+  marcar e para editar.
+- **O gatilho `agendamento_novo_tem_cliente` foi afrouxado, não apagado.**
+  Agendamento novo sem cliente só passa quando quem grava é a própria
+  barbearia, logada (`auth.uid() = barbearia_id`). A página pública roda
+  sem sessão, então continua barrada pelo banco — além de a RPC pública
+  responder "Informe seu telefone com DDD" quando o número falta. Ensaio
+  de 12/11/2026: 7 testes, inclusive sem sessão e outra conta tentando.
+- **Telefone pela metade continua sendo erro.** Opcional não quer dizer
+  que aceita lixo: se veio algo, tem que ter 10 ou 11 dígitos.
+- **Editar e apagar o telefone solta o agendamento do cliente** (fica só
+  o nome; o cadastro continua). É a barbearia mexendo nos dados dela.
+- Agendamento sem telefone não tem WhatsApp nem busca do nome — a agenda
+  e a loja mostram o `cliente_nome`, como já faziam com os antigos.
+
+**A ordem de subir:** 0047 antes do deploy. Ela só afrouxa o gatilho, e o
+código antigo sempre manda cliente. O código novo sem ela responde
+"Informe o telefone ou rode a migração 0047" a quem marcar sem número.
 
 ## Pagamento (Asaas) — migração 0041
 

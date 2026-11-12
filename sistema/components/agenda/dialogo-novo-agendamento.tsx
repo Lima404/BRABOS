@@ -152,16 +152,6 @@ function Conteudo({
     mascararTelefone(emEdicao?.clienteTelefone ?? ""),
   );
   /**
-   * O telefone é obrigatório para marcar, e também para editar um
-   * agendamento que já tem número.
-   *
-   * A exceção é o agendamento gravado antes da migração 0037: ele não tem
-   * telefone porque não havia campo, e exigir um aqui prenderia a dona —
-   * ela abriria para lançar um consumo e não conseguiria salvar, sem ter
-   * como descobrir o número de um cliente de agosto.
-   */
-  const telefoneObrigatorio = !emEdicao || Boolean(emEdicao.clienteTelefone);
-  /**
    * Nasce VAZIO quando ninguém escolheu ainda.
    *
    * O `barbeiros[0]?.id` saiu daqui: ele fazia o campo começar no primeiro
@@ -353,15 +343,11 @@ function Conteudo({
   });
 
   function tentarSalvar(dados: DadosAgendamento) {
-    // Na ordem dos campos: o telefone é o primeiro (0042), e quem
-    // esqueceu os dois lê primeiro o recado do campo de cima.
+    // Na ordem dos campos: o telefone é o primeiro (0042). Aqui na agenda
+    // ele é OPCIONAL (0047): o avulso que chegou na porta nem sempre deixa
+    // número, e sem ele o agendamento guarda só o nome. Mas meio digitado
+    // é erro: campo opcional não pode virar lixo.
     const digitos = digitosDoTelefone(dados.clienteTelefone);
-    if (telefoneObrigatorio && digitos.length === 0) {
-      setErro("Informe o telefone do cliente.");
-      return;
-    }
-    // Meio digitado é erro em qualquer caso — inclusive no agendamento
-    // antigo, onde o campo é opcional mas não pode virar lixo.
     if (digitos.length > 0 && (digitos.length < 10 || digitos.length > 11)) {
       setErro("Informe o telefone do cliente com DDD (10 ou 11 dígitos).");
       return;
@@ -536,7 +522,7 @@ function Conteudo({
             aoMudarClienteNome={setClienteNome}
             clienteTelefone={clienteTelefone}
             aoMudarClienteTelefone={setClienteTelefone}
-            telefoneObrigatorio={telefoneObrigatorio}
+            telefoneObrigatorio={false}
             buscarCliente={(telefone) => buscarClienteDaAgenda(telefone)}
             nomeDoCadastro={emEdicao?.nomeNoCadastro}
             barbeiroId={barbeiroId}

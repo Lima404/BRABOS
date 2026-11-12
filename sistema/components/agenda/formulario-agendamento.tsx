@@ -142,14 +142,13 @@ export function FormularioAgendamento({
   clienteTelefone: string;
   aoMudarClienteTelefone: (v: string) => void;
   /**
-   * Falso só num caso: agendamento gravado ANTES da migração 0037, que
-   * não tem número porque não havia campo.
+   * Verdadeiro só na página pública de agendamento: ali o telefone é o
+   * cadastro do cliente e o canal da barbearia com ele.
    *
-   * Sem esta saída, abrir um desses para lançar um consumo ou corrigir a
-   * observação viraria "não dá para salvar" — o navegador recusa o envio
-   * de um `required` vazio, e a dona não tem como descobrir o telefone de
-   * um cliente que passou aqui em agosto. Quem marca HOJE continua tendo
-   * que informar.
+   * Na agenda da barbearia é falso desde 12/11/2026 (pedido do Gabriel):
+   * o barbeiro marca o avulso que chegou na porta ou ligou, e nem sempre
+   * tem o número. Sem telefone, o agendamento guarda só o nome (migração
+   * 0047), como os antigos de antes da 0037.
    */
   telefoneObrigatorio?: boolean;
   /**
@@ -406,20 +405,21 @@ export function FormularioAgendamento({
       className="flex flex-col gap-5"
     >
       {/* O telefone vem PRIMEIRO: é ele que identifica o cliente (0042).
-          Obrigatório, e por isso sem a etiqueta "opcional": sem número a
-          barbearia não tem como avisar atraso nem falar com quem não
-          apareceu. A ajuda diz PARA QUÊ — pedir telefone sem dizer o
-          motivo é o jeito mais rápido de receber um número inventado. */}
+          Na página pública é obrigatório: sem número a barbearia não tem
+          como avisar atraso nem falar com quem não apareceu. Na agenda da
+          barbearia é opcional (0047), e a ajuda diz o que se ganha com
+          ele. Nos dois casos a ajuda diz PARA QUÊ — pedir telefone sem
+          dizer o motivo é o jeito mais rápido de receber número inventado. */}
       <Campo
         id="agendamento-telefone"
         rotulo="Telefone"
         opcional={!telefoneObrigatorio}
         ajuda={
-          !telefoneObrigatorio
-            ? "Este agendamento é de antes do campo existir. Se você souber o número, aproveite para guardá-lo."
-            : publico
-              ? "Com DDD. É por ele que a barbearia fala com você."
-              : "Com DDD. É por aqui que a barbearia fala com o cliente."
+          publico
+            ? "Com DDD. É por ele que a barbearia fala com você."
+            : telefoneObrigatorio
+              ? "Com DDD. É por aqui que a barbearia fala com o cliente."
+              : "Com DDD. Com o número, o cliente fica cadastrado e da próxima vez o nome aparece sozinho."
         }
       >
         <Input
