@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>BARBOS · Dia 5 · Horário vago também é prejuízo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,600;1,700&display=swap">
+<!-- As cores saem dos tokens da marca: nenhum hex solto aqui. -->
+<link rel="stylesheet" href="../../../identidade/tokens.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--graf-700); font-family: Inter, "Segoe UI", Arial, sans-serif; }
+  time, .num { font-variant-numeric: tabular-nums; }
+
+  /* Sem âncora: todos os slides empilhados, para conferir. Com #s3: só ele (o render usa isso). */
+  .slide { width: 1080px; height: 1350px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; padding: 84px 88px 72px; margin: 0 auto 40px; }
+  body:has(.slide:target) { background: none; }
+  body:has(.slide:target) .slide:not(:target) { display: none; }
+  body:has(.slide:target) .slide { margin: 0; }
+
+  .escuro { background: var(--graf-900); color: var(--branco); }
+  .claro  { background: var(--graf-50);  color: var(--graf-900); }
+  .acao   { background: var(--ambar-500); color: var(--graf-900); }
+
+  .topo { display: flex; justify-content: space-between; align-items: center; height: 52px; flex: none; }
+  .topo img { height: 46px; }
+  .contador { font-size: 22px; font-weight: 600; letter-spacing: .18em; }
+  .escuro .contador { color: var(--graf-300); }
+  .claro .contador { color: var(--graf-500); }
+
+  .rodape { margin-top: auto; flex: none; display: flex; justify-content: space-between; align-items: center;
+    padding-top: 28px; font-size: 22px; font-weight: 600; }
+  .escuro .rodape { border-top: 1px solid var(--graf-700); color: var(--graf-300); }
+  .claro .rodape { border-top: 1px solid var(--graf-200); color: var(--graf-500); }
+  .seta { letter-spacing: .14em; text-transform: uppercase; font-size: 20px; font-weight: 700; }
+  .escuro .seta { color: var(--ambar-500); }
+  .claro .seta { color: var(--ambar-800); }
+
+  .miolo { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .eyebrow { font-size: 22px; font-weight: 800; letter-spacing: .26em; text-transform: uppercase; margin-bottom: 30px; }
+  .escuro .eyebrow { color: var(--ambar-500); }
+  .claro .eyebrow { color: var(--ambar-800); }
+  .regua { width: 80px; height: 6px; border-radius: 3px; background: var(--ambar-500); margin: 34px 0; }
+  h1 { font-size: 112px; line-height: .98; letter-spacing: -.045em; font-weight: 900; }
+  h2 { font-size: 72px; line-height: 1.04; letter-spacing: -.035em; font-weight: 800; }
+  .corpo { font-size: 34px; line-height: 1.4; font-weight: 500; margin-top: 24px; }
+  .escuro .corpo { color: var(--graf-300); }
+  .claro .corpo { color: var(--graf-500); }
+  .destaque-escuro { color: var(--ambar-500); }
+  .destaque-claro { color: var(--ambar-800); }
+
+  .faixa { position: absolute; left: 0; right: 0; top: 0; height: 14px;
+    background: repeating-linear-gradient(-45deg, var(--ambar-500) 0 22px, var(--graf-900) 22px 44px); }
+
+  /* selo "exemplo": exigido pelo planejamento em todo slide com número */
+  .exemplo { display: inline-flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; letter-spacing: .2em;
+    text-transform: uppercase; padding: 9px 18px; border-radius: 999px; }
+  .escuro .exemplo { color: var(--ambar-500); border: 2px solid var(--ambar-500); }
+  .claro .exemplo { color: var(--ambar-800); border: 2px solid var(--ambar-800); }
+
+  /* --- slide 1: capa, com o horário vago --- */
+  .vaga { margin-top: 64px; display: flex; align-items: center; gap: 30px; height: 120px; padding: 0 40px;
+    border: 3px dashed var(--ambar-500); border-radius: 22px; background: var(--graf-800); }
+  .vaga time { font-size: 46px; font-weight: 800; color: var(--graf-300); }
+  .vaga .tracos { flex: 1; height: 0; border-top: 3px dotted var(--graf-500); }
+  .vaga .rot { font-size: 26px; font-weight: 800; letter-spacing: .24em; color: var(--ambar-500); }
+
+  /* --- slide 2: caderno e Pix, com o buraco das 15h --- */
+  .dupla { display: flex; gap: 24px; margin-top: 60px; }
+  .folha { flex: 1; background: var(--branco); border: 1px solid var(--graf-200); border-radius: 22px; padding: 26px 26px 18px; }
+  .folha .tit { font-size: 20px; font-weight: 800; letter-spacing: .2em; color: var(--graf-500); text-transform: uppercase; padding-bottom: 14px;
+    border-bottom: 2px solid var(--graf-100); }
+  .linha { display: flex; align-items: baseline; gap: 18px; padding: 18px 0; border-bottom: 2px solid var(--graf-100); font-size: 30px; }
+  .linha:last-child { border-bottom: 0; }
+  .linha time { font-weight: 700; color: var(--graf-500); width: 78px; flex: none; font-size: 26px; }
+  .mao { font-style: italic; font-weight: 600; color: var(--azul-700); font-size: 34px; }
+  .pix { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+  .pix b { font-size: 24px; font-weight: 700; }
+  .pix .valor { font-size: 28px; font-weight: 800; color: var(--verde-700); }
+  .linha.buraco { background: var(--ambar-100); margin: 0 -14px; padding: 18px 14px; border-radius: 12px; border-bottom-color: transparent; }
+  .linha.buraco .vazio { font-size: 22px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--ambar-800); }
+  .nota { margin-top: 22px; display: flex; justify-content: flex-end; }
+
+  /* --- slide 3: os dados da conta, como campos (classe .dado: o tokens.css já tem uma .campo do sistema) --- */
+  .dados { display: flex; flex-direction: column; gap: 22px; margin-top: 56px; }
+  .dado { display: flex; align-items: center; justify-content: space-between; height: 132px; padding: 0 36px;
+    background: var(--graf-800); border: 2px solid var(--graf-400); border-radius: 20px; }
+  .dado span { font-size: 30px; font-weight: 600; color: var(--graf-300); }
+  .dado b { font-size: 64px; font-weight: 900; letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--branco); }
+
+  /* --- slides 4 e 6: fita de calculadora --- */
+  .fita { background: var(--branco); border: 1px solid var(--graf-200); border-radius: 24px; padding: 18px 40px; margin-top: 50px; }
+  .op { display: flex; align-items: baseline; gap: 26px; padding: 26px 0; border-bottom: 2px dashed var(--graf-200); }
+  .op:last-child { border-bottom: 0; }
+  .op .sinal { width: 44px; flex: none; font-size: 54px; font-weight: 800; color: var(--graf-400); text-align: center; }
+  .op .val { font-size: 76px; font-weight: 900; letter-spacing: -.03em; font-variant-numeric: tabular-nums; min-width: 260px; }
+  .op .rot { font-size: 30px; font-weight: 600; color: var(--graf-500); }
+  .op.res { background: var(--ambar-500); margin: 10px -24px 0; padding: 26px 24px; border-radius: 18px; border-bottom: 0; }
+  .op.res .sinal, .op.res .rot { color: var(--graf-900); }
+  .fita.grande .op { padding: 40px 0; }
+  .fita.grande .op .sinal { width: 56px; font-size: 68px; }
+  .fita.grande .op .val { font-size: 104px; min-width: 340px; }
+  .fita.grande .op .rot { font-size: 34px; }
+  .fita.grande .op.res { padding: 40px 24px; }
+  .branco { display: inline-block; width: 210px; border-bottom: 5px solid var(--graf-900); height: 64px; }
+  .op.res .branco { width: 300px; }
+
+  /* --- slide 5: o mês no calendário --- */
+  .mes { margin-top: 44px; }
+  .mes .dias, .mes .grade { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+  .mes .dias span { font-size: 20px; font-weight: 800; letter-spacing: .14em; color: var(--graf-300); text-align: center; padding-bottom: 6px; }
+  .mes .grade i { height: 62px; border-radius: 12px; background: var(--ambar-500); color: var(--graf-900); font-style: normal;
+    font-size: 22px; font-weight: 800; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+  .mes .grade i.fora { background: transparent; border: 2px dashed var(--graf-700); }
+  .conta-mes { display: flex; align-items: baseline; justify-content: space-between; margin-top: 28px; font-size: 30px; font-weight: 600; color: var(--graf-300); }
+  .total { font-size: 168px; font-weight: 900; letter-spacing: -.05em; line-height: 1; color: var(--ambar-500); margin-top: 26px; font-variant-numeric: tabular-nums; }
+  .total small { font-size: 46px; font-weight: 800; letter-spacing: -.02em; color: var(--branco); margin-left: 14px; }
+
+  /* --- slide 7: o horário vago, visto pelo cliente --- */
+  .antes-depois { display: flex; flex-direction: column; align-items: stretch; gap: 0; margin-top: 56px; }
+  .slot { display: flex; align-items: center; gap: 28px; height: 116px; padding: 0 34px; border-radius: 20px; font-size: 36px; font-weight: 800; }
+  .slot time { font-size: 40px; font-weight: 800; }
+  .slot.vazio { border: 3px dashed var(--graf-400); color: var(--graf-300); }
+  .slot.vazio .rot { margin-left: auto; font-size: 22px; letter-spacing: .2em; text-transform: uppercase; color: var(--graf-300); }
+  .slot.cheio { background: var(--branco); color: var(--graf-900); }
+  .slot.cheio time { color: var(--graf-500); }
+  .slot.cheio .estado { margin-left: auto; font-size: 23px; font-weight: 700; padding: 10px 20px; border-radius: 999px;
+    color: var(--ag-agendado-txt); background: var(--ag-agendado-bg); }
+  .desce { align-self: center; margin: 16px 0; width: 64px; height: 64px; }
+
+  /* --- slide 8: CTA --- */
+  .acao .miolo { align-items: center; text-align: center; }
+  .acao .logo-final { height: 70px; margin-bottom: 70px; }
+  .acao h2 { font-size: 90px; max-width: 880px; }
+  .salvar { display: inline-flex; align-items: center; gap: 22px; margin: 60px 0 44px; background: var(--graf-900); color: var(--branco);
+    padding: 26px 50px; border-radius: 22px; font-size: 44px; font-weight: 900; letter-spacing: .06em; }
+  .salvar svg { width: 44px; height: 52px; }
+  .acao .corpo { color: var(--graf-900); margin-top: 0; }
+  .acao .rodape { justify-content: center; border-top: 2px solid var(--graf-900); color: var(--graf-900); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- 1 · CAPA (escuro) -->
+<div class="slide escuro" id="s1">
+  <div class="faixa"></div>
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-escuro.png" alt="BARBOS"><span class="contador">01 / 08</span></div>
+  <div class="miolo">
+    <p class="eyebrow">Agenda de barbearia</p>
+    <h1>Horário vago também é <span class="destaque-escuro">prejuízo.</span></h1>
+    <div class="vaga" aria-hidden="true"><time>15:00</time><span class="tracos"></span><span class="rot">Vago</span></div>
+    <p class="corpo" style="margin-top:44px">Faz a conta com a gente.</p>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 2 · NÃO APARECE (claro) -->
+<div class="slide claro" id="s2">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-claro.png" alt="BARBOS"><span class="contador">02 / 08</span></div>
+  <div class="miolo">
+    <h2>Cadeira parada não aparece em lugar nenhum.</h2>
+    <p class="corpo">Nem no caderno, <span class="destaque-claro">nem no Pix.</span></p>
+    <div class="dupla" aria-hidden="true">
+      <div class="folha">
+        <p class="tit">Caderno</p>
+        <div class="linha"><time>14h</time><span class="mao">Lucas</span></div>
+        <div class="linha buraco"><time>15h</time><span class="vazio">nada</span></div>
+        <div class="linha"><time>16h</time><span class="mao">Bruno</span></div>
+      </div>
+      <div class="folha">
+        <p class="tit">Pix</p>
+        <div class="linha"><time>14:40</time><span class="pix"><b>Recebido</b><span class="valor">+ R$ 35</span></span></div>
+        <div class="linha buraco"><time>15h</time><span class="vazio">nada</span></div>
+        <div class="linha"><time>16:35</time><span class="pix"><b>Recebido</b><span class="valor">+ R$ 35</span></span></div>
+      </div>
+    </div>
+    <div class="nota"><span class="exemplo">Exemplo</span></div>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 3 · OS DADOS DA CONTA (escuro) -->
+<div class="slide escuro" id="s3">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-escuro.png" alt="BARBOS"><span class="contador">03 / 08</span></div>
+  <div class="miolo">
+    <p><span class="exemplo">Exemplo</span></p>
+    <h2 style="margin-top:34px">Faz a conta com a gente.</h2>
+    <div class="dados" aria-hidden="true">
+      <div class="dado"><span>Horários vagos por dia</span><b>2</b></div>
+      <div class="dado"><span>Preço do corte</span><b>R$ 35</b></div>
+      <div class="dado"><span>Dias de trabalho no mês</span><b>26</b></div>
+    </div>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 4 · A CONTA DO DIA (claro) -->
+<div class="slide claro" id="s4">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-claro.png" alt="BARBOS"><span class="contador">04 / 08</span></div>
+  <div class="miolo">
+    <p class="eyebrow" style="margin-bottom:0;display:flex;align-items:center;gap:20px">A conta do dia <span class="exemplo">Exemplo</span></p>
+    <div class="fita grande">
+      <div class="op"><span class="sinal"></span><span class="val">2</span><span class="rot">horários vagos por dia</span></div>
+      <div class="op"><span class="sinal">×</span><span class="val">R$ 35</span><span class="rot">o corte</span></div>
+      <div class="op res"><span class="sinal">=</span><span class="val">R$ 70</span><span class="rot">por dia</span></div>
+    </div>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 5 · A CONTA DO MÊS (escuro) -->
+<div class="slide escuro" id="s5">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-escuro.png" alt="BARBOS"><span class="contador">05 / 08</span></div>
+  <div class="miolo">
+    <p class="eyebrow" style="margin-bottom:0;display:flex;align-items:center;gap:20px">A conta do mês <span class="exemplo">Exemplo</span></p>
+    <div class="mes" aria-hidden="true">
+      <div class="dias"><span>SEG</span><span>TER</span><span>QUA</span><span>QUI</span><span>SEX</span><span>SÁB</span></div>
+      <div class="grade">
+        <i>70</i><i>70</i><i>70</i><i>70</i><i>70</i><i>70</i>
+        <i>70</i><i>70</i><i>70</i><i>70</i><i>70</i><i>70</i>
+        <i>70</i><i>70</i><i>70</i><i>70</i><i>70</i><i>70</i>
+        <i>70</i><i>70</i><i>70</i><i>70</i><i>70</i><i>70</i>
+        <i>70</i><i>70</i><i class="fora"></i><i class="fora"></i><i class="fora"></i><i class="fora"></i>
+      </div>
+    </div>
+    <div class="conta-mes"><span>R$ 70 × 26 dias de trabalho =</span></div>
+    <p class="total">R$ 1.820<small>no mês</small></p>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 6 · A SUA CONTA (claro) -->
+<div class="slide claro" id="s6">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-claro.png" alt="BARBOS"><span class="contador">06 / 08</span></div>
+  <div class="miolo">
+    <h2>Troca pelos seus números. <span class="destaque-claro">Assusta, né?</span></h2>
+    <div class="fita">
+      <div class="op"><span class="sinal"></span><span class="branco"></span><span class="rot">vagos por dia</span></div>
+      <div class="op"><span class="sinal">×</span><span class="val" style="min-width:0">R$</span><span class="branco" style="width:150px"></span><span class="rot">o seu corte</span></div>
+      <div class="op"><span class="sinal">×</span><span class="branco"></span><span class="rot">dias no mês</span></div>
+      <div class="op res"><span class="sinal">=</span><span class="val" style="min-width:0">R$</span><span class="branco"></span></div>
+    </div>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 7 · A VIRADA (escuro) -->
+<div class="slide escuro" id="s7">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-escuro.png" alt="BARBOS"><span class="contador">07 / 08</span></div>
+  <div class="miolo">
+    <h2>Horário fica vago quando o cliente <span class="destaque-escuro">não sabe que ele existe.</span></h2>
+    <p class="corpo">Com a agenda aberta para o cliente ver, ele é preenchido.</p>
+    <div class="antes-depois" aria-hidden="true">
+      <div class="slot vazio"><time>15:00</time><span class="rot">Vago · ninguém viu</span></div>
+      <svg class="desce" viewBox="0 0 64 64" fill="none" stroke="var(--ambar-500)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M32 8v44M14 36l18 18 18-18"/></svg>
+      <div class="slot cheio"><time>15:00</time><span>Rafael</span><span class="estado">Agendado</span></div>
+    </div>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 8 · CTA (âmbar, texto grafite) -->
+<div class="slide acao" id="s8">
+  <div class="miolo">
+    <img class="logo-final" src="../../../identidade/logo/barbos-horizontal-mono-grafite.png" alt="BARBOS">
+    <h2>Salva e faz a conta com o seu preço.</h2>
+    <span class="salvar"><svg viewBox="0 0 44 52" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"><path d="M5 4h34v44L22 36 5 48z"/></svg>SALVAR</span>
+    <p class="corpo">Depois comenta quanto deu.<br>A gente responde todo mundo.</p>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span></div>
+</div>
+
+</body>
+</html>

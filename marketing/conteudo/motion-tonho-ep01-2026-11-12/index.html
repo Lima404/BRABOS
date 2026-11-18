@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Na cadeira do Tonho · Ep. 01</title>
+<style>
+  html,body{margin:0;background:#0D0F12;overflow:hidden;width:1080px;height:1920px;position:relative}
+  canvas{display:block}
+  #logo{position:absolute;left:50%;top:1390px;width:300px;transform:translateX(-50%);opacity:0;pointer-events:none}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<img id="logo" src="assets/barbos-horizontal-escuro.png" alt="BARBOS">
+<script type="module">
+// Tudo sai do tempo, em window.seek(t). window.AMOSTRAS = amostras por quadro (desfoque de movimento + foco).
+import { carregarBase } from './nucleo.js';
+import { criarCenas, seek, DUR } from './cenas.js';
+window.pronto = (async () => {
+  await carregarBase(); await criarCenas();
+  await new Promise(ok => { const i = document.getElementById('logo'); i.complete ? ok() : (i.onload = ok); });
+  window.seek = seek; window.DUR = DUR; seek(0); return true;
+})();
+</script>
+</body></html>

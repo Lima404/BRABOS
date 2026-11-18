@@ -1,0 +1,18 @@
+duração 43.0 s · tomada única
+  0.35 →   1.52  c01 b1.70  Tesoura numa mão.
+  1.88 →   3.13  c01 b4.75  Celular na outra.
+  3.88 →   6.79  c02 b4.75  O Tonho está cortando, e o celular não para.
+  7.25 →   8.51  c04 b3.50  Três mensagens.
+  8.88 →   9.52  c05 b2.75  Sete.
+  9.88 →  10.45  c05 b4.75  Doze.
+ 11.25 →  13.82  c06 b3.50  Onze e dois: tem horário hoje à tarde?
+ 14.62 →  17.59  c08 b2.25  O Tonho só consegue responder às duas e quarenta.
+ 18.12 →  19.12  c10 b1.25  Tenho às três!
+ 19.62 →  21.32  c10 b4.25  Já cortei, obrigado.
+ 22.12 →  24.30  c12 b1.25  Ele não perdeu o cliente por ser ruim.
+ 24.62 →  26.30  c13 b2.25  Perdeu por estar trabalhando.
+ 27.12 →  31.45  c14 b3.25  E se o cliente pudesse ver os horários livres, sem precisar perguntar?
+ 32.38 →  35.24  c17 b1.75  Quantas vezes por dia te perguntam se tem horário?
+ 35.62 →  36.66  c18 b4.25  Comenta o número.
+ 37.50 →  38.73  c19 b4.00  Na cadeira do Tonho.
+ 39.12 →  40.69  c20 b3.25  Até o próximo episódio.

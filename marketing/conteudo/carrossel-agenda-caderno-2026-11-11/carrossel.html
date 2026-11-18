@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>BARBOS · Dia 1 · Sua agenda cabe num caderno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+<!-- As cores saem dos tokens da marca: nenhum hex solto aqui. -->
+<link rel="stylesheet" href="../../../identidade/tokens.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--graf-700); font-family: Inter, "Segoe UI", Arial, sans-serif; }
+
+  /* Sem âncora: todos os slides empilhados, para conferir. Com #s3: só ele (o render usa isso). */
+  .slide { width: 1080px; height: 1350px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; padding: 84px 88px 72px; margin: 0 auto 40px; }
+  body:has(.slide:target) { background: none; }
+  body:has(.slide:target) .slide:not(:target) { display: none; }
+  body:has(.slide:target) .slide { margin: 0; }
+
+  .escuro { background: var(--graf-900); color: var(--branco); }
+  .claro  { background: var(--graf-50);  color: var(--graf-900); }
+  .acao   { background: var(--ambar-500); color: var(--graf-900); }
+
+  /* topo: logo à esquerda, contador à direita */
+  .topo { display: flex; justify-content: space-between; align-items: center; height: 52px; flex: none; }
+  .topo img { height: 46px; }
+  .contador { font-size: 22px; font-weight: 600; letter-spacing: .18em; }
+  .escuro .contador { color: var(--graf-300); }
+  .claro .contador { color: var(--graf-500); }
+
+  /* rodapé */
+  .rodape { margin-top: auto; flex: none; display: flex; justify-content: space-between; align-items: center;
+    padding-top: 28px; font-size: 22px; font-weight: 600; }
+  .escuro .rodape { border-top: 1px solid var(--graf-700); color: var(--graf-300); }
+  .claro .rodape { border-top: 1px solid var(--graf-200); color: var(--graf-500); }
+  .seta { letter-spacing: .14em; text-transform: uppercase; font-size: 20px; font-weight: 700; }
+  .escuro .seta { color: var(--ambar-500); }
+  .claro .seta { color: var(--ambar-800); }
+
+  .miolo { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+  .eyebrow { font-size: 22px; font-weight: 800; letter-spacing: .26em; text-transform: uppercase; margin-bottom: 30px; }
+  .escuro .eyebrow { color: var(--ambar-500); }
+  .claro .eyebrow { color: var(--ambar-800); }
+  .regua { width: 80px; height: 6px; border-radius: 3px; background: var(--ambar-500); margin: 34px 0; }
+  h1 { font-size: 104px; line-height: .98; letter-spacing: -.045em; font-weight: 900; }
+  h2 { font-size: 76px; line-height: 1.03; letter-spacing: -.035em; font-weight: 800; }
+  .corpo { font-size: 36px; line-height: 1.4; font-weight: 500; }
+  .escuro .corpo { color: var(--graf-300); }
+  .claro .corpo { color: var(--graf-500); }
+  .destaque-escuro { color: var(--ambar-500); }
+  .destaque-claro { color: var(--ambar-800); }
+
+  /* faixa diagonal da marca (o "elemento barbearia" do manual) */
+  .faixa { position: absolute; left: 0; right: 0; top: 0; height: 14px;
+    background: repeating-linear-gradient(-45deg, var(--ambar-500) 0 22px, var(--graf-900) 22px 44px); }
+
+  /* --- slide 2: a semana --- */
+  .semana { display: flex; align-items: flex-end; gap: 22px; height: 470px; margin-top: 64px;
+    border-bottom: 3px solid var(--graf-200); }
+  .dia { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 14px; }
+  .barra { width: 100%; border-radius: 14px 14px 0 0; background: var(--graf-200); }
+  .dia.sab .barra { background: var(--ambar-500); position: relative; }
+  .rotulo-dia { font-size: 26px; font-weight: 700; color: var(--graf-500); letter-spacing: .08em; padding-bottom: 6px; }
+  .dia.sab .rotulo-dia { color: var(--graf-900); }
+  .lotado { position: absolute; top: -78px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+    background: var(--graf-900); color: var(--branco); font-size: 22px; font-weight: 800; letter-spacing: .16em;
+    text-transform: uppercase; padding: 10px 18px; border-radius: 10px; }
+
+  /* --- slide 3: a página do caderno --- */
+  .caderno { background: var(--branco); color: var(--graf-900); border-radius: 18px; padding: 34px 44px 30px 120px;
+    position: relative; transform: rotate(-2deg); margin: 10px 8px 64px;
+    box-shadow: 0 30px 60px rgba(0,0,0,.35); }
+  .caderno::before { content: ""; position: absolute; top: 0; bottom: 0; left: 92px; width: 3px; background: var(--graf-200); }
+  .caderno .titulo-pag { font-size: 24px; font-weight: 700; color: var(--graf-500); letter-spacing: .14em; text-transform: uppercase;
+    padding-bottom: 14px; }
+  .linha { display: flex; gap: 34px; align-items: baseline; font-size: 40px; font-weight: 600; height: 82px;
+    border-top: 2px solid var(--graf-100); padding-top: 18px; position: relative; }
+  .hora { font-variant-numeric: tabular-nums; color: var(--graf-500); width: 120px; font-weight: 700; }
+  .riscado { text-decoration: line-through; text-decoration-thickness: 5px; text-decoration-color: var(--graf-900); color: var(--graf-400); }
+  .por-cima { position: absolute; left: 270px; top: -6px; transform: rotate(-6deg); font-style: italic; font-weight: 800; }
+  .conflito { position: absolute; right: -10px; top: 14px; background: var(--ambar-500); color: var(--graf-900);
+    font-size: 22px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; padding: 8px 16px; border-radius: 10px; transform: rotate(4deg); }
+
+  /* --- slide 4: três batidas --- */
+  .batidas { display: flex; flex-direction: column; margin-top: 10px; }
+  .batida { display: flex; align-items: baseline; gap: 34px; padding: 44px 0; border-bottom: 2px solid var(--graf-200); }
+  .batida:last-child { border-bottom: 0; }
+  .batida .n { font-size: 30px; font-weight: 800; color: var(--ambar-800); font-variant-numeric: tabular-nums; width: 56px; flex: none; }
+  .batida h2 { font-size: 70px; }
+
+  /* --- slide 5: a conversa --- */
+  .conversa { display: flex; flex-direction: column; gap: 26px; margin: 0 0 56px; }
+  .balao { max-width: 760px; padding: 26px 34px 20px; border-radius: 30px; font-size: 38px; font-weight: 600; line-height: 1.25; }
+  .balao .hora-msg { display: block; text-align: right; font-size: 22px; font-weight: 600; margin-top: 8px; font-variant-numeric: tabular-nums; }
+  .recebida { background: var(--graf-800); color: var(--branco); border-bottom-left-radius: 8px; align-self: flex-start; }
+  .recebida .hora-msg { color: var(--graf-300); }
+  .enviada { background: var(--ambar-500); color: var(--graf-900); border-bottom-right-radius: 8px; align-self: flex-end; }
+  .enviada .hora-msg { color: var(--graf-900); opacity: .75; }
+  .espera { align-self: center; font-size: 24px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--ambar-500); border: 2px dashed var(--ambar-500); border-radius: 999px; padding: 12px 30px; }
+
+  /* --- slide 6: a frase --- */
+  .aspas { position: absolute; right: 70px; top: 150px; font-size: 520px; line-height: 1; font-weight: 900; color: var(--graf-100); }
+  .frase h2 { font-size: 92px; position: relative; }
+
+  /* --- slide 7: CTA --- */
+  .acao .miolo { align-items: center; text-align: center; }
+  .acao .logo-final { height: 70px; margin-bottom: 70px; }
+  .acao h2 { font-size: 96px; max-width: 860px; }
+  .respostas { display: flex; gap: 28px; margin: 64px 0 40px; }
+  .resposta { background: var(--graf-900); color: var(--branco); font-size: 52px; font-weight: 900; letter-spacing: .04em;
+    padding: 26px 70px; border-radius: 22px; }
+  .acao .corpo { color: var(--graf-900); }
+  .acao .rodape { justify-content: center; border-top: 2px solid var(--graf-900); color: var(--graf-900); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<!-- 1 · CAPA (escuro) -->
+<div class="slide escuro" id="s1">
+  <div class="faixa"></div>
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-escuro.png" alt="BARBOS"><span class="contador">01 / 07</span></div>
+  <div class="miolo">
+    <p class="eyebrow">Agenda de barbearia</p>
+    <h1>Sua agenda cabe num caderno.<br><span class="destaque-escuro">Seu sábado, não.</span></h1>
+    <div class="regua"></div>
+    <p class="corpo">Arrasta e vê se algum desses já aconteceu aí.</p>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 2 · A SEMANA (claro) -->
+<div class="slide claro" id="s2">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-claro.png" alt="BARBOS"><span class="contador">02 / 07</span></div>
+  <div class="miolo">
+    <h2>O caderno aguenta a segunda-feira.</h2>
+    <p class="corpo" style="margin-top:28px">No sábado, com fila na porta, ele começa a falhar.</p>
+    <div class="semana" aria-hidden="true">
+      <div class="dia"><div class="barra" style="height:26%"></div><span class="rotulo-dia">SEG</span></div>
+      <div class="dia"><div class="barra" style="height:34%"></div><span class="rotulo-dia">TER</span></div>
+      <div class="dia"><div class="barra" style="height:38%"></div><span class="rotulo-dia">QUA</span></div>
+      <div class="dia"><div class="barra" style="height:46%"></div><span class="rotulo-dia">QUI</span></div>
+      <div class="dia"><div class="barra" style="height:62%"></div><span class="rotulo-dia">SEX</span></div>
+      <div class="dia sab"><div class="barra" style="height:84%"><span class="lotado">Lotado</span></div><span class="rotulo-dia">SÁB</span></div>
+    </div>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 3 · O CADERNO (escuro) -->
+<div class="slide escuro" id="s3">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-escuro.png" alt="BARBOS"><span class="contador">03 / 07</span></div>
+  <div class="miolo">
+    <div class="caderno" aria-hidden="true">
+      <p class="titulo-pag">Sábado</p>
+      <div class="linha"><span class="hora">08:30</span><span>Carlos</span></div>
+      <div class="linha"><span class="hora">09:00</span><span class="riscado">João</span><span class="por-cima">Pedro?</span><span class="conflito">Os dois vieram</span></div>
+      <div class="linha"><span class="hora">09:30</span><span class="riscado">Zé</span><span>Marcos</span></div>
+      <div class="linha"><span class="hora">10:00</span><span>Neto (filho)</span></div>
+    </div>
+    <h2>Rasura em cima de rasura.</h2>
+    <p class="corpo" style="margin-top:26px">Um nome escrito por cima do outro. <span class="destaque-escuro">Quem marcou primeiro?</span></p>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 4 · TRÊS BATIDAS (claro) -->
+<div class="slide claro" id="s4">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-claro.png" alt="BARBOS"><span class="contador">04 / 07</span></div>
+  <div class="miolo">
+    <p class="eyebrow">E quando o caderno some?</p>
+    <div class="batidas">
+      <div class="batida"><span class="n">01</span><h2>O caderno ficou em casa.</h2></div>
+      <div class="batida"><span class="n">02</span><h2>Molhou.</h2></div>
+      <div class="batida"><span class="n">03</span><h2>Alguém levou para a outra cadeira.</h2></div>
+    </div>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 5 · A CONVERSA (escuro) -->
+<div class="slide escuro" id="s5">
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-escuro.png" alt="BARBOS"><span class="contador">05 / 07</span></div>
+  <div class="miolo">
+    <div class="conversa" aria-hidden="true">
+      <div class="balao recebida">Tem horário hoje à tarde?<span class="hora-msg">11:02</span></div>
+      <div class="espera">4 horas depois</div>
+      <div class="balao enviada">Tenho às 15h!<span class="hora-msg">15:00</span></div>
+      <div class="balao recebida">Já cortei, obrigado.<span class="hora-msg">15:01</span></div>
+    </div>
+    <h2>A resposta chegou. <span class="destaque-escuro">O cliente, não.</span></h2>
+    <p class="corpo" style="margin-top:26px">Mandou mensagem às 11h, recebeu resposta às 15h e já tinha cortado em outro lugar.</p>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 6 · A FRASE (claro) -->
+<div class="slide claro" id="s6">
+  <div class="aspas" aria-hidden="true">“</div>
+  <div class="topo"><img src="../../../identidade/logo/barbos-horizontal-claro.png" alt="BARBOS"><span class="contador">06 / 07</span></div>
+  <div class="miolo frase">
+    <h2>Não é falta de esforço.</h2>
+    <div class="regua"></div>
+    <h2 class="destaque-claro">É ferramenta pequena para um negócio que cresceu.</h2>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span><span class="seta">Arrasta →</span></div>
+</div>
+
+<!-- 7 · CTA (âmbar, texto grafite) -->
+<div class="slide acao" id="s7">
+  <div class="miolo">
+    <img class="logo-final" src="../../../identidade/logo/barbos-horizontal-mono-grafite.png" alt="BARBOS">
+    <h2>Seu caderno ainda dá conta?</h2>
+    <div class="respostas"><span class="resposta">SIM</span><span class="resposta">NÃO</span></div>
+    <p class="corpo">Comenta aqui embaixo. A gente responde todo mundo.</p>
+  </div>
+  <div class="rodape"><span>@barboss.oficial</span></div>
+</div>
+
+</body>
+</html>

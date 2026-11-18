@@ -1,0 +1,25 @@
+{
+  "voz": "pt-BR-AntonioNeural",
+  "velocidade": "-6%",
+  "inicio": 0.35,
+  "frases": [
+    {"id": "f01", "pausa": 0.35, "texto": "Terça, quatro da tarde."},
+    {"id": "f02", "pausa": 0.30, "texto": "A cadeira está pronta."},
+    {"id": "f03", "pausa": 0.75, "texto": "O cliente não veio."},
+    {"id": "f04", "pausa": 0.30, "texto": "Quatro e quinze."},
+    {"id": "f05", "pausa": 0.75, "texto": "Quatro e meia, e o Tonho de olho na porta."},
+    {"id": "f06", "pausa": 0.35, "texto": "Ele procura o telefone no caderno."},
+    {"id": "f07", "pausa": 0.70, "texto": "Só tem escrito: Damião."},
+    {"id": "f08", "pausa": 0.25, "texto": "Sem telefone."},
+    {"id": "f09", "pausa": 0.25, "texto": "Sem aviso."},
+    {"id": "f10", "pausa": 0.75, "texto": "Sem como remarcar."},
+    {"id": "f11", "pausa": 0.35, "texto": "Quatro e quarenta, chega outro cliente querendo encaixe."},
+    {"id": "f12", "pausa": 0.80, "texto": "Mas quarenta minutos já foram."},
+    {"id": "f13", "pausa": 0.80, "texto": "Um furo por dia, no fim do mês, vira mais de dezessete horas de cadeira parada."},
+    {"id": "f14", "pausa": 0.80, "texto": "Agenda boa guarda o telefone de quem marcou."},
+    {"id": "f15", "pausa": 0.30, "texto": "E você, como lida com quem fura?"},
+    {"id": "f16", "pausa": 0.75, "texto": "Conta aqui."},
+    {"id": "f17", "pausa": 0.30, "texto": "Na cadeira do Tonho."},
+    {"id": "f18", "pausa": 0.00, "texto": "Toda semana tem episódio."}
+  ]
+}

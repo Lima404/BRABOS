@@ -1,0 +1,6 @@
+node_modules/
+_sub/
+_batidas/
+_soltos/
+_teste/
+*.wav

@@ -1,0 +1,1546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>jQuery FX Lab — 25 Animações Modernas para Web</title>
+  
+  <!-- jQuery 3.7.1 local (pasta vendor/) — funciona sem internet -->
+  <script src="vendor/jquery-3.7.1.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111726;
+      --card-border: #1e293b;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --secondary: #06b6d4;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --code-bg: #070a12;
+      --accent: #10b981;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Header & Navigation */
+    header {
+      padding: 3rem 1.5rem 2rem;
+      text-align: center;
+      background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent 70%);
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, #a5b4fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 650px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.6rem;
+      margin-top: 1rem;
+    }
+
+    .filter-btn {
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      padding: 0.45rem 1rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1300px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    /* Section Card */
+    .demo-item {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+
+    .demo-item:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+    }
+
+    .demo-header {
+      padding: 1rem 1.5rem;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .demo-title-area {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .demo-number {
+      background: rgba(99, 102, 241, 0.15);
+      color: #a5b4fc;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .demo-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .demo-controls {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: var(--text);
+    }
+
+    .btn-secondary:hover {
+      background: #334155;
+    }
+
+    /* Grid layout inside demo */
+    .demo-body {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      min-height: 280px;
+    }
+
+    @media (max-width: 900px) {
+      .demo-body {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Stage */
+    .demo-stage {
+      padding: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: radial-gradient(circle at center, #151c2e 0%, #0d121f 100%);
+      overflow: hidden;
+      min-height: 240px;
+    }
+
+    /* Code Panel */
+    .demo-code {
+      background: var(--code-bg);
+      border-left: 1px solid var(--card-border);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @media (max-width: 900px) {
+      .demo-code {
+        border-left: none;
+        border-top: 1px solid var(--card-border);
+      }
+    }
+
+    .code-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--card-border);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: none;
+      color: #38bdf8;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .copy-btn:hover {
+      text-decoration: underline;
+    }
+
+    pre {
+      margin: 0;
+      padding: 1rem;
+      font-family: "Fira Code", Consolas, Monaco, monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #cbd5e1;
+      overflow-x: auto;
+      max-height: 260px;
+    }
+
+    /* Individual Component Styles */
+    /* 1. Staggered Grid */
+    .stagger-box { width: 45px; height: 45px; background: var(--primary); border-radius: 8px; margin: 4px; display: inline-block; opacity: 0; transform: translateY(20px); }
+    
+    /* 2. Skeleton */
+    .skel-wrap { width: 220px; padding: 15px; background: #1e293b; border-radius: 10px; }
+    .skel-line { height: 14px; background: #334155; border-radius: 4px; margin-bottom: 8px; position: relative; overflow: hidden; }
+    .skel-line.avatar { width: 40px; height: 40px; border-radius: 50%; }
+    .skel-line::after { content:''; position:absolute; top:0; left:-100%; width:100%; height:100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent); animation: skel 1.4s infinite; }
+    @keyframes skel { 100% { left: 100%; } }
+
+    /* 3. Circular Progress */
+    .circle-svg { transform: rotate(-90deg); }
+    .circle-val { font-size: 1.4rem; font-weight: 700; position: absolute; }
+
+    /* 4. Curtain Reveal */
+    .curtain-wrap { position: relative; width: 260px; height: 120px; overflow: hidden; border-radius: 8px; background: #312e81; display:flex; align-items:center; justify-content:center; }
+    .curtain-layer { position: absolute; top:0; left:0; width:100%; height:100%; background: #6366f1; z-index:2; }
+
+    /* 5. Progress Step */
+    .steps-wrap { display: flex; align-items: center; gap: 1rem; position: relative; }
+    .step-dot { width: 32px; height: 32px; border-radius: 50%; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; z-index: 2; transition: all 0.3s; }
+    .step-dot.active { background: var(--accent); color: #fff; box-shadow: 0 0 12px var(--accent); }
+    .step-bar { position: absolute; top: 50%; left: 0; height: 4px; background: #1e293b; width: 100%; transform: translateY(-50%); z-index: 1; }
+    .step-fill { height: 100%; width: 0; background: var(--accent); }
+
+    /* 6. 3D Tilt */
+    .tilt-card { width: 200px; height: 120px; background: linear-gradient(135deg, #4338ca, #6366f1); border-radius: 12px; transform-style: preserve-3d; display: flex; align-items: center; justify-content: center; font-weight: 700; box-shadow: 0 15px 35px rgba(0,0,0,0.5); cursor: pointer; }
+
+    /* 7. Magnetic Button */
+    .magnetic-btn { padding: 1rem 2rem; background: #0ea5e9; border: none; border-radius: 50px; color: #fff; font-weight: 700; cursor: pointer; transition: transform 0.1s ease-out; }
+
+    /* 8. Card Expand Modal */
+    .mini-card { width: 140px; padding: 15px; background: #1e293b; border-radius: 8px; cursor: pointer; text-align: center; font-size: 0.85rem; border: 1px solid #334155; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(4px); }
+    .modal-content { width: 340px; background: #1e293b; padding: 25px; border-radius: 12px; border: 1px solid var(--primary); }
+
+    /* 9. Spotlight Border */
+    .spot-card { width: 220px; height: 120px; background: #111726; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 1px solid #1e293b; }
+    .spot-card::before { content: ''; position: absolute; inset: 0; background: radial-gradient(80px circle at var(--x, 50%) var(--y, 50%), rgba(99, 102, 241, 0.35), transparent 80%); pointer-events: none; }
+
+    /* 10. 3D Flip */
+    .flip-box { width: 180px; height: 110px; perspective: 800px; cursor: pointer; }
+    .flip-inner { width: 100%; height: 100%; transform-style: preserve-3d; transition: transform 0.6s; position: relative; }
+    .flip-face { position: absolute; inset: 0; backface-visibility: hidden; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-weight: 700; }
+    .flip-front { background: #3b82f6; }
+    .flip-back { background: #ec4899; transform: rotateY(180deg); }
+
+    /* 11. Multi-layer Parallax */
+    .parallax-scene { width: 260px; height: 140px; background: #0f172a; border-radius: 10px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .para-layer { position: absolute; border-radius: 50%; pointer-events: none; }
+    .layer-1 { width: 60px; height: 60px; background: rgba(99,102,241,0.5); top: 20%; left: 20%; }
+    .layer-2 { width: 100px; height: 100px; background: rgba(14,165,233,0.3); bottom: 10%; right: 15%; }
+
+    /* 12. Simulated Scroll Parallax */
+    .mock-viewport { width: 240px; height: 120px; overflow-y: scroll; border: 1px solid #334155; border-radius: 8px; background: #0f172a; position: relative; }
+    .mock-scroll-content { height: 350px; padding: 20px; position: relative; }
+    .float-orb { width: 40px; height: 40px; border-radius: 50%; background: #f59e0b; position: absolute; top: 30px; left: 90px; }
+
+    /* 13. Floating Orbit */
+    .orbit-core { width: 50px; height: 50px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; position: relative; }
+    .orbit-satellite { position: absolute; width: 18px; height: 18px; border-radius: 50%; background: var(--secondary); top: -20px; left: 16px; }
+
+    /* 14. Glare Reflect */
+    .glare-card { width: 200px; height: 110px; background: #1e293b; border-radius: 10px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .glare-sheen { position: absolute; top: 0; left: -150%; width: 100%; height: 100%; background: linear-gradient(105deg, transparent 20%, rgba(255,255,255,0.4) 50%, transparent 80%); transform: skewX(-20deg); }
+
+    /* 15. Clip Mask Reveal */
+    .clip-reveal { width: 220px; height: 120px; background: linear-gradient(135deg, #059669, #10b981); border-radius: 10px; clip-path: circle(0% at 50% 50%); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+    /* 16. Ripple Button */
+    .ripple-btn { position: relative; overflow: hidden; padding: 1rem 2rem; background: #4f46e5; border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer; }
+    .ripple-wave { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.5); transform: scale(0); animation: rip 0.6s linear; pointer-events: none; }
+    @keyframes rip { to { transform: scale(4); opacity: 0; } }
+
+    /* 17. Custom Cursor/Pill Follower */
+    .mouse-dock { width: 260px; height: 120px; background: #1e293b; border-radius: 10px; position: relative; overflow: hidden; cursor: crosshair; }
+    .mouse-badge { position: absolute; background: #f43f5e; color: #fff; font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; pointer-events: none; transform: translate(-50%, -150%); }
+
+    /* 18. Expanding Accordion Cards */
+    .cards-row { display: flex; gap: 8px; width: 260px; }
+    .exp-item { flex: 1; height: 100px; background: #334155; border-radius: 8px; cursor: pointer; transition: flex 0.4s ease; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; }
+    .exp-item.active { flex: 3; background: var(--primary); }
+
+    /* 19. Elastic Dropdown */
+    .drop-trigger { position: relative; }
+    .drop-menu { position: absolute; top: 110%; left: 0; background: #1e293b; border: 1px solid #334155; border-radius: 8px; width: 140px; padding: 8px 0; display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.5); z-index: 10; }
+    .drop-menu a { display: block; padding: 6px 14px; font-size: 0.8rem; color: #cbd5e1; text-decoration: none; }
+    .drop-menu a:hover { background: #334155; color: #fff; }
+
+    /* 20. Off-Canvas Drawer */
+    .drawer-view { width: 260px; height: 120px; background: #0f172a; border-radius: 8px; position: relative; overflow: hidden; }
+    .drawer-panel { position: absolute; top: 0; right: -160px; width: 160px; height: 100%; background: #1e293b; border-left: 1px solid #334155; padding: 15px; box-sizing: border-box; font-size: 0.8rem; }
+
+    /* 21. Number Counter */
+    .count-display { font-size: 2.5rem; font-weight: 900; color: #38bdf8; font-family: monospace; }
+
+    /* 22. Text Scramble */
+    .scramble-txt { font-family: monospace; font-size: 1.25rem; font-weight: 700; color: var(--accent); letter-spacing: 2px; }
+
+    /* 23. Typewriter */
+    .type-txt { font-family: monospace; font-size: 1.1rem; border-right: 2px solid #fff; padding-right: 4px; }
+
+    /* 24. FAQ Slide Accordion */
+    .faq-box { width: 260px; background: #1e293b; border-radius: 8px; overflow: hidden; border: 1px solid #334155; }
+    .faq-head { padding: 10px 14px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; justify-content: space-between; }
+    .faq-body { padding: 10px 14px; font-size: 0.75rem; color: var(--text-muted); display: none; border-top: 1px solid #334155; background: #141c2e; }
+
+    /* 25. Live Toast */
+    .toast-box { width: 220px; padding: 10px 14px; background: #065f46; border: 1px solid #10b981; border-radius: 8px; font-size: 0.8rem; font-weight: 600; display: none; position: relative; overflow: hidden; }
+    .toast-prog { position: absolute; bottom: 0; left: 0; height: 3px; background: #34d399; width: 100%; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 3rem 1rem;
+      border-top: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <h1>jQuery FX Lab</h1>
+    <p>25 animações interativas e modernas para sites. Teste, reinicie e copie o código limpo diretamente para seus projetos.</p>
+    
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">Todos (25)</button>
+      <button class="filter-btn" data-filter="load">Loadings & Revelações</button>
+      <button class="filter-btn" data-filter="card">Cards & 3D</button>
+      <button class="filter-btn" data-filter="parallax">Parallax & Profundidade</button>
+      <button class="filter-btn" data-filter="micro">Hover & Micro-interações</button>
+      <button class="filter-btn" data-filter="typo">Tipografia & UI</button>
+    </div>
+  </header>
+
+  <!-- MAIN LIST OF DEMOS -->
+  <main id="demos-container">
+
+    <!-- ==================== GRUPO 1: LOADINGS & REVELAÇÕES ==================== -->
+
+    <!-- DEMO 1 -->
+    <div class="demo-item" data-category="load">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#01</span>
+          <h2 class="demo-title">Staggered Grid Entrance (Cascata de Elementos)</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="1">▶ Reiniciar</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-1">
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr);">
+            <div class="stagger-box"></div>
+            <div class="stagger-box"></div>
+            <div class="stagger-box"></div>
+            <div class="stagger-box"></div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>jQuery + CSS Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Cascata suave com delay incremental
+$('.stagger-box').each(function(i) {
+  $(this).delay(i * 120).animate({
+    opacity: 1
+  }, {
+    step: function(now, fx) {
+      $(this).css('transform', `translateY(${20 * (1 - now)}px)`);
+    },
+    duration: 500
+  });
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 2 -->
+    <div class="demo-item" data-category="load">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#02</span>
+          <h2 class="demo-title">Skeleton Loader para Conteúdo Real</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="2">▶ Reiniciar</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-2">
+          <div class="skel-wrap" id="skel-box">
+            <div class="skel-line avatar"></div>
+            <div class="skel-line" style="width: 80%;"></div>
+            <div class="skel-line" style="width: 50%;"></div>
+          </div>
+          <div id="real-box" style="display:none; width: 220px; padding: 15px; background: #1e293b; border-radius: 10px;">
+            <div style="font-weight:700; color:#38bdf8; margin-bottom:5px;">🚀 Conteúdo Pronto</div>
+            <div style="font-size:0.75rem; color:#94a3b8;">Os dados foram renderizados com transição de fade suave.</div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>jQuery Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Transição de placeholder skeleton para conteúdo
+$('#skel-box').show();
+$('#real-box').hide();
+
+setTimeout(() => {
+  $('#skel-box').fadeOut(300, function() {
+    $('#real-box').fadeIn(400);
+  });
+}, 1500);</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 3 -->
+    <div class="demo-item" data-category="load">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#03</span>
+          <h2 class="demo-title">Radial Circular Progress Loader</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="3">▶ Reiniciar</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-3">
+          <svg class="circle-svg" width="100" height="100">
+            <circle cx="50" cy="50" r="40" stroke="#1e293b" stroke-width="8" fill="none" />
+            <circle id="circle-bar" cx="50" cy="50" r="40" stroke="#6366f1" stroke-width="8" fill="none"
+              stroke-dasharray="251.2" stroke-dashoffset="251.2" stroke-linecap="round" />
+          </svg>
+          <div class="circle-val" id="circle-txt">0%</div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>jQuery SVG Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>const totalCirc = 2 * Math.PI * 40; // 251.2
+$({ val: 0 }).animate({ val: 85 }, {
+  duration: 1500,
+  step: function(now) {
+    const offset = totalCirc - (now / 100 * totalCirc);
+    $('#circle-bar').css('stroke-dashoffset', offset);
+    $('#circle-txt').text(Math.round(now) + '%');
+  }
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 4 -->
+    <div class="demo-item" data-category="load">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#04</span>
+          <h2 class="demo-title">Curtain Mask Wipe Reveal</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="4">▶ Reiniciar</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-4">
+          <div class="curtain-wrap">
+            <div class="curtain-layer" id="curtain-el"></div>
+            <span style="font-weight:800; font-size:1.1rem; color:#fff;">NOVA COLEÇÃO</span>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>jQuery Curtain Reveal</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Efeito cortina subindo e revelando a imagem/bloco
+$('#curtain-el').css({ height: '100%', top: '0' })
+  .animate({ height: '0%' }, {
+    duration: 800,
+    easing: 'swing'
+  });</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 5 -->
+    <div class="demo-item" data-category="load">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#05</span>
+          <h2 class="demo-title">Progress Stepper Interativo</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="5">▶ Reiniciar</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-5">
+          <div class="steps-wrap" style="width: 220px;">
+            <div class="step-bar"><div class="step-fill" id="step-prog"></div></div>
+            <div class="step-dot active">1</div>
+            <div class="step-dot">2</div>
+            <div class="step-dot">3</div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>jQuery Multi-step Progress</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Anima barra e ilumina pontos em sequência
+$('#step-prog').stop().css('width', '0%').animate({ width: '100%' }, {
+  duration: 1800,
+  step: function(now) {
+    if (now >= 50) $('.step-dot').eq(1).addClass('active');
+    if (now >= 95) $('.step-dot').eq(2).addClass('active');
+  }
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== GRUPO 2: CARDS & 3D ==================== -->
+
+    <!-- DEMO 6 -->
+    <div class="demo-item" data-category="card">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#06</span>
+          <h2 class="demo-title">Interactive 3D Mouse Tilt</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Mova o mouse sobre o card</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-6" style="perspective: 1000px;">
+          <div class="tilt-card" id="tilt-box">Hover 3D</div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>jQuery Mouse Tilt 3D</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Efeito inclinação 3D dinâmico ao mover o ponteiro
+$('#tilt-box').on('mousemove', function(e) {
+  const o = $(this).offset();
+  const x = e.pageX - o.left - $(this).width()/2;
+  const y = e.pageY - o.top - $(this).height()/2;
+  $(this).css('transform', `rotateY(${x * 0.15}deg) rotateX(${-y * 0.15}deg) scale(1.05)`);
+}).on('mouseleave', function() {
+  $(this).css('transform', 'rotateY(0deg) rotateX(0deg) scale(1)');
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 7 -->
+    <div class="demo-item" data-category="card">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#07</span>
+          <h2 class="demo-title">Magnetic Button (Snap ao Cursor)</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Aproxime o cursor do botão</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-7">
+          <button class="magnetic-btn" id="mag-btn">Atrair</button>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Magnetic Pull Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>$('#mag-btn').on('mousemove', function(e) {
+  const rect = this.getBoundingClientRect();
+  const x = (e.clientX - rect.left) - rect.width / 2;
+  const y = (e.clientY - rect.top) - rect.height / 2;
+  $(this).css('transform', `translate(${x * 0.35}px, ${y * 0.35}px)`);
+}).on('mouseleave', function() {
+  $(this).css('transform', 'translate(0, 0)');
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 8 -->
+    <div class="demo-item" data-category="card">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#08</span>
+          <h2 class="demo-title">Card Morph to Full Modal Dialog</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn" id="open-modal-demo">Expandir Card</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-8">
+          <div class="mini-card" id="card-expand-source">
+            <strong>Detalhes do Item</strong>
+            <p style="color:#94a3b8; font-size:0.75rem; margin-top:4px;">Clique para expandir</p>
+          </div>
+          <!-- Modal -->
+          <div class="modal-overlay" id="demo-modal">
+            <div class="modal-content">
+              <h3>Visão Expandida</h3>
+              <p style="color:#94a3b8; margin: 10px 0; font-size:0.85rem;">Card aberto com expansão e blur de fundo nativo.</p>
+              <button class="btn btn-secondary" id="close-modal-demo">Fechar</button>
+            </div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Modal Morph Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Modal suave com fade e zoom
+$('#open-modal-demo, #card-expand-source').on('click', function() {
+  $('#demo-modal').css({display:'flex', opacity: 0}).animate({opacity: 1}, 250);
+  $('.modal-content').css({transform: 'scale(0.85)'}).animate({transform: 'scale(1)'}, 250);
+});
+
+$('#close-modal-demo').on('click', function() {
+  $('#demo-modal').fadeOut(200);
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 9 -->
+    <div class="demo-item" data-category="card">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#09</span>
+          <h2 class="demo-title">Spotlight Glow Tracker no Card</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Passe o mouse no card</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-9">
+          <div class="spot-card" id="spotlight-card">
+            <span style="z-index: 2; font-weight:600; font-size:0.9rem;">Iluminação Direcional</span>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Radial Spotlight Tracker</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Atualiza variáveis CSS do foco de luz pelo ponteiro
+$('#spotlight-card').on('mousemove', function(e) {
+  const rect = this.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  this.style.setProperty('--x', `${x}px`);
+  this.style.setProperty('--y', `${y}px`);
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 10 -->
+    <div class="demo-item" data-category="card">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#10</span>
+          <h2 class="demo-title">3D Flip Card Flip (180 Graus)</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="10">Girar Card</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-10">
+          <div class="flip-box">
+            <div class="flip-inner" id="flip-elem">
+              <div class="flip-face flip-front">Frente (A)</div>
+              <div class="flip-face flip-back">Verso (B)</div>
+            </div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>jQuery 3D Card Flip</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>let flipped = false;
+$('#flip-elem, [data-demo="10"]').on('click', function() {
+  flipped = !flipped;
+  $('#flip-elem').css('transform', flipped ? 'rotateY(180deg)' : 'rotateY(0deg)');
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== GRUPO 3: PARALLAX & PROFUNDIDADE ==================== -->
+
+    <!-- DEMO 11 -->
+    <div class="demo-item" data-category="parallax">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#11</span>
+          <h2 class="demo-title">Multi-Layer Mouse Parallax</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Mova o ponteiro no box</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-11">
+          <div class="parallax-scene" id="para-scene">
+            <div class="para-layer layer-1" data-depth="0.06"></div>
+            <div class="para-layer layer-2" data-depth="0.14"></div>
+            <span style="z-index:3; font-weight:700;">Profundidade 2.5D</span>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Multi-Depth Parallax</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Parallax multi-camadas com coeficientes independentes
+$('#para-scene').on('mousemove', function(e) {
+  const rect = this.getBoundingClientRect();
+  const x = e.clientX - rect.left - rect.width / 2;
+  const y = e.clientY - rect.top - rect.height / 2;
+
+  $(this).find('.para-layer').each(function() {
+    const depth = $(this).data('depth');
+    $(this).css('transform', `translate(${x * depth}px, ${y * depth}px)`);
+  });
+}).on('mouseleave', function() {
+  $(this).find('.para-layer').css('transform', 'translate(0, 0)');
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 12 -->
+    <div class="demo-item" data-category="parallax">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#12</span>
+          <h2 class="demo-title">Scroll Parallax Container</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Role o box interno</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-12">
+          <div class="mock-viewport" id="scroll-box">
+            <div class="mock-scroll-content">
+              <div class="float-orb" id="scroll-orb"></div>
+              <p style="font-size:0.75rem; color:#94a3b8; padding-top:140px; text-align:center;">Role para baixo ↓</p>
+            </div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Scroll Trigger Parallax</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// O elemento interno desloca em velocidade diferencial (0.5x)
+$('#scroll-box').on('scroll', function() {
+  const scrollTop = $(this).scrollTop();
+  $('#scroll-orb').css('transform', `translateY(${scrollTop * 0.55}px)`);
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 13 -->
+    <div class="demo-item" data-category="parallax">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#13</span>
+          <h2 class="demo-title">Floating Physics Bobbing Loop</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="13">Alternar Velocidade</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-13">
+          <div class="orbit-core" id="float-obj">
+            🪐
+            <div class="orbit-satellite" id="satellite"></div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Floating Loop Math</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Flutuação senoidal contínua
+let angle = 0;
+function floatLoop() {
+  angle += 0.04;
+  const y = Math.sin(angle) * 12;
+  $('#float-obj').css('transform', `translateY(${y}px)`);
+  requestAnimationFrame(floatLoop);
+}
+floatLoop();</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 14 -->
+    <div class="demo-item" data-category="parallax">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#14</span>
+          <h2 class="demo-title">Dynamic Glare Sheen Reflection</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="14">Disparar Reflexo</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-14">
+          <div class="glare-card" id="glare-target">
+            <span>Vidro Acrílico</span>
+            <div class="glare-sheen" id="sheen-el"></div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Glare Sheen Animation</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Reflexo de feixe luminoso percorrendo o card
+$('#sheen-el').css({ left: '-150%' }).stop().animate({
+  left: '150%'
+}, 850);</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 15 -->
+    <div class="demo-item" data-category="parallax">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#15</span>
+          <h2 class="demo-title">Clip-Path Circle Reveal Transition</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="15">▶ Abrir Foco</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-15">
+          <div class="clip-reveal" id="clip-box">
+            <span>Revelação Óptica</span>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>SVG Clip Mask Easing</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Animação de expansão circular do clip-path
+$({ radius: 0 }).animate({ radius: 100 }, {
+  duration: 800,
+  step: function(now) {
+    $('#clip-box').css('clip-path', `circle(${now}% at 50% 50%)`);
+  }
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== GRUPO 4: MICRO-INTERAÇÕES & HOVER ==================== -->
+
+    <!-- DEMO 16 -->
+    <div class="demo-item" data-category="micro">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#16</span>
+          <h2 class="demo-title">Liquid Ripple Effect no Clique</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Clique no botão</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-16">
+          <button class="ripple-btn" id="rip-btn">Clique para Ondas</button>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Ripple Click Origin</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Ondulação a partir das coordenadas exatas do clique
+$('#rip-btn').on('click', function(e) {
+  const o = $(this).offset();
+  const x = e.pageX - o.left;
+  const y = e.pageY - o.top;
+  const ripple = $('&lt;span class="ripple-wave"&gt;&lt;/span&gt;').css({
+    top: y, left: x, width: 80, height: 80, margin: -40
+  });
+  $(this).append(ripple);
+  setTimeout(() => ripple.remove(), 600);
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 17 -->
+    <div class="demo-item" data-category="micro">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#17</span>
+          <h2 class="demo-title">Follower Badge com Easing (Cursor Pill)</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Passe o mouse no box</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-17">
+          <div class="mouse-dock" id="dock-area">
+            <div class="mouse-badge" id="badge-pill">Preview</div>
+            <span style="color:#64748b; font-size:0.8rem; position:absolute; bottom:15px; left:15px;">Área sensível</span>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Smooth Badge Lag</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Seguidor fluido com atraso suave
+$('#dock-area').on('mousemove', function(e) {
+  const o = $(this).offset();
+  $('#badge-pill').stop().animate({
+    left: e.pageX - o.left,
+    top: e.pageY - o.top
+  }, { duration: 120, easing: 'swing' });
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 18 -->
+    <div class="demo-item" data-category="micro">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#18</span>
+          <h2 class="demo-title">Horizontal Expanding Split Accordion</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Passe o mouse sobre os blocos</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-18">
+          <div class="cards-row">
+            <div class="exp-item active">01</div>
+            <div class="exp-item">02</div>
+            <div class="exp-item">03</div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Flex Accordion Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Alterna classes para expansão de colunas em flex
+$('.exp-item').on('mouseenter', function() {
+  $('.exp-item').removeClass('active');
+  $(this).addClass('active');
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 19 -->
+    <div class="demo-item" data-category="micro">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#19</span>
+          <h2 class="demo-title">Elastic Dropdown com Rebote</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-secondary" id="drop-btn">Abrir Menu ▾</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-19">
+          <div class="drop-trigger">
+            <div class="drop-menu" id="el-menu">
+              <a href="javascript:void(0)">Configurações</a>
+              <a href="javascript:void(0)">Exportar Dados</a>
+              <a href="javascript:void(0)">Desconectar</a>
+            </div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Bounce Dropdown Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Efeito bounce no dropdown usando slideDown customizado
+$('#drop-btn').on('click', function(e) {
+  e.stopPropagation();
+  $('#el-menu').slideToggle(250);
+});
+
+$(document).on('click', () => $('#el-menu').slideUp(180));</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 20 -->
+    <div class="demo-item" data-category="micro">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#20</span>
+          <h2 class="demo-title">Off-Canvas Drawer com Slide Lateral</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn" id="drawer-toggle">Toggle Drawer</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-20">
+          <div class="drawer-view">
+            <div class="drawer-panel" id="side-drawer">
+              <strong>Gaveta Lateral</strong>
+              <p style="color:#94a3b8; font-size:0.75rem; margin-top:8px;">Aba deslizante com animação via jQuery.</p>
+            </div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Off-canvas Slide Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Alterna estado da gaveta lateral off-canvas
+let open = false;
+$('#drawer-toggle').on('click', function() {
+  open = !open;
+  $('#side-drawer').stop().animate({
+    right: open ? '0px' : '-160px'
+  }, 350);
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== GRUPO 5: TIPOGRAFIA & UI DINÂMICA ==================== -->
+
+    <!-- DEMO 21 -->
+    <div class="demo-item" data-category="typo">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#21</span>
+          <h2 class="demo-title">Number Counter-Up com Formatação</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="21">▶ Contar</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-21">
+          <div class="count-display" id="metric-val">0</div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Counter-up Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Animação de número de 0 até o total com formatação pt-BR
+$({ val: 0 }).animate({ val: 14850 }, {
+  duration: 1800,
+  step: function(now) {
+    $('#metric-val').text('$' + Math.floor(now).toLocaleString('pt-BR'));
+  }
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 22 -->
+    <div class="demo-item" data-category="typo">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#22</span>
+          <h2 class="demo-title">Matrix / Hacker Text Scramble Effect</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="22">▶ Decifrar</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-22">
+          <div class="scramble-txt" id="matrix-txt">SYSTEM SECURE</div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Text Decrypt Snippet</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>const chars = "!@#$%^&*()_+-=<>?/\\[]{}";
+const target = "SECURITY ACCESS";
+let frame = 0;
+const interval = setInterval(() => {
+  $('#matrix-txt').text(
+    target.split('').map((c, i) => i < frame / 3 ? c : chars[Math.floor(Math.random()*chars.length)]).join('')
+  );
+  if (frame++ > target.length * 3) clearInterval(interval);
+}, 40);</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 23 -->
+    <div class="demo-item" data-category="typo">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#23</span>
+          <h2 class="demo-title">Typewriter & Auto-Delete Carousel</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn btn-replay" data-demo="23">▶ Reiniciar Digitação</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-23">
+          <span class="type-txt" id="typewriter-el"></span>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Typewriter Engine</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>const phrases = ["Inovação Ágil", "UX Futurista", "Performance Pura"];
+let pIdx = 0, charIdx = 0, deleting = false;
+
+function typeStep() {
+  const cur = phrases[pIdx];
+  $('#typewriter-el').text(cur.substring(0, charIdx));
+  
+  if (!deleting && charIdx++ === cur.length) {
+    deleting = true; setTimeout(typeStep, 1000); return;
+  }
+  if (deleting && charIdx-- === 0) {
+    deleting = false; pIdx = (pIdx + 1) % phrases.length;
+  }
+  setTimeout(typeStep, deleting ? 40 : 90);
+}
+typeStep();</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 24 -->
+    <div class="demo-item" data-category="typo">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#24</span>
+          <h2 class="demo-title">Fluid Accordion com Toggle de Rotação</h2>
+        </div>
+        <div class="demo-controls">
+          <span style="font-size:0.8rem; color:var(--text-muted)">Clique no cabeçalho</span>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-24">
+          <div class="faq-box">
+            <div class="faq-head" id="faq-trigger">
+              <span>Como funciona a API?</span>
+              <span id="faq-arrow">▾</span>
+            </div>
+            <div class="faq-body" id="faq-content">
+              Nossa biblioteca oferece chamadas assíncronas e renderizações ultra rápidas sem engasgos de frame.
+            </div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Smooth FAQ Slide</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>$('#faq-trigger').on('click', function() {
+  $('#faq-content').slideToggle(250);
+  const arrow = $('#faq-arrow');
+  arrow.text(arrow.text() === '▾' ? '▴' : '▾');
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEMO 25 -->
+    <div class="demo-item" data-category="typo">
+      <div class="demo-header">
+        <div class="demo-title-area">
+          <span class="demo-number">#25</span>
+          <h2 class="demo-title">Toast Stack com Barra de Tempo Decrescente</h2>
+        </div>
+        <div class="demo-controls">
+          <button class="btn" id="toast-trigger">Disparar Toast</button>
+        </div>
+      </div>
+      <div class="demo-body">
+        <div class="demo-stage" id="stage-25">
+          <div class="toast-box" id="live-toast">
+            ✓ Arquivo publicado com sucesso!
+            <div class="toast-prog" id="toast-bar"></div>
+          </div>
+        </div>
+        <div class="demo-code">
+          <div class="code-topbar"><span>Live Toast Notification</span><button class="copy-btn">Copiar</button></div>
+          <pre><code>// Notificação moderna com slide-in e barra de progresso
+$('#live-toast').stop().slideDown(200);
+$('#toast-bar').css('width', '100%').animate({ width: '0%' }, 2200, function() {
+  $('#live-toast').slideUp(250);
+});</code></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>Construído para fácil portabilidade • Desenvolvido com HTML5, CSS3 Moderno e jQuery 3.7.1</p>
+  </footer>
+
+  <!-- ==================== JAVASCRIPT MASTER DAS ANIMAÇÕES ==================== -->
+  <script>
+    $(document).ready(function() {
+
+      // --- FILTROS DE CATEGORIA ---
+      $('.filter-btn').on('click', function() {
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+
+        const filter = $(this).data('filter');
+        if (filter === 'all') {
+          $('.demo-item').fadeIn(250);
+        } else {
+          $('.demo-item').hide();
+          $(`.demo-item[data-category="${filter}"]`).fadeIn(250);
+        }
+      });
+
+      // --- BOTÃO DE COPIAR CÓDIGO ---
+      $('.copy-btn').on('click', function() {
+        const code = $(this).closest('.demo-code').find('pre code').text();
+        navigator.clipboard.writeText(code).then(() => {
+          const original = $(this).text();
+          $(this).text('✓ Copiado!').css('color', '#10b981');
+          setTimeout(() => $(this).text(original).css('color', '#38bdf8'), 1600);
+        });
+      });
+
+      // --- #01 STAGGERED GRID ---
+      function runStagger() {
+        $('#stage-1 .stagger-box').stop(true, true).css({ opacity: 0, transform: 'translateY(20px)' });
+        $('#stage-1 .stagger-box').each(function(i) {
+          $(this).delay(i * 120).animate({ opacity: 1 }, {
+            step: function(now) {
+              $(this).css('transform', `translateY(${20 * (1 - now)}px)`);
+            },
+            duration: 400
+          });
+        });
+      }
+      runStagger();
+
+      // --- #02 SKELETON LOADER ---
+      function runSkeleton() {
+        $('#skel-box').show();
+        $('#real-box').hide();
+        setTimeout(() => {
+          $('#skel-box').fadeOut(300, function() {
+            $('#real-box').fadeIn(400);
+          });
+        }, 1200);
+      }
+      runSkeleton();
+
+      // --- #03 CIRCULAR PROGRESS ---
+      function runCircle() {
+        const total = 251.2;
+        $({ val: 0 }).animate({ val: 85 }, {
+          duration: 1400,
+          step: function(now) {
+            const offset = total - (now / 100 * total);
+            $('#circle-bar').css('stroke-dashoffset', offset);
+            $('#circle-txt').text(Math.round(now) + '%');
+          }
+        });
+      }
+      runCircle();
+
+      // --- #04 CURTAIN REVEAL ---
+      function runCurtain() {
+        $('#curtain-el').stop(true).css({ height: '100%', top: '0' })
+          .animate({ height: '0%' }, { duration: 800, easing: 'swing' });
+      }
+      runCurtain();
+
+      // --- #05 PROGRESS STEPPER ---
+      function runStepper() {
+        $('#stage-5 .step-dot').removeClass('active').eq(0).addClass('active');
+        $('#step-prog').stop(true).css('width', '0%').animate({ width: '100%' }, {
+          duration: 1800,
+          step: function(now) {
+            if (now >= 50) $('#stage-5 .step-dot').eq(1).addClass('active');
+            if (now >= 95) $('#stage-5 .step-dot').eq(2).addClass('active');
+          }
+        });
+      }
+      runStepper();
+
+      // --- #06 3D MOUSE TILT ---
+      $('#tilt-box').on('mousemove', function(e) {
+        const o = $(this).offset();
+        const x = e.pageX - o.left - $(this).width() / 2;
+        const y = e.pageY - o.top - $(this).height() / 2;
+        $(this).css('transform', `rotateY(${x * 0.15}deg) rotateX(${-y * 0.15}deg) scale(1.05)`);
+      }).on('mouseleave', function() {
+        $(this).css('transform', 'rotateY(0deg) rotateX(0deg) scale(1)');
+      });
+
+      // --- #07 MAGNETIC BUTTON ---
+      $('#mag-btn').on('mousemove', function(e) {
+        const rect = this.getBoundingClientRect();
+        const x = (e.clientX - rect.left) - rect.width / 2;
+        const y = (e.clientY - rect.top) - rect.height / 2;
+        $(this).css('transform', `translate(${x * 0.35}px, ${y * 0.35}px)`);
+      }).on('mouseleave', function() {
+        $(this).css('transform', 'translate(0, 0)');
+      });
+
+      // --- #08 CARD MORPH TO MODAL ---
+      // jQuery não anima "transform", então o zoom usa transição CSS
+      $('#open-modal-demo, #card-expand-source').on('click', function() {
+        const $conteudo = $('#demo-modal .modal-content');
+        $conteudo.css({ transition: 'none', transform: 'scale(0.85)' });
+        $('#demo-modal').stop(true).css({ display: 'flex', opacity: 0 }).animate({ opacity: 1 }, 250);
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          $conteudo.css({ transition: 'transform 0.25s ease-out', transform: 'scale(1)' });
+        }));
+      });
+      $('#close-modal-demo').on('click', function() {
+        $('#demo-modal').stop(true).fadeOut(200);
+      });
+
+      // --- #09 SPOTLIGHT GLOW ---
+      $('#spotlight-card').on('mousemove', function(e) {
+        const rect = this.getBoundingClientRect();
+        this.style.setProperty('--x', `${e.clientX - rect.left}px`);
+        this.style.setProperty('--y', `${e.clientY - rect.top}px`);
+      });
+
+      // --- #10 3D FLIP CARD ---
+      let flipped = false;
+      function runFlip() {
+        flipped = !flipped;
+        $('#flip-elem').css('transform', flipped ? 'rotateY(180deg)' : 'rotateY(0deg)');
+      }
+      $('#flip-elem').on('click', runFlip);
+
+      // --- #11 MULTI-LAYER PARALLAX ---
+      $('#para-scene').on('mousemove', function(e) {
+        const rect = this.getBoundingClientRect();
+        const x = e.clientX - rect.left - rect.width / 2;
+        const y = e.clientY - rect.top - rect.height / 2;
+        $(this).find('.para-layer').each(function() {
+          const depth = $(this).data('depth');
+          $(this).css('transform', `translate(${x * depth}px, ${y * depth}px)`);
+        });
+      }).on('mouseleave', function() {
+        $(this).find('.para-layer').css('transform', 'translate(0, 0)');
+      });
+
+      // --- #12 SCROLL PARALLAX ---
+      $('#scroll-box').on('scroll', function() {
+        $('#scroll-orb').css('transform', `translateY(${$(this).scrollTop() * 0.55}px)`);
+      });
+
+      // --- #13 FLOATING BOBBING LOOP ---
+      let floatAngle = 0;
+      let floatSpeed = 0.04;
+      function floatLoop() {
+        floatAngle += floatSpeed;
+        $('#float-obj').css('transform', `translateY(${Math.sin(floatAngle) * 12}px)`);
+        requestAnimationFrame(floatLoop);
+      }
+      floatLoop();
+      function toggleFloatSpeed() {
+        floatSpeed = floatSpeed === 0.04 ? 0.12 : 0.04;
+      }
+
+      // --- #14 GLARE SHEEN ---
+      function runSheen() {
+        $('#sheen-el').stop(true).css({ left: '-150%' }).animate({ left: '150%' }, 850);
+      }
+      $('#glare-target').on('mouseenter', runSheen);
+
+      // --- #15 CLIP-PATH CIRCLE REVEAL ---
+      function runClip() {
+        $('#clip-box').css('clip-path', 'circle(0% at 50% 50%)');
+        $({ radius: 0 }).animate({ radius: 100 }, {
+          duration: 800,
+          step: function(now) {
+            $('#clip-box').css('clip-path', `circle(${now}% at 50% 50%)`);
+          }
+        });
+      }
+      runClip();
+
+      // --- #16 LIQUID RIPPLE ---
+      $('#rip-btn').on('click', function(e) {
+        const o = $(this).offset();
+        const ripple = $('<span class="ripple-wave"></span>').css({
+          top: e.pageY - o.top, left: e.pageX - o.left, width: 80, height: 80, margin: -40
+        });
+        $(this).append(ripple);
+        setTimeout(() => ripple.remove(), 600);
+      });
+
+      // --- #17 FOLLOWER BADGE ---
+      $('#dock-area').on('mousemove', function(e) {
+        const o = $(this).offset();
+        $('#badge-pill').stop().animate({
+          left: e.pageX - o.left,
+          top: e.pageY - o.top
+        }, { duration: 120, easing: 'swing' });
+      });
+
+      // --- #18 EXPANDING ACCORDION ---
+      $('#stage-18 .exp-item').on('mouseenter', function() {
+        $('#stage-18 .exp-item').removeClass('active');
+        $(this).addClass('active');
+      });
+
+      // --- #19 ELASTIC DROPDOWN ---
+      $('#drop-btn').on('click', function(e) {
+        e.stopPropagation();
+        $('#el-menu').stop(true, true).slideToggle(250);
+      });
+      $(document).on('click', () => $('#el-menu').stop(true, true).slideUp(180));
+
+      // --- #20 OFF-CANVAS DRAWER ---
+      let drawerOpen = false;
+      $('#drawer-toggle').on('click', function() {
+        drawerOpen = !drawerOpen;
+        $('#side-drawer').stop().animate({ right: drawerOpen ? '0px' : '-160px' }, 350);
+      });
+
+      // --- #21 NUMBER COUNTER-UP ---
+      function runCounter() {
+        $({ val: 0 }).animate({ val: 14850 }, {
+          duration: 1800,
+          step: function(now) {
+            $('#metric-val').text('$' + Math.floor(now).toLocaleString('pt-BR'));
+          },
+          complete: function() {
+            $('#metric-val').text('$' + (14850).toLocaleString('pt-BR'));
+          }
+        });
+      }
+      runCounter();
+
+      // --- #22 TEXT SCRAMBLE ---
+      let scrambleTimer = null;
+      function runScramble() {
+        const chars = '!@#$%^&*()_+-=<>?/\\[]{}';
+        const target = 'SECURITY ACCESS';
+        let frame = 0;
+        clearInterval(scrambleTimer);
+        scrambleTimer = setInterval(() => {
+          $('#matrix-txt').text(
+            target.split('').map((c, i) => (i < frame / 3 || c === ' ') ? c : chars[Math.floor(Math.random() * chars.length)]).join('')
+          );
+          if (frame++ > target.length * 3) clearInterval(scrambleTimer);
+        }, 40);
+      }
+      runScramble();
+
+      // --- #23 TYPEWRITER ---
+      const phrases = ['Inovação Ágil', 'UX Futurista', 'Performance Pura'];
+      let pIdx = 0, charIdx = 0, deleting = false, typeTimer = null;
+      function typeStep() {
+        const cur = phrases[pIdx];
+        $('#typewriter-el').text(cur.substring(0, charIdx));
+        if (!deleting && charIdx++ === cur.length) {
+          deleting = true;
+          typeTimer = setTimeout(typeStep, 1000);
+          return;
+        }
+        if (deleting && charIdx-- === 0) {
+          deleting = false;
+          pIdx = (pIdx + 1) % phrases.length;
+        }
+        typeTimer = setTimeout(typeStep, deleting ? 40 : 90);
+      }
+      function runTypewriter() {
+        clearTimeout(typeTimer);
+        pIdx = 0; charIdx = 0; deleting = false;
+        typeStep();
+      }
+      runTypewriter();
+
+      // --- #24 FLUID ACCORDION ---
+      $('#faq-trigger').on('click', function() {
+        $('#faq-content').stop(true, true).slideToggle(250);
+        const arrow = $('#faq-arrow');
+        arrow.text(arrow.text() === '▾' ? '▴' : '▾');
+      });
+
+      // --- #25 TOAST ---
+      $('#toast-trigger').on('click', function() {
+        $('#live-toast').stop(true, true).slideDown(200);
+        $('#toast-bar').stop(true).css('width', '100%').animate({ width: '0%' }, 2200, 'linear', function() {
+          $('#live-toast').slideUp(250);
+        });
+      });
+
+      // --- BOTÕES "REINICIAR" (data-demo) ---
+      const replays = {
+        1: runStagger,
+        2: runSkeleton,
+        3: runCircle,
+        4: runCurtain,
+        5: runStepper,
+        10: runFlip,
+        13: toggleFloatSpeed,
+        14: runSheen,
+        15: runClip,
+        21: runCounter,
+        22: runScramble,
+        23: runTypewriter
+      };
+      $('.btn-replay').on('click', function() {
+        const fn = replays[$(this).data('demo')];
+        if (fn) fn();
+      });
+
+    });
+  </script>
+</body>
+</html>

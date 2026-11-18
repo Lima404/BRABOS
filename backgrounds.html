@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Interactive Backgrounds (2024–2026)</title>
+  <style>
+    :root {
+      --bg: #090a0f;
+      --card-bg: rgba(18, 20, 29, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Container Canvas/Efeito */
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Interface Superior */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 2.5rem 2rem 1.5rem;
+      text-align: center;
+      background: linear-gradient(180deg, rgba(9, 10, 15, 0.9) 0%, transparent 100%);
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, #fff 40%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Seletor de Efeitos */
+    .controls-wrapper {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      padding: 0.5rem 1.5rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .effect-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.5rem 0.9rem;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .effect-btn:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .effect-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    /* Card Central com Informações e Código */
+    main {
+      position: relative;
+      z-index: 10;
+      max-width: 800px;
+      margin: 0 auto 3rem;
+      padding: 0 1.5rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+      padding: 1.75rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .card-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .copy-btn {
+      background: #1e2235;
+      color: #e2e8f0;
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: #282e47;
+      color: #fff;
+    }
+
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 1.25rem;
+    }
+
+    pre {
+      background: #050608;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      max-height: 280px;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="canvas-container">
+    <canvas id="stage"></canvas>
+  </div>
+
+  <header>
+    <h1>Motion & Interactive Background Showcase</h1>
+    <p>10 efeitos reativos ao mouse (Canvas & WebGL Native Essentials).</p>
+  </header>
+
+  <nav class="controls-wrapper" id="buttons-container"></nav>
+
+  <main>
+    <div class="card">
+      <div class="card-header">
+        <h2 id="effect-title">Carregando efeito...</h2>
+        <button class="copy-btn" id="btn-copy">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+          </svg>
+          Copiar Código
+        </button>
+      </div>
+      <p class="card-desc" id="effect-desc"></p>
+      <pre><code id="code-block"></code></pre>
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let animId = null;
+    let mouse = { x: -1000, y: -1000, tx: -1000, ty: -1000, radius: 150 };
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.tx = e.clientX;
+      mouse.ty = e.clientY;
+    });
+
+    // Interpolação suave para movimento orgânico
+    function updateMouse() {
+      mouse.x += (mouse.tx - mouse.x) * 0.12;
+      mouse.y += (mouse.ty - mouse.y) * 0.12;
+    }
+
+    // LISTA DOS 10 EFEITOS
+    const effects = [
+      {
+        id: "fluid-glow",
+        name: "1. SaaS Spotlight Mesh",
+        desc: "Gradiente radial dinâmico que rastreia a aceleração do mouse com difusão suave sob uma malha semi-opaca.",
+        init: () => {
+          return () => {
+            ctx.fillStyle = "#090a0f";
+            ctx.fillRect(0, 0, width, height);
+
+            const g1 = ctx.createRadialGradient(mouse.x, mouse.y, 10, mouse.x, mouse.y, 450);
+            g1.addColorStop(0, "rgba(99, 102, 241, 0.28)");
+            g1.addColorStop(0.5, "rgba(168, 85, 247, 0.1)");
+            g1.addColorStop(1, "rgba(9, 10, 15, 0)");
+            ctx.fillStyle = g1;
+            ctx.fillRect(0, 0, width, height);
+
+            // Grid overlay
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+            ctx.lineWidth = 1;
+            const step = 45;
+            for (let x = 0; x < width; x += step) {
+              ctx.beginPath();
+              ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+            }
+            for (let y = 0; y < height; y += step) {
+              ctx.beginPath();
+              ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+            }
+          };
+        },
+        code: `// SaaS Spotlight Mesh\nconst g = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 400);\ng.addColorStop(0, "rgba(99, 102, 241, 0.3)");\ng.addColorStop(1, "transparent");\nctx.fillStyle = g;\nctx.fillRect(0, 0, width, height);`
+      },
+      {
+        id: "dot-warp",
+        name: "2. Dot Matrix Warp",
+        desc: "Malha de pontos com física repulsiva elástica com base no vetor de distância até as coordenadas do mouse.",
+        init: () => {
+          const spacing = 32;
+          return (time) => {
+            ctx.fillStyle = "#090a0f";
+            ctx.fillRect(0, 0, width, height);
+            for (let x = spacing; x < width; x += spacing) {
+              for (let y = spacing; y < height; y += spacing) {
+                const dx = x - mouse.x;
+                const dy = y - mouse.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const maxDist = 140;
+                let px = x;
+                let py = y;
+
+                if (dist < maxDist) {
+                  const force = (1 - dist / maxDist) * 22;
+                  px += (dx / dist) * force;
+                  py += (dy / dist) * force;
+                }
+
+                ctx.fillStyle = dist < maxDist ? "#818cf8" : "rgba(255, 255, 255, 0.18)";
+                ctx.beginPath();
+                ctx.arc(px, py, dist < maxDist ? 2.5 : 1.2, 0, Math.PI * 2);
+                ctx.fill();
+              }
+            }
+          };
+        },
+        code: `// Dot Matrix Warp\nconst dx = x - mouse.x, dy = y - mouse.y;\nconst dist = Math.hypot(dx, dy);\nif (dist < 140) {\n  const force = (1 - dist / 140) * 22;\n  px += (dx / dist) * force;\n  py += (dy / dist) * force;\n}`
+      },
+      {
+        id: "aurora-wave",
+        name: "3. Aurora Fluid Waves",
+        desc: "Camadas senoidais empilhadas simulando tecido iluminado pelo cursor.",
+        init: () => {
+          return (time) => {
+            ctx.fillStyle = "#07080d";
+            ctx.fillRect(0, 0, width, height);
+
+            [0.003, 0.005, 0.008].forEach((freq, idx) => {
+              ctx.beginPath();
+              ctx.moveTo(0, height);
+              for (let x = 0; x <= width; x += 15) {
+                const my = (mouse.y / height - 0.5) * 50;
+                const y = Math.sin(x * freq + time * 0.002 + idx) * 60 + (height * 0.5) + my;
+                ctx.lineTo(x, y);
+              }
+              ctx.lineTo(width, height);
+              ctx.closePath();
+
+              const grad = ctx.createLinearGradient(0, height * 0.3, width, height);
+              grad.addColorStop(0, `rgba(${idx === 0 ? '99,102,241' : '168,85,247'}, 0.08)`);
+              grad.addColorStop(1, "transparent");
+              ctx.fillStyle = grad;
+              ctx.fill();
+            });
+          };
+        },
+        code: `// Aurora Waves\nctx.beginPath();\nfor (let x = 0; x <= width; x += 15) {\n  const y = Math.sin(x * freq + t) * 60 + height * 0.5;\n  ctx.lineTo(x, y);\n}\nctx.fill();`
+      },
+      {
+        id: "constellation",
+        name: "4. Constellation Nodes",
+        desc: "Nós flutuantes com interconexão de linhas vetoriais calculadas sob raio dinâmico de proximidade.",
+        init: () => {
+          const pts = Array.from({ length: 70 }, () => ({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.8,
+            vy: (Math.random() - 0.5) * 0.8
+          }));
+
+          return () => {
+            ctx.fillStyle = "#0a0c13";
+            ctx.fillRect(0, 0, width, height);
+
+            pts.forEach(p => {
+              p.x += p.vx; p.y += p.vy;
+              if (p.x < 0 || p.x > width) p.vx *= -1;
+              if (p.y < 0 || p.y > height) p.vy *= -1;
+
+              // Atração ao mouse
+              const dmx = mouse.x - p.x;
+              const dmy = mouse.y - p.y;
+              const dm = Math.hypot(dmx, dmy);
+              if (dm < 150) {
+                p.x += (dmx / dm) * 0.5;
+                p.y += (dmy / dm) * 0.5;
+              }
+
+              ctx.fillStyle = "#6366f1";
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+              ctx.fill();
+            });
+
+            for (let i = 0; i < pts.length; i++) {
+              for (let j = i + 1; j < pts.length; j++) {
+                const d = Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y);
+                if (d < 110) {
+                  ctx.strokeStyle = `rgba(148, 163, 184, ${1 - d / 110 * 0.9})`;
+                  ctx.lineWidth = 0.6;
+                  ctx.beginPath();
+                  ctx.moveTo(pts[i].x, pts[i].y);
+                  ctx.lineTo(pts[j].x, pts[j].y);
+                  ctx.stroke();
+                }
+              }
+            }
+          };
+        },
+        code: `// Constellation Network\nconst d = Math.hypot(p1.x - p2.x, p1.y - p2.y);\nif (d < 110) {\n  ctx.strokeStyle = \`rgba(148, 163, 184, \${1 - d / 110})\`;\n  ctx.stroke();\n}`
+      },
+      {
+        id: "kinetic-type",
+        name: "5. Kinetic Typography Grid",
+        desc: "Grade tipográfica sutil que deforma espaçamento e escala pela gravidade do cursor.",
+        init: () => {
+          const text = "AI • UX • MOTION • 2026 • ";
+          return () => {
+            ctx.fillStyle = "#090a0f";
+            ctx.fillRect(0, 0, width, height);
+            ctx.font = "600 14px monospace";
+            const rowHeight = 35;
+            const colWidth = 220;
+
+            for (let y = 30; y < height; y += rowHeight) {
+              for (let x = 0; x < width; x += colWidth) {
+                const d = Math.hypot(x - mouse.x, y - mouse.y);
+                const scale = d < 180 ? 1 + (1 - d / 180) * 0.4 : 1;
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.scale(scale, scale);
+                ctx.fillStyle = d < 180 ? "#e2e8f0" : "rgba(255,255,255,0.08)";
+                ctx.fillText(text, 0, 0);
+                ctx.restore();
+              }
+            }
+          };
+        },
+        code: `// Kinetic Grid\nconst d = Math.hypot(x - mouse.x, y - mouse.y);\nconst scale = d < 180 ? 1 + (1 - d / 180) * 0.4 : 1;\nctx.scale(scale, scale);`
+      },
+      {
+        id: "retro-grid",
+        name: "6. 3D Perspective Plane",
+        desc: "Grid estilo synthwave em perspectiva com inclinação angular de câmera guiada por coordenadas cartesianas.",
+        init: () => {
+          let offset = 0;
+          return () => {
+            ctx.fillStyle = "#08090d";
+            ctx.fillRect(0, 0, width, height);
+
+            offset = (offset + 1) % 40;
+            const horizon = height * 0.45;
+            const tiltX = (mouse.x - width / 2) * 0.08;
+
+            ctx.strokeStyle = "rgba(99, 102, 241, 0.25)";
+            ctx.lineWidth = 1;
+
+            // Linhas de fuga verticais
+            for (let x = -width; x < width * 2; x += 60) {
+              ctx.beginPath();
+              ctx.moveTo(width / 2 + tiltX, horizon);
+              ctx.lineTo(x, height);
+              ctx.stroke();
+            }
+
+            // Linhas horizontais com espaçamento geométrico
+            for (let y = horizon; y < height; y += 12) {
+              const p = (y - horizon) / (height - horizon);
+              const curY = horizon + Math.pow(p, 2.5) * (height - horizon) + (offset * p * 0.4);
+              if (curY <= height) {
+                ctx.beginPath();
+                ctx.moveTo(0, curY); ctx.lineTo(width, curY);
+                ctx.stroke();
+              }
+            }
+          };
+        },
+        code: `// 3D Perspective Grid\nconst horizon = height * 0.45;\nconst p = (y - horizon) / (height - horizon);\nconst curY = horizon + Math.pow(p, 2.5) * (height - horizon);`
+      },
+      {
+        id: "metaballs",
+        name: "7. Glassmorphic Blobs",
+        desc: "Metaballs orgânicos que orbitam e são empurrados suavemente pela inércia do cursor.",
+        init: () => {
+          const blobs = [
+            { x: width * 0.3, y: height * 0.4, r: 180, c: "rgba(99, 102, 241, 0.3)" },
+            { x: width * 0.7, y: height * 0.6, r: 210, c: "rgba(236, 72, 153, 0.25)" },
+            { x: width * 0.5, y: height * 0.5, r: 150, c: "rgba(16, 185, 129, 0.2)" }
+          ];
+
+          return (time) => {
+            ctx.fillStyle = "#07090e";
+            ctx.fillRect(0, 0, width, height);
+
+            blobs.forEach((b, i) => {
+              const ox = Math.cos(time * 0.001 + i) * 60;
+              const oy = Math.sin(time * 0.001 + i) * 60;
+              const mx = (mouse.x - width / 2) * 0.05 * (i + 1);
+              const my = (mouse.y - height / 2) * 0.05 * (i + 1);
+
+              const g = ctx.createRadialGradient(b.x + ox + mx, b.y + oy + my, 0, b.x + ox + mx, b.y + oy + my, b.r);
+              g.addColorStop(0, b.c);
+              g.addColorStop(1, "transparent");
+              ctx.fillStyle = g;
+              ctx.beginPath();
+              ctx.arc(b.x + ox + mx, b.y + oy + my, b.r, 0, Math.PI * 2);
+              ctx.fill();
+            });
+          };
+        },
+        code: `// Blobs Glow\nconst g = ctx.createRadialGradient(x, y, 0, x, y, r);\ng.addColorStop(0, 'rgba(99,102,241,0.3)');\ng.addColorStop(1, 'transparent');`
+      },
+      {
+        id: "matrix-stream",
+        name: "8. Hex Digital Stream",
+        desc: "Chuva de dados minimalista com caracteres em hexadecimal ativados por raio de iluminação do mouse.",
+        init: () => {
+          const chars = "0123456789ABCDEF";
+          const cols = Math.floor(width / 24);
+          const drops = Array(cols).fill(0);
+
+          return () => {
+            ctx.fillStyle = "rgba(9, 10, 15, 0.15)";
+            ctx.fillRect(0, 0, width, height);
+            ctx.font = "12px monospace";
+
+            for (let i = 0; i < drops.length; i++) {
+              const text = chars[Math.floor(Math.random() * chars.length)];
+              const x = i * 24;
+              const y = drops[i] * 24;
+
+              const d = Math.hypot(x - mouse.x, y - mouse.y);
+              ctx.fillStyle = d < 130 ? "#38bdf8" : "rgba(255, 255, 255, 0.07)";
+
+              ctx.fillText(text, x, y);
+              if (y > height && Math.random() > 0.975) drops[i] = 0;
+              drops[i]++;
+            }
+          };
+        },
+        code: `// Minimal Digital Stream\nconst d = Math.hypot(x - mouse.x, y - mouse.y);\nctx.fillStyle = d < 130 ? '#38bdf8' : 'rgba(255,255,255,0.07)';\nctx.fillText(char, x, y);`
+      },
+      {
+        id: "starfield",
+        name: "9. Interactive Hyperspace",
+        desc: "Túnel de estrelas 3D com curvatura direcional e aceleração relativa ao cursor.",
+        init: () => {
+          const stars = Array.from({ length: 400 }, () => ({
+            x: (Math.random() - 0.5) * width * 2,
+            y: (Math.random() - 0.5) * height * 2,
+            z: Math.random() * width
+          }));
+
+          return () => {
+            ctx.fillStyle = "#06070a";
+            ctx.fillRect(0, 0, width, height);
+
+            const cx = width / 2;
+            const cy = height / 2;
+            const speed = 7;
+            const mx = (mouse.x - cx) * 0.002;
+            const my = (mouse.y - cy) * 0.002;
+
+            stars.forEach(s => {
+              s.z -= speed;
+              if (s.z <= 0) {
+                s.z = width;
+                s.x = (Math.random() - 0.5) * width * 2;
+                s.y = (Math.random() - 0.5) * height * 2;
+              }
+
+              const k = 180 / s.z;
+              const px = (s.x + mx * s.z) * k + cx;
+              const py = (s.y + my * s.z) * k + cy;
+
+              if (px >= 0 && px <= width && py >= 0 && py <= height) {
+                const alpha = Math.min(1, (1 - s.z / width) * 1.5);
+                ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(px, py, Math.max(0.6, (1 - s.z / width) * 2.2), 0, Math.PI * 2);
+                ctx.fill();
+              }
+            });
+          };
+        },
+        code: `// Hyperspace Warp\nconst k = 180 / s.z;\nconst px = (s.x + mx * s.z) * k + cx;\nconst py = (s.y + my * s.z) * k + cy;`
+      },
+      {
+        id: "delaunay-tri",
+        name: "10. Kinetic Delaunay Mesh",
+        desc: "Malha geométrica subdividida com oscilação orgânica e refração por proximidade do cursor.",
+        init: () => {
+          const size = 90;
+          return (time) => {
+            ctx.fillStyle = "#080a10";
+            ctx.fillRect(0, 0, width, height);
+            ctx.lineWidth = 0.8;
+
+            for (let y = 0; y < height + size; y += size) {
+              for (let x = 0; x < width + size; x += size) {
+                const d = Math.hypot(x - mouse.x, y - mouse.y);
+                const shift = d < 180 ? (1 - d / 180) * 20 : 0;
+                const nx = x + Math.sin(time * 0.001 + y) * 8 + (x < mouse.x ? -shift : shift);
+                const ny = y + Math.cos(time * 0.001 + x) * 8 + (y < mouse.y ? -shift : shift);
+
+                ctx.strokeStyle = d < 180 ? "rgba(99, 102, 241, 0.4)" : "rgba(255, 255, 255, 0.05)";
+                ctx.strokeRect(nx - size / 2, ny - size / 2, size, size);
+              }
+            }
+          };
+        },
+        code: `// Kinetic Mesh Displacement\nconst d = Math.hypot(x - mouse.x, y - mouse.y);\nconst shift = d < 180 ? (1 - d / 180) * 20 : 0;\nctx.strokeRect(nx, ny, size, size);`
+      }
+    ];
+
+    // Gerenciador da Aplicação
+    let currentRender = null;
+    const btnContainer = document.getElementById('buttons-container');
+    const titleEl = document.getElementById('effect-title');
+    const descEl = document.getElementById('effect-desc');
+    const codeEl = document.getElementById('code-block');
+    const copyBtn = document.getElementById('btn-copy');
+
+    function setEffect(index) {
+      document.querySelectorAll('.effect-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+
+      const eff = effects[index];
+      titleEl.innerText = eff.name;
+      descEl.innerText = eff.desc;
+      codeEl.innerText = eff.code;
+
+      currentRender = eff.init();
+    }
+
+    effects.forEach((eff, i) => {
+      const btn = document.createElement('button');
+      btn.className = `effect-btn ${i === 0 ? 'active' : ''}`;
+      btn.innerText = eff.name;
+      btn.onclick = () => setEffect(i);
+      btnContainer.appendChild(btn);
+    });
+
+    // Copiar Código
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(codeEl.innerText);
+      const originalText = copyBtn.innerHTML;
+      copyBtn.innerText = "Copiado!";
+      setTimeout(() => copyBtn.innerHTML = originalText, 1800);
+    };
+
+    // Loop Principal (60-120 FPS)
+    function loop(time) {
+      updateMouse();
+      if (currentRender) currentRender(time);
+      animId = requestAnimationFrame(loop);
+    }
+
+    setEffect(0);
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

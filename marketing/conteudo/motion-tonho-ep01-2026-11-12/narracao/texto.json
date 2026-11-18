@@ -1,0 +1,24 @@
+{
+  "voz": "pt-BR-AntonioNeural",
+  "velocidade": "-6%",
+  "frases": [
+    {"id": "f01", "pausa": 0.0,  "texto": "Sábado, nove da manhã."},
+    {"id": "f02", "pausa": 0.25, "texto": "Dois clientes chegam para o mesmo horário."},
+    {"id": "f03", "pausa": 0.9,  "texto": "Esse é o Tonho."},
+    {"id": "f04", "pausa": 0.25, "texto": "Barbeiro há quinze anos em Currais Novos, aqui no Seridó."},
+    {"id": "f05", "pausa": 0.4,  "texto": "Duas cadeiras e um caderno de capa azul."},
+    {"id": "f06", "pausa": 0.8,  "texto": "Na página de sábado, dois nomes no mesmo horário."},
+    {"id": "f07", "pausa": 0.2,  "texto": "Um escrito por cima do outro."},
+    {"id": "f08", "pausa": 0.6,  "texto": "Os dois se olham."},
+    {"id": "f09", "pausa": 0.3,  "texto": "E o Tonho, sem graça, pergunta:"},
+    {"id": "f10", "pausa": 0.2,  "texto": "Quem marcou primeiro?"},
+    {"id": "f11", "pausa": 0.7,  "texto": "Ninguém sabe."},
+    {"id": "f12", "pausa": 0.2,  "texto": "Um deles vai embora."},
+    {"id": "f13", "pausa": 0.6,  "texto": "Menos um corte."},
+    {"id": "f14", "pausa": 0.25, "texto": "E, talvez, menos um cliente."},
+    {"id": "f15", "pausa": 0.9,  "texto": "O problema não é o Tonho."},
+    {"id": "f16", "pausa": 0.3,  "texto": "É o caderno."},
+    {"id": "f17", "pausa": 0.9,  "texto": "Se isso já aconteceu com você, comenta: já."},
+    {"id": "f18", "pausa": 0.5,  "texto": "Na cadeira do Tonho. Toda semana tem episódio."}
+  ]
+}

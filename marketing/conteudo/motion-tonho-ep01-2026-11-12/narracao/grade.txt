@@ -1,0 +1,19 @@
+duração 51.0 s
+  0.35 →   2.23  c01 b1.70  Sábado, nove da manhã.
+  2.50 →   4.98  c02 b2.00  Dois clientes chegam para o mesmo horário.
+  6.00 →   7.03  c04 b1.00  Esse é o Tonho.
+  7.50 →  11.29  c04 b4.00  Barbeiro há quinze anos em Currais Novos, aqui no Seridó.
+ 11.75 →  14.30  c06 b4.50  Duas cadeiras e um caderno de capa azul.
+ 15.25 →  18.57  c08 b3.50  Na página de sábado, dois nomes no mesmo horário.
+ 19.00 →  20.88  c10 b3.00  Um escrito por cima do outro.
+ 21.50 →  22.76  c11 b4.00  Os dois se olham.
+ 23.25 →  25.87  c12 b3.50  E o Tonho, sem graça, pergunta:
+ 26.25 →  27.52  c14 b1.50  Quem marcou primeiro?
+ 28.25 →  29.40  c15 b1.50  Ninguém sabe.
+ 29.75 →  31.15  c15 b4.50  Um deles vai embora.
+ 31.75 →  32.97  c16 b4.50  Menos um corte.
+ 33.25 →  36.01  c17 b3.50  E, talvez, menos um cliente.
+ 37.00 →  38.68  c19 b3.00  O problema não é o Tonho.
+ 39.00 →  40.02  c20 b3.00  É o caderno.
+ 41.00 →  44.70  c21 b3.00  Se isso já aconteceu com você, comenta: já.
+ 45.25 →  49.11  c23 b3.50  Na cadeira do Tonho. Toda semana tem episódio.

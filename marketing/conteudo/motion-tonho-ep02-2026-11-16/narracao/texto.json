@@ -1,0 +1,24 @@
+{
+  "voz": "pt-BR-AntonioNeural",
+  "velocidade": "-6%",
+  "inicio": 0.35,
+  "frases": [
+    {"id": "f01", "pausa": 0.30, "texto": "Tesoura numa mão."},
+    {"id": "f02", "pausa": 0.70, "texto": "Celular na outra."},
+    {"id": "f03", "pausa": 0.40, "texto": "O Tonho está cortando, e o celular não para."},
+    {"id": "f04", "pausa": 0.25, "texto": "Três mensagens."},
+    {"id": "f05", "pausa": 0.25, "texto": "Sete."},
+    {"id": "f06", "pausa": 0.75, "texto": "Doze."},
+    {"id": "f07", "pausa": 0.75, "texto": "Onze e dois: tem horário hoje à tarde?"},
+    {"id": "f08", "pausa": 0.45, "texto": "O Tonho só consegue responder às duas e quarenta."},
+    {"id": "f09", "pausa": 0.45, "texto": "Tenho às três!"},
+    {"id": "f10", "pausa": 0.80, "texto": "Já cortei, obrigado."},
+    {"id": "f11", "pausa": 0.25, "texto": "Ele não perdeu o cliente por ser ruim."},
+    {"id": "f12", "pausa": 0.80, "texto": "Perdeu por estar trabalhando."},
+    {"id": "f13", "pausa": 0.80, "texto": "E se o cliente pudesse ver os horários livres, sem precisar perguntar?"},
+    {"id": "f14", "pausa": 0.35, "texto": "Quantas vezes por dia te perguntam se tem horário?"},
+    {"id": "f15", "pausa": 0.75, "texto": "Comenta o número."},
+    {"id": "f16", "pausa": 0.30, "texto": "Na cadeira do Tonho."},
+    {"id": "f17", "pausa": 0.00, "texto": "Até o próximo episódio."}
+  ]
+}

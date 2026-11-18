@@ -1,0 +1,19 @@
+duração 47.0 s · tomada única
+  0.35 →   2.12  c01 b1.70  Terça, quatro da tarde.
+  2.50 →   3.78  c02 b2.00  A cadeira está pronta.
+  4.12 →   5.42  c03 b1.25  O cliente não veio.
+  6.25 →   7.23  c04 b1.50  Quatro e quinze.
+  7.62 →  10.37  c04 b4.25  Quatro e meia, e o Tonho de olho na porta.
+ 11.12 →  13.12  c06 b3.25  Ele procura o telefone no caderno.
+ 13.50 →  15.36  c07 b4.00  Só tem escrito: Damião.
+ 16.12 →  17.16  c09 b1.25  Sem telefone.
+ 17.50 →  18.39  c09 b4.00  Sem aviso.
+ 18.75 →  20.03  c10 b2.50  Sem como remarcar.
+ 20.88 →  24.34  c11 b2.75  Quatro e quarenta, chega outro cliente querendo encaixe.
+ 24.75 →  26.61  c13 b2.50  Mas quarenta minutos já foram.
+ 27.50 →  32.89  c14 b4.00  Um furo por dia, no fim do mês, vira mais de dezessete horas de cadeira parada.
+ 33.75 →  36.50  c17 b4.50  Agenda boa guarda o telefone de quem marcou.
+ 37.38 →  39.88  c19 b3.75  E você, como lida com quem fura?
+ 40.25 →  40.97  c21 b1.50  Conta aqui.
+ 41.75 →  42.97  c21 b4.50  Na cadeira do Tonho.
+ 43.38 →  44.98  c22 b3.75  Toda semana tem episódio.
