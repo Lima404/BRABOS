@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { isAuthRetryableFetchError, type User } from "@supabase/supabase-js";
 
 import { criarClienteServidor } from "@/lib/supabase/servidor";
 import { supabaseConfigurado } from "@/lib/supabase/config";
@@ -60,9 +61,7 @@ export const obterSessao = cache(async function obterSessao(): Promise<Sessao> {
 
   const supabase = await criarClienteServidor();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await usuarioDaSessao(supabase);
   if (!user) return { logado: false, barbearia: null };
 
   // `*` e não a lista de colunas: sem a 0044 no banco, pedir `admin` pelo
@@ -90,6 +89,50 @@ export const obterSessao = cache(async function obterSessao(): Promise<Sessao> {
     },
   };
 });
+
+/**
+ * O `getUser()`, sem deixar falha de rede derrubar a tela.
+ *
+ * ============================================================
+ * O MESMO PROBLEMA QUE O `proxy.ts` JÁ TRATAVA
+ * ============================================================
+ *
+ * O proxy embrulha o `getUser()` num try/catch (ver "LAÇO 1" lá). Este
+ * aqui não embrulhava — e ele roda no layout do sistema, a cada
+ * navegação. Uma falha de rede no instante errado (4G da rua, Supabase
+ * oscilando, antivírus no TLS) estourava o layout inteiro, e quem via o
+ * resultado era a página de erro padrão do Next.
+ *
+ * A falha chega de dois jeitos: LANÇANDO (o caso do antivírus) ou
+ * DEVOLVENDO `AuthRetryableFetchError` com usuário nulo. Os dois ganham
+ * uma segunda tentativa, porque a queda costuma durar um instante. Se a
+ * segunda também falhar, a tela abre como "sem sessão" — mesma escolha
+ * do proxy: não vaza nada, porque quem isola os dados é o RLS, e
+ * recarregar resolve quando a rede volta.
+ *
+ * Resposta que CHEGOU dizendo "sem usuário" não é repetida: aí a pessoa
+ * está deslogada mesmo.
+ */
+async function usuarioDaSessao(
+  supabase: Awaited<ReturnType<typeof criarClienteServidor>>,
+): Promise<User | null> {
+  for (let tentativa = 1; tentativa <= 2; tentativa++) {
+    try {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error || !isAuthRetryableFetchError(error)) return data.user;
+      console.error(
+        `[BARBOS] getUser não alcançou o Supabase (tentativa ${tentativa}):`,
+        error.message,
+      );
+    } catch (erro) {
+      console.error(
+        `[BARBOS] getUser lançou (tentativa ${tentativa}):`,
+        erro,
+      );
+    }
+  }
+  return null;
+}
 
 /**
  * A barbearia da conta logada.

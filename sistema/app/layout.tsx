@@ -1,26 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Archivo_Black, Inter } from "next/font/google";
 
+import { CLASSES_DAS_FONTES } from "@/app/fontes";
 import { Providers } from "@/app/providers";
 import { SITE } from "@/lib/site";
 import "./globals.css";
-
-/**
- * Inter faz a interface inteira. Archivo Black assina a marca e nao aparece
- * em mais nenhum lugar — regra do identidade/design-guide.md.
- */
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const archivoBlack = Archivo_Black({
-  variable: "--font-archivo-black",
-  subsets: ["latin"],
-  weight: "400",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   /**
@@ -62,7 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${archivoBlack.variable} h-full`}
+      className={`${CLASSES_DAS_FONTES} h-full`}
       suppressHydrationWarning
     >
       <body className="flex min-h-full flex-col">
