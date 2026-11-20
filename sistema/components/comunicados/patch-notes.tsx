@@ -15,6 +15,7 @@ import { FormaDosPatchNotes } from "@/components/comunicados/forma-dos-patch-not
 import { VisorDeFotos } from "@/components/comunicados/visor-de-fotos";
 import { Button } from "@/components/ui/button";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
+import { Markdown } from "@/components/ui/markdown";
 import {
   ancoraDaVersao,
   ehLinkInterno,
@@ -216,7 +217,7 @@ function Versao({ patch }: { patch: PatchNote }) {
           {patch.titulo}
         </h2>
         {/* Largura de leitura: na tela toda a linha passaria de 150 letras. */}
-        <p className="max-w-3xl whitespace-pre-line text-base text-foreground">{patch.texto}</p>
+        <Markdown className="max-w-3xl">{patch.texto}</Markdown>
       </header>
 
       {partes > 0 ? (
@@ -248,7 +249,7 @@ function CartaoDaSecao({ secao }: { secao: SecaoDoPatch }) {
   return (
     <section className="flex min-w-0 flex-1 flex-col gap-3 rounded-lg border border-l-4 border-border border-l-ambar-500 bg-card p-5">
       <h3 className="text-lg font-bold tracking-wide uppercase">{secao.titulo}</h3>
-      <p className="whitespace-pre-line text-base text-foreground">{secao.texto}</p>
+      <Markdown>{secao.texto}</Markdown>
 
       {secao.link ? <BotaoDoLink link={secao.link} rotulo={secao.rotuloDoLink} /> : null}
 

@@ -2,6 +2,7 @@ import { AlertTriangle, Sparkles, type LucideIcon } from "lucide-react";
 
 import { FitaDeNovidade } from "@/components/comunicados/fita-de-novidade";
 import { Badge } from "@/components/ui/badge";
+import { Markdown } from "@/components/ui/markdown";
 import {
   foiEditado,
   TIPOS_DE_COMUNICADO,
@@ -89,10 +90,8 @@ export function CartaoDeComunicado({
 
       <h2 className="text-lg font-semibold leading-snug">{comunicado.titulo}</h2>
 
-      {/* As quebras de linha que o admin digitou são os parágrafos. */}
-      <p className="whitespace-pre-line text-base text-foreground">
-        {comunicado.texto}
-      </p>
+      {/* Escrito em markdown pelo admin — ver components/ui/markdown.tsx. */}
+      <Markdown>{comunicado.texto}</Markdown>
 
       {rodape ? (
         <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">

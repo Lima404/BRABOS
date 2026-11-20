@@ -8,6 +8,10 @@ import { Alerta } from "@/components/ui/alerta";
 import { Button } from "@/components/ui/button";
 import { Campo } from "@/components/ui/campo";
 import { Input } from "@/components/ui/input";
+import {
+  DICA_DE_MARKDOWN,
+  PreviaMarkdown,
+} from "@/components/admin/previa-markdown";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AREA_MAX,
@@ -307,7 +311,7 @@ function CartaoDaSecao({
 
       <Campo
         rotulo="O que mudou"
-        ajuda={`${secao.texto.length} de ${TEXTO_MAX} letras. Linha em branco separa parágrafos.`}
+        ajuda={`${DICA_DE_MARKDOWN} ${secao.texto.length} de ${TEXTO_MAX} letras.`}
         erro={erros.texto}
       >
         <Textarea
@@ -317,6 +321,7 @@ function CartaoDaSecao({
           onChange={(e) => aoMudar({ texto: e.target.value })}
         />
       </Campo>
+      <PreviaMarkdown texto={secao.texto} />
 
       {/* Mesma ordem da página: o botão vem logo depois do texto. */}
       {comLink ? (

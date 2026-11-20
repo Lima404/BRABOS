@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Esqueleto } from "@/components/ui/esqueleto";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { Input } from "@/components/ui/input";
+import { Markdown } from "@/components/ui/markdown";
 import { Modal } from "@/components/ui/modal";
 import { RadioGrupo, RadioItem } from "@/components/ui/radio";
 import {
@@ -347,6 +348,15 @@ export function Amostruario() {
       </Secao>
 
       <Secao
+        titulo="Markdown"
+        nota="Texto escrito em markdown pelo admin (notificações e patch notes). HTML colado no texto sai como texto, link só passa se for http(s) ou caminho do sistema, e Enter sozinho quebra a linha. Os títulos do texto descem de nível: # vira h3. Onde só cabe prévia (o sino), usar textoSemMarkdown()."
+      >
+        <div className="max-w-2xl rounded-lg border border-border bg-card p-5">
+          <Markdown>{EXEMPLO_MARKDOWN}</Markdown>
+        </div>
+      </Secao>
+
+      <Secao
         titulo="Esqueleto"
         nota="O bloco que ocupa o lugar do conteúdo enquanto ele não chega. Tem que ter a FORMA do que vai chegar — esqueleto genérico faz a tela pular quando o conteúdo entra. Quem anuncia pro leitor de tela é o contêiner da tela, uma vez só; o bloco é aria-hidden. A animação respeita prefers-reduced-motion."
       >
@@ -412,6 +422,17 @@ export function Amostruario() {
     </div>
   );
 }
+
+const EXEMPLO_MARKDOWN = `### Agenda mais rápida
+
+A tela agora abre **direto no dia de hoje**, e o horário livre já vem marcado.
+
+- Arrastar o bloco encaixa de 15 em 15 minutos
+- *Folga* aparece hachurada no calendário
+
+> Citação: um recado que merece destaque.
+
+Veja em [Agenda](/agenda).`;
 
 function Secao({
   titulo,

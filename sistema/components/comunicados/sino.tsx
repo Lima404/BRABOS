@@ -14,6 +14,7 @@ import { useNaoLidos } from "@/components/comunicados/nao-lidos";
 import { Button } from "@/components/ui/button";
 import { Esqueleto } from "@/components/ui/esqueleto";
 import { EstadoVazio } from "@/components/ui/estado-vazio";
+import { textoSemMarkdown } from "@/components/ui/markdown";
 import {
   Sheet,
   SheetContent,
@@ -216,7 +217,9 @@ function ItemDoSino({
           <time dateTime={c.publicadoEm}>{diaDoMomento(c.publicadoEm)}</time>
         </p>
         <p className="font-semibold leading-snug text-foreground">{c.titulo}</p>
-        <p className="line-clamp-2 text-sm text-muted-foreground">{c.texto}</p>
+        <p className="line-clamp-2 text-sm text-muted-foreground">
+          {textoSemMarkdown(c.texto)}
+        </p>
       </div>
     </Link>
   );

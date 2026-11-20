@@ -27,6 +27,10 @@ import { EstadoVazio } from "@/components/ui/estado-vazio";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { RadioGrupo, RadioItem } from "@/components/ui/radio";
+import {
+  DICA_DE_MARKDOWN,
+  PreviaMarkdown,
+} from "@/components/admin/previa-markdown";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -444,8 +448,8 @@ function DialogoComunicado({
           rotulo={ehAtualizacao ? "Resumo" : "Texto"}
           ajuda={
             ehAtualizacao
-              ? `Aparece no sino e no topo da versão, antes das seções. ${texto.length} de ${TEXTO_MAX} letras.`
-              : `${texto.length} de ${TEXTO_MAX} letras. Linha em branco separa parágrafos.`
+              ? `Aparece no sino e no topo da versão, antes das seções. ${DICA_DE_MARKDOWN} ${texto.length} de ${TEXTO_MAX} letras.`
+              : `${DICA_DE_MARKDOWN} ${texto.length} de ${TEXTO_MAX} letras.`
           }
           erro={erros.texto}
         >
@@ -456,6 +460,7 @@ function DialogoComunicado({
             onChange={(e) => setTexto(e.target.value)}
           />
         </Campo>
+        <PreviaMarkdown texto={texto} />
 
         {ehAtualizacao ? (
           <EditorDeSecoes
